@@ -434,6 +434,25 @@ Connection_putFile (Connection *self, PyObject *args)
   return Py_None;
 }
 
+static ipp_t *
+add_modify_printer_request (const char *name)
+{
+  char uri[HTTP_MAX_URI];
+  ipp_t *request = ippNew ();
+  cups_lang_t *language;
+  snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
+  request->request.op.operation_id = CUPS_ADD_MODIFY_PRINTER;
+  request->request.op.request_id = 1;
+  language = cupsLangDefault ();
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
+		"attributes-charset", NULL, cupsLangEncoding (language));
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
+		"attributes-natural-language", NULL, language->language);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
+		"printer-uri", NULL, uri);
+  return request;
+}
+
 static PyObject *
 Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
 {
@@ -442,8 +461,6 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   const char *ppdname = NULL;
   const char *info = NULL;
   const char *location = NULL;
-  char uri[HTTP_MAX_URI];
-  cups_lang_t *language;
   ipp_t *request, *answer;
   static char *kwlist[] = { "name", "filename", "ppdname", "info",
 			    "location", NULL };
@@ -459,26 +476,13 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
     return NULL;
   }
 
-  request = ippNew ();
-  snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
-  request->request.op.operation_id = CUPS_ADD_MODIFY_PRINTER;
-  request->request.op.request_id = 1;
-  language = cupsLangDefault ();
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
-		"attributes-charset", NULL, cupsLangEncoding (language));
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
-		"attributes-natural-language", NULL, language->language);
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
-		"printer-uri", NULL, uri);
-
+  request = add_modify_printer_request (name);
   if (ppdname)
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		  "ppd-name", NULL, ppdname);
-
   if (info)
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		  "printer-info", NULL, info);
-
   if (location)
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		  "printer-location", NULL, location);
@@ -507,26 +511,70 @@ Connection_setPrinterDevice (Connection *self, PyObject *args)
 {
   const char *name;
   const char *device_uri;
-  char uri[HTTP_MAX_URI];
-  cups_lang_t *language;
   ipp_t *request, *answer;
 
   if (!PyArg_ParseTuple (args, "ss", &name, &device_uri))
     return NULL;
 
-  request = ippNew ();
-  snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
-  request->request.op.operation_id = CUPS_ADD_PRINTER;
-  request->request.op.request_id = 1;
-  language = cupsLangDefault ();
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
-		"attributes-charset", NULL, cupsLangEncoding (language));
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
-		"attributes-natural-language", NULL, language->language);
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
-		"printer-uri", NULL, uri);
+  request = add_modify_printer_request (name);
   ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_URI,
 		"device-uri", NULL, device_uri);
+  answer = cupsDoRequest (self->http, request, "/admin/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  ippDelete (answer);
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
+static PyObject *
+Connection_setPrinterInfo (Connection *self, PyObject *args)
+{
+  const char *name;
+  const char *info;
+  ipp_t *request, *answer;
+
+  if (!PyArg_ParseTuple (args, "ss", &name, &info))
+    return NULL;
+
+  request = add_modify_printer_request (name);
+  ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_URI,
+		"printer-info", NULL, info);
+  answer = cupsDoRequest (self->http, request, "/admin/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  ippDelete (answer);
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
+static PyObject *
+Connection_setPrinterLocation (Connection *self, PyObject *args)
+{
+  const char *name;
+  const char *location;
+  ipp_t *request, *answer;
+
+  if (!PyArg_ParseTuple (args, "ss", &name, &location))
+    return NULL;
+
+  request = add_modify_printer_request (name);
+  ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_URI,
+		"printer-location", NULL, location);
   answer = cupsDoRequest (self->http, request, "/admin/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
@@ -828,6 +876,14 @@ PyMethodDef Connection_methods[] =
     { "setPrinterDevice",
       (PyCFunction) Connection_setPrinterDevice, METH_VARARGS,
       "setPrinterDevice(name, device_uri) -> None" },
+
+    { "setPrinterInfo",
+      (PyCFunction) Connection_setPrinterInfo, METH_VARARGS,
+      "setPrinterInfo(name, info) -> None" },
+
+    { "setPrinterLocation",
+      (PyCFunction) Connection_setPrinterLocation, METH_VARARGS,
+      "setPrinterLocation(name, info) -> None" },
 
     { "getPPD",
       (PyCFunction) Connection_getPPD, METH_VARARGS,
