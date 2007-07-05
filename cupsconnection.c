@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2002, 2005, 2006, 2007  Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -642,21 +642,8 @@ Connection_getJobs (Connection *self)
   PyObject *result;
   ipp_t *request = ippNewRequest(IPP_GET_JOBS), *answer;
   ipp_attribute_t *attr;
-  const char *attributes[] = {
-	  "job-id",
-	  "job-name",
-	  "job-k-octets",
-	  "job-printer-uri",
-	  "job-originating-user-name",
-	  "job-priority",
-  };
 
   debugprintf ("-> Connection_getJobs()\n");
-  ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
-		 "requested-attributes",
-		 sizeof (attributes) / sizeof (attributes[0]),
-		 NULL, attributes);
-
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri",
 		NULL, "ipp://localhost/jobs/");
 
@@ -695,9 +682,16 @@ Connection_getJobs (Connection *self)
       if (!strcmp (attr->name, "job-id") &&
 	  attr->value_tag == IPP_TAG_INTEGER)
 	job_id = attr->values[0].integer;
-      else if ((!strcmp (attr->name, "job-k-octets") ||
-		!strcmp (attr->name, "job-priority")) &&
-	       attr->value_tag == IPP_TAG_INTEGER)
+      else if (((!strcmp (attr->name, "job-k-octets") ||
+		 !strcmp (attr->name, "job-priority") ||
+		 !strcmp (attr->name, "time-at-creation") ||
+		 !strcmp (attr->name, "time-at-processing") ||
+		 !strcmp (attr->name, "time-at-completed") ||
+		 !strcmp (attr->name, "job-media-sheets") ||
+		 !strcmp (attr->name, "job-media-sheets-completed")) &&
+		attr->value_tag == IPP_TAG_INTEGER) ||
+	       (!strcmp (attr->name, "job-state") &&
+		attr->value_tag == IPP_TAG_ENUM))
 	val = PyInt_FromLong (attr->values[0].integer);
       else if ((!strcmp (attr->name, "job-name") &&
 		attr->value_tag == IPP_TAG_NAME) ||
@@ -706,6 +700,9 @@ Connection_getJobs (Connection *self)
 	       (!strcmp (attr->name, "job-printer-uri") &&
 		attr->value_tag == IPP_TAG_URI))
 	val = PyString_FromString (attr->values[0].string.text);
+      else if (!strcmp (attr->name, "job-preserved") &&
+	       attr->value_tag == IPP_TAG_BOOLEAN)
+	val = PyBool_FromLong (attr->values[0].integer);
 
       if (val) {
 	debugprintf ("Adding %s to job dict\n", attr->name);

@@ -1,3 +1,13 @@
+2007-03-18  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getJobs): Include job-state
+	attribute.
+	(Connection_getJobs): Include job-preserved attribute.
+	(Connection_getJobs): Include time-at-creation, time-at-processing
+	and time-at-completed attributes.
+	(Connection_getJobs): Include job-media-sheets and
+	job-media-sheets-completed attributes.
+
 2007-01-03  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Version 1.9.17.
