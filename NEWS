@@ -12,3 +12,4 @@ New since 1.9.0:
 * cups.Connection.getPPDs()
 * cups.Connection.getDevices()
 * cups.IPPError now includes the cupsLastErrorString()
+* cups.IPP_PRINTER_* constants

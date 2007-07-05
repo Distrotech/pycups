@@ -301,6 +301,11 @@ initcups (void)
   INT_CONSTANT (PPD_UI_PICKONE);
   INT_CONSTANT (PPD_UI_PICKMANY);
 
+  // Printer states
+  INT_CONSTANT (IPP_PRINTER_IDLE);
+  INT_CONSTANT (IPP_PRINTER_PROCESSING);
+  INT_CONSTANT (IPP_PRINTER_STOPPED);
+
   // Exceptions
   HTTPError = PyErr_NewException ("cups.HTTPError", NULL, NULL);
   if (HTTPError == NULL)
