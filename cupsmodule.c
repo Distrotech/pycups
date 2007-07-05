@@ -404,7 +404,7 @@ initcups (void)
   INT_CONSTANT (IPP_PRINTER_IS_DEACTIVATED);
 
   // Limits
-  IPP_CONSTANT (IPP_MAX_NAME);
+  INT_CONSTANT (IPP_MAX_NAME);
 
   // Exceptions
   HTTPError = PyErr_NewException ("cups.HTTPError", NULL, NULL);
