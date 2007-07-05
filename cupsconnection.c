@@ -867,6 +867,83 @@ Connection_setPrinterOpPolicy (Connection *self, PyObject *args)
 }
 
 static PyObject *
+do_requesting_user_names (Connection *self, PyObject *args,
+			  const char *requeststr)
+{
+  const char *name;
+  PyObject *users;
+  int num_users, i;
+  ipp_t *request, *answer;
+  ipp_attribute_t *attr;
+
+  if (!PyArg_ParseTuple (args, "sO", &name, &users))
+    return NULL;
+
+  if (!PyList_Check (users)) {
+    PyErr_SetString (PyExc_TypeError, "List required");
+    return NULL;
+  }
+  request = add_modify_printer_request (name);
+  num_users = PyList_Size (users);
+  if (num_users) {
+    attr = ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
+			  requeststr, num_users, NULL, NULL);
+    for (i = 0; i < num_users; i++) {
+      PyObject *username = PyList_GetItem (users, i);
+      if (!PyString_Check (username)) {
+	int j;
+	PyErr_SetString (PyExc_TypeError, "String required");
+	for (j = 0; j < i; j++) {
+	  free (attr->values[j].string.text);
+	  attr->values[j].string.text = NULL;
+	}
+	ippDelete (request);
+	return NULL;
+      }
+      attr->values[i].string.text = strdup (PyString_AsString (username));
+    }
+  } else {
+    attr = ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
+			  requeststr, 1, NULL, NULL);
+    if (strstr (requeststr, "denied"))
+      attr->values[0].string.text = strdup ("none");
+    else
+      attr->values[0].string.text = strdup ("all");
+  }
+  answer = cupsDoRequest (self->http, request, "/admin/");
+  if (PyErr_Occurred ()) {
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  ippDelete (answer);
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
+static PyObject *
+Connection_setPrinterUsersAllowed (Connection *self, PyObject *args)
+{
+  return do_requesting_user_names (self, args, "requesting-user-name-allowed");
+}
+
+static PyObject *
+Connection_setPrinterUsersDenied (Connection *self, PyObject *args)
+{
+  return do_requesting_user_names (self, args, "requesting-user-name-denied");
+}
+
+static PyObject *
 Connection_deletePrinter (Connection *self, PyObject *args)
 {
   return do_printer_request (self, args, CUPS_DELETE_PRINTER);
@@ -943,6 +1020,22 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
   if (attr)
     PyDict_SetItemString (ret, "printer-op-policy",
 			  PyString_FromString (attr->values[0].string.text));
+
+  attr = ippFindAttribute (answer, "requesting-user-name-allowed",
+			   IPP_TAG_ZERO);
+  if (attr) {
+    PyObject *allowed = build_list_from_attribute_strings (attr);
+    PyDict_SetItemString (ret, "requesting-user-name-allowed",
+			  allowed);
+  }
+
+  attr = ippFindAttribute (answer, "requesting-user-name-denied",
+			   IPP_TAG_ZERO);
+  if (attr) {
+    PyObject *denied = build_list_from_attribute_strings (attr);
+    PyDict_SetItemString (ret, "requesting-user-name-denied",
+			  denied);
+  }
 
   return ret;
 }
@@ -1230,6 +1323,22 @@ PyMethodDef Connection_methods[] =
     { "setPrinterOpPolicy",
       (PyCFunction) Connection_setPrinterOpPolicy, METH_VARARGS,
       "setPrinterOpPolicy(name, policy) -> None" },
+
+    { "setPrinterUsersAllowed",
+      (PyCFunction) Connection_setPrinterUsersAllowed, METH_VARARGS,
+      "setPrinterUsersAllowed(name, string list) -> None\n\n"
+      "CUPS 1.2.\n"
+      "string list is a list of user-names.\n"
+      "The special string 'all' means that there will be no user-name\n"
+      "restriction."},
+
+    { "setPrinterUsersDenied",
+      (PyCFunction) Connection_setPrinterUsersDenied, METH_VARARGS,
+      "setPrinterUsersDenied(name, string list) -> None\n\n"
+      "CUPS 1.2.\n"
+      "string list is a list of user-names.\n"
+      "The special string 'none' means that there will be no user-name\n"
+      "restriction."},
 
     { "deletePrinter",
       (PyCFunction) Connection_deletePrinter, METH_VARARGS,
