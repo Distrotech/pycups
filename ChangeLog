@@ -3,6 +3,7 @@
 	* cupsconnection.c (Connection_disablePrinter): Use
 	IPP_PAUSE_PRINTER.
 	(Connection_enablePrinter): Use IPP_RESUME_PRINTER.
+	(Connection_setPrinterJobSheets): Fixed typo.
 
 2006-03-10  Tim Waugh  <twaugh@redhat.com>
 

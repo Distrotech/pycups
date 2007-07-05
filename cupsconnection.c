@@ -776,7 +776,7 @@ Connection_setPrinterJobSheets (Connection *self, PyObject *args)
   a = ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
 		     "job-sheets-default", 2, NULL, NULL);
   a->values[0].string.text = strdup (start);
-  a->values[0].string.text = strdup (end);
+  a->values[1].string.text = strdup (end);
   answer = cupsDoRequest (self->http, request, "/admin/");
   if (PyErr_Occurred ()) {
     if (answer)
