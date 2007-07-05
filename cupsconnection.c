@@ -321,6 +321,9 @@ Connection_getClasses (Connection *self)
       members = PyString_FromString (printer_uri);
     }
 
+    if (!members)
+      members = PyList_new (0);
+
     if (classname) {
       PyDict_SetItemString (result, classname, members);
     } else

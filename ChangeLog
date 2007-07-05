@@ -1,5 +1,7 @@
 2006-03-09  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_getClasses): Handle empty classes.
+
 	* cupsmodule.c (initcups): Always define CUPS 1.2.x CUPS_PRINTER_*
 	constants.
 
