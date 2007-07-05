@@ -1665,6 +1665,61 @@ Connection_printTestPage (Connection *self, PyObject *args)
   return Py_BuildValue ("i", jobid);
 }
 
+static PyObject *
+Connection_adminGetServerSettings (Connection *self)
+{
+  PyObject *ret = PyDict_New ();
+  int num_settings, i;
+  cups_option_t *settings;
+  _cupsAdminGetServerSettings (self->http, &num_settings, &settings);
+  for (i = 0; i < num_settings; i++)
+    PyDict_SetItemString (ret, settings[i].name,
+			  PyString_FromString (settings[i].value));
+
+  cupsFreeOptions (num_settings, settings);
+  return ret;
+}
+
+static PyObject *
+Connection_adminSetServerSettings (Connection *self, PyObject *args)
+{
+  PyObject *dict, *key, *val;
+  int num_settings = 0;
+  int pos = 0;
+  cups_option_t *settings = NULL;
+  if (!PyArg_ParseTuple (args, "O", &dict))
+    return NULL;
+  if (!PyDict_Check (dict)) {
+    PyErr_SetString (PyExc_TypeError, "Expecting dict");
+    return NULL;
+  }
+
+  while (PyDict_Next (dict, &pos, &key, &val)) {
+    char *name, *value;
+    if (!PyString_Check (key) ||
+	!PyString_Check (val)) {
+      cupsFreeOptions (num_settings, settings);
+      PyErr_SetString (PyExc_TypeError, "Keys and values must be strings");
+      return NULL;
+    }
+
+    name = PyString_AsString (key);
+    value = PyString_AsString (val);
+    num_settings = cupsAddOption (name,
+				  value,
+				  num_settings,
+				  &settings);
+  }
+
+  if (!_cupsAdminSetServerSettings (self->http, num_settings, settings)) {
+    PyErr_SetString (PyExc_RuntimeError, "Failed to set settings");
+    return NULL;
+  }
+
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
 PyMethodDef Connection_methods[] =
   {
     { "getPrinters",
@@ -1824,6 +1879,14 @@ PyMethodDef Connection_methods[] =
     { "printTestPage",
       (PyCFunction) Connection_printTestPage, METH_VARARGS,
       "printTestPage(printer) -> job ID\nPrint a test page." },
+
+    { "adminGetServerSettings",
+      (PyCFunction) Connection_adminGetServerSettings, METH_NOARGS,
+      "adminGetServerSettings() -> dict\n" },
+
+    { "adminSetServerSettings",
+      (PyCFunction) Connection_adminSetServerSettings, METH_VARARGS,
+      "adminSetServerSettings() -> None\n" },
 
     { NULL } /* Sentinel */
   };

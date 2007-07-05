@@ -1,6 +1,12 @@
 NEWS
 ----
 
+New since 1.9.7:
+
+* cups.Connection.adminGetServerSettings()
+* cups.Connection.adminSetServerSettings()
+* cups.CUPS_SERVER_* string constants
+
 New since 1.9.6:
 
 * threading support

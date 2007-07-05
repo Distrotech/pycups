@@ -335,6 +335,8 @@ initcups (void)
 
 #define INT_CONSTANT(name)					\
   PyDict_SetItemString (d, #name, PyInt_FromLong (name))
+#define STR_CONSTANT(name)					\
+  PyDict_SetItemString (d, #name, PyString_FromString (name))
 
   // CUPS printer types
   INT_CONSTANT (CUPS_PRINTER_LOCAL);
@@ -428,6 +430,13 @@ initcups (void)
 
   // Limits
   INT_CONSTANT (IPP_MAX_NAME);
+
+  // Admin Util constants
+  STR_CONSTANT (CUPS_SERVER_DEBUG_LOGGING);
+  STR_CONSTANT (CUPS_SERVER_REMOTE_ADMIN);
+  STR_CONSTANT (CUPS_SERVER_REMOTE_PRINTERS);
+  STR_CONSTANT (CUPS_SERVER_SHARE_PRINTERS);
+  STR_CONSTANT (CUPS_SERVER_USER_CANCEL_ANY);
 
   // Exceptions
   HTTPError = PyErr_NewException ("cups.HTTPError", NULL, NULL);

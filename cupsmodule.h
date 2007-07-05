@@ -22,6 +22,7 @@
 
 #include <cups/cups.h>
 #include <cups/language.h>
+#include <cups/adminutil.h>
 
 #if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MINOR > 1)
 #define HAVE_CUPS_1_2 1

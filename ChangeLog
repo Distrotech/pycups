@@ -1,7 +1,11 @@
 2006-04-19  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsmodule.c (initcups): String constants from adminutil.h.
+
 	* cupsconnection.c (Connection_addPrinterOptionDefault): Handle
 	different types for the value.
+	(Connection_adminGetServerSettings): Implemented.
+	(Connection_adminSetServerSettings): Implemented.
 
 2006-04-15  Tim Waugh  <twaugh@redhat.com>
 
