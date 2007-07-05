@@ -1,5 +1,13 @@
 2006-02-21  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsppd.c (PPD_getOptionGroups): Make this an attribute not a
+	method.
+	* test.py (test_cups_module): Updated.
+
+	* cupsppd.c: Implement 'Constraint' type.
+	* cupsppd.h: Declare cups_ConstraintType.
+	* cupsmodule.c (initcups): Add 'Constraint' type.
+
 	* cupsconnection.c (Connection_getPrinters): Do this inline
 	instead of in a separate function.
 

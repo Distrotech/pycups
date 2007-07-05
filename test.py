@@ -26,7 +26,7 @@ def test_cups_module ():
 	ppd = cups.PPD (f)
 	ppd.markDefaults ()
 	print ppd.conflicts ()
-	groups = ppd.getOptionGroups ()
+	groups = ppd.optionGroups
 	for group in groups:
 		for opt in group.options:
 			print opt
