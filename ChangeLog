@@ -1,3 +1,25 @@
+2006-03-07  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsppd.h (PPD struct): New members for encoding conversion.
+	* cupsppd.c (PPD_new): Initialise encoding conversion members in
+	PPD struct.
+	(PPD_init): Likewise.
+	(PPD_dealloc): Deallocate encoding conversion handles.
+	(ppd_encoding_is_utf8): New function.
+	(make_PyUnicode_from_ppd_string): New function.
+	(utf8_to_ppd_encoding): New function.
+	(Option_getKeyword): Convert to Unicode.
+	(Option_getDefchoice): Likewise.
+	(Option_getText): Likewise.
+	(Option_getChoices): Likewise.
+	(Group_getText): Likewise.
+	(Group_getName): Likewise.
+	(Constraint_getOption1): Likewise.
+	(Constraint_getChoice1): Likewise.
+	(Constraint_getOption2): Likewise.
+	(Constraint_getChoice2): Likewise.
+	(PPD_markOption): Convert to PPD encoding.
+
 2006-03-03  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Version 1.9.2.

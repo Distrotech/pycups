@@ -22,6 +22,7 @@
 
 #include <Python.h>
 #include <cups/ppd.h>
+#include <iconv.h>
 
 extern PyMethodDef PPD_methods[];
 extern PyTypeObject cups_PPDType;
@@ -34,6 +35,8 @@ typedef struct
   PyObject_HEAD
   ppd_file_t *ppd;
   FILE *file;
+  iconv_t *conv_from;
+  iconv_t *conv_to;
 } PPD;
 
 extern PyObject *PPD_writeFd (PPD *self, PyObject *args);

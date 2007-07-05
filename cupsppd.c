@@ -20,6 +20,8 @@
 #include "cupsppd.h"
 #include "cupsmodule.h"
 
+#include <iconv.h>
+
 typedef struct
 {
   PyObject_HEAD
@@ -41,6 +43,112 @@ typedef struct
   PPD *ppd;
 } Group;
 
+/////////////////////////
+// Encoding conversion //
+/////////////////////////
+
+static int
+ppd_encoding_is_utf8 (PPD *ppd)
+{
+  const char *lang_encoding, *from_encoding;
+  iconv_t cdf, cdt;
+  if (ppd->conv_from != NULL)
+    return 0;
+
+  lang_encoding = ppd->ppd->lang_encoding;
+  if (!strcasecmp (lang_encoding, "UTF-8"))
+    return 1;
+
+  if (!strcasecmp (lang_encoding, "ISOLatin1"))
+    from_encoding = "ISO-8859-1";
+  else if (!strcasecmp (lang_encoding, "ISOLatin2"))
+    from_encoding = "ISO-8859-2";
+  else if (!strcasecmp (lang_encoding, "ISOLatin5"))
+    from_encoding = "ISO-8859-5";
+  else if (!strcasecmp (lang_encoding, "JIS83-RKSJ"))
+    from_encoding = "SHIFT-JIS";
+  else if (!strcasecmp (lang_encoding, "MacStandard"))
+    from_encoding = "MACINTOSH";
+  else if (!strcasecmp (lang_encoding, "WindowsANSI"))
+    from_encoding = "WINDOWS-1252";
+  else
+    // Guess
+    from_encoding = "ISO-8859-1";
+
+  cdf = iconv_open ("UTF-8", from_encoding);
+  if (cdf == (iconv_t) -1)
+    cdf = iconv_open ("UTF-8", "ISO-8859-1");
+
+  cdt = iconv_open (from_encoding, "UTF-8");
+  if (cdt == (iconv_t) -1)
+    cdt = iconv_open ("ISO-8859-1", "UTF-8");
+
+  ppd->conv_from = malloc (sizeof (iconv_t));
+  *ppd->conv_from = cdf;
+
+  ppd->conv_to = malloc (sizeof (iconv_t));
+  *ppd->conv_to = cdt;
+
+  return 0;
+}
+
+static PyObject *
+make_PyUnicode_from_ppd_string (PPD *ppd, const char *ppdstr)
+{
+  iconv_t cdf;
+  size_t len;
+  char *outbuf, *outbufptr;
+  size_t outbytesleft;
+  size_t origleft;
+  PyObject *ret;
+
+  if (ppd_encoding_is_utf8 (ppd))
+    return PyUnicode_DecodeUTF8 (ppdstr, strlen (ppdstr), NULL);
+
+  cdf = *ppd->conv_from;
+
+  // Reset to initial state
+  iconv (cdf, NULL, NULL, NULL, NULL);
+  len = strlen (ppdstr); // CUPS doesn't keep track of string lengths
+  origleft = outbytesleft = MB_CUR_MAX * len;
+  outbufptr = outbuf = malloc (outbytesleft);
+  if (iconv (cdf, (char **) &ppdstr, &len,
+	     &outbufptr, &outbytesleft) == (size_t) -1) {
+    free (outbuf);
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
+  }
+
+  ret = PyUnicode_DecodeUTF8 (outbuf, origleft - outbytesleft, NULL);
+  free (outbuf);
+  return ret;
+}
+
+static char *
+utf8_to_ppd_encoding (PPD *ppd, const char *inbuf)
+{
+  char *outbuf, *ret;
+  size_t len, outsize, outbytesleft;
+  iconv_t cdt;
+
+  if (ppd_encoding_is_utf8 (ppd))
+    return strdup (inbuf);
+
+  cdt = *ppd->conv_to;
+
+  // Reset to initial state
+  iconv (cdt, NULL, NULL, NULL, NULL);
+  len = strlen (inbuf);
+  outbytesleft = outsize = MB_CUR_MAX * len;
+  ret = outbuf = malloc (outsize);
+  if (iconv (cdt, (char **) &inbuf, &len,
+	     &outbuf, &outbytesleft) == (size_t) -1) {
+    free (outbuf);
+    return NULL;
+  }
+
+  return ret;
+}
+
 /////////
 // PPD //
 /////////
@@ -53,6 +161,8 @@ PPD_new (PyTypeObject *type, PyObject *args, PyObject *kwds)
   if (self != NULL) {
     self->ppd = NULL;
     self->file = NULL;
+    self->conv_from = NULL;
+    self->conv_to = NULL;
   }
 
   return (PyObject *) self;
@@ -74,6 +184,7 @@ PPD_init (PPD *self, PyObject *args, PyObject *kwds)
     PyErr_SetString (PyExc_RuntimeError, "ppdOpenFile failed");
     return -1;
   }
+  self->conv_from = self->conv_to = NULL;
 
   return 0;
 }
@@ -85,6 +196,10 @@ PPD_dealloc (PPD *self)
     fclose (self->file);
   if (self->ppd)
     ppdClose (self->ppd);
+  if (self->conv_from)
+    iconv_close (*self->conv_from);
+  if (self->conv_to)
+    iconv_close (*self->conv_to);
 
   self->ob_type->tp_free ((PyObject *) self);
 }
@@ -104,15 +219,30 @@ PPD_markDefaults (PPD *self)
 static PyObject *
 PPD_markOption (PPD *self, PyObject *args)
 {
-  PyObject *ret;
   int conflicts;
-  const char *name, *value;
-  if (!PyArg_ParseTuple (args, "ss", &name, &value))
+  char *name, *value;
+  char *encname, *encvalue;
+  if (!PyArg_ParseTuple (args, "eses", "UTF-8", &name, "UTF-8", &value))
     return NULL;
 
-  conflicts = ppdMarkOption (self->ppd, name, value);
-  ret = Py_BuildValue ("i", conflicts);
-  return ret;
+  encname = utf8_to_ppd_encoding (self, name);
+  PyMem_Free (name);
+  if (!encname) {
+    PyMem_Free (value); 
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
+  }
+
+  encvalue = utf8_to_ppd_encoding (self, value);
+  PyMem_Free (value);
+  if (!encvalue) {
+    free (encname);
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
+  }
+
+  conflicts = ppdMarkOption (self->ppd, encname, encvalue);
+  free (encname);
+  free (encvalue);
+  return Py_BuildValue ("i", conflicts);
 }
 
 static PyObject *
@@ -459,7 +589,7 @@ Option_getKeyword (Option *self, void *closure)
     return Py_None;
   }
 
-  return PyString_FromString (self->option->keyword);
+  return make_PyUnicode_from_ppd_string (self->ppd, self->option->keyword);
 }
 
 static PyObject *
@@ -470,7 +600,7 @@ Option_getDefchoice (Option *self, void *closure)
     return Py_None;
   }
 
-  return PyString_FromString (self->option->defchoice);
+  return make_PyUnicode_from_ppd_string (self->ppd, self->option->defchoice);
 }
 
 static PyObject *
@@ -481,7 +611,7 @@ Option_getText (Option *self, void *closure)
     return Py_None;
   }
 
-  return PyString_FromString (self->option->text);
+  return make_PyUnicode_from_ppd_string (self->ppd, self->option->text);
 }
 
 static PyObject *
@@ -510,9 +640,11 @@ Option_getChoices (Option *self, void *closure)
        i++, choice++) {
     PyObject *choice_dict = PyDict_New ();
     PyDict_SetItemString (choice_dict, "choice",
-			  PyString_FromString (choice->choice));
+			  make_PyUnicode_from_ppd_string (self->ppd,
+							  choice->choice));
     PyDict_SetItemString (choice_dict, "text",
-			  PyString_FromString (choice->text));
+			  make_PyUnicode_from_ppd_string (self->ppd,
+							  choice->text));
     PyList_Append (choices, choice_dict);
   }
 
@@ -634,7 +766,7 @@ Group_getText (Group *self, void *closure)
     return Py_None;
   }
 
-  return PyString_FromString (self->group->text);
+  return make_PyUnicode_from_ppd_string (self->ppd, self->group->text);
 }
 
 static PyObject *
@@ -645,7 +777,7 @@ Group_getName (Group *self, void *closure)
     return Py_None;
   }
 
-  return PyString_FromString (self->group->name);
+  return make_PyUnicode_from_ppd_string (self->ppd, self->group->name);
 }
 
 static PyObject *
@@ -811,7 +943,7 @@ Constraint_getOption1 (Constraint *self, void *closure)
     return Py_None;
   }
 
-  return PyString_FromString (self->constraint->option1);
+  return make_PyUnicode_from_ppd_string (self->ppd, self->constraint->option1);
 }
 
 static PyObject *
@@ -822,7 +954,7 @@ Constraint_getChoice1 (Constraint *self, void *closure)
     return Py_None;
   }
 
-  return PyString_FromString (self->constraint->choice1);
+  return make_PyUnicode_from_ppd_string (self->ppd, self->constraint->choice1);
 }
 
 static PyObject *
@@ -833,7 +965,7 @@ Constraint_getOption2 (Constraint *self, void *closure)
     return Py_None;
   }
 
-  return PyString_FromString (self->constraint->option2);
+  return make_PyUnicode_from_ppd_string (self->ppd, self->constraint->option2);
 }
 
 static PyObject *
@@ -844,7 +976,7 @@ Constraint_getChoice2 (Constraint *self, void *closure)
     return Py_None;
   }
 
-  return PyString_FromString (self->constraint->choice2);
+  return make_PyUnicode_from_ppd_string (self->ppd, self->constraint->choice2);
 }
 
 PyGetSetDef Constraint_getseters[] =
