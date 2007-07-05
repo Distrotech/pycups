@@ -1,5 +1,7 @@
 2006-05-03  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsmodule.c (initcups): IPP finishings.
+
 	* cupsconnection.c (Connection_getPrinterAttributes): Multi-valued
 	network default options should appear as lists.
 
