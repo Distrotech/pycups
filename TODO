@@ -1,4 +1,3 @@
 * Write all the doc strings!
 
-* cups.Connection.printFile() is needed for sending CUPS command
-  (maintenance) files
+* Support CUPS_GET_PPD (CUPS 1.3)
