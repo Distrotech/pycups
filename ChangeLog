@@ -1,3 +1,7 @@
+2006-03-08  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsppd.c (PPD_init): Handle fopen failure.
+
 2006-03-07  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsppd.h (PPD struct): New members for encoding conversion.

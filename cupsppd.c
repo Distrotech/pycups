@@ -177,6 +177,11 @@ PPD_init (PPD *self, PyObject *args, PyObject *kwds)
     return -1;
 
   self->file = fopen (filename, "r");
+  if (!self->file) {
+    PyErr_SetString (PyExc_RuntimeError, "fopen failed");
+    return -1;
+  }
+
   self->ppd = ppdOpenFile (filename);
   if (!self->ppd) {
     fclose (self->file);
