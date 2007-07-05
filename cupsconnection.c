@@ -385,6 +385,11 @@ Connection_getPPDs (Connection *self)
 				    strlen (attr->values[0].string.text),
 				    NULL);
 	if (!val) {
+	  // CUPS 1.2 always gives us UTF-8.  Before CUPS 1.2, the
+	  // ppd-* strings come straight from the PPD with no
+	  // transcoding, but the attributes-charset is still 'utf-8'
+	  // so we've no way of knowing the real encoding.
+	  // In that case, detect the error and force it to ASCII.
 	  char *ascii, *orig = attr->values[0].string.text;
 	  int i;
 	  PyErr_Clear ();
