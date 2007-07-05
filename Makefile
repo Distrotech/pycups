@@ -25,5 +25,8 @@ dist:
 	tar jcf pycups-$(VERSION).tar.bz2 pycups-$(VERSION)
 	rm -rf pycups-$(VERSION)
 
-.PHONY: clean
+install:
+	python setup.py install
+
+.PHONY: clean tag dist install
 
