@@ -785,6 +785,19 @@ Connection_setPrinterShared (Connection *self, PyObject *args)
     return NULL;
   }
 
+  if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
+    // Perhaps it's a class, not a printer.
+    ippDelete (answer);
+    request = add_modify_class_request (name);
+    ippAddBoolean (request, IPP_TAG_OPERATION, "printer-is-shared", sharing);
+    answer = cupsDoRequest (self->http, request, "/admin/");
+    if (PyErr_Occurred ()) {
+      if (answer)
+	ippDelete (answer);
+      return NULL;
+    }
+  }
+
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
