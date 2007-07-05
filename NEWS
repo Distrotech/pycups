@@ -7,9 +7,12 @@ New since 1.9.0:
 * cups.IPPError now includes the cupsLastErrorString()
 * cups.IPP_PRINTER_* constants
 * cups.setPort()
+
 * cups.PPD.constraints attribute
 * cups.PPD.getOptionGroups() method changed to optionGroups attribute
 * cups.PPD.Group.options is not a list, not a dict
+* cups.PPD.writeFd()
+
 * cups.Connection.addPrinter now allows ppdname="foo.ppd" keyword for
   installed PPDs; also info, location, and device keywords
 * cups.Connection.getPPDs()
