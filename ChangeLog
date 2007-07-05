@@ -1,5 +1,9 @@
 2006-05-15  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.10.
+
+2006-05-15  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_addPrinter): Put debug messages
 	in.
 
