@@ -5,6 +5,8 @@
 	(docstrings): Better doc strings for addPrinterToClass and
 	deletePrinterFromClass.
 	(Connection_deleteClass): Implemented.
+	(Connection_setPrinterInfo): Handle classes.
+	(Connection_setPrinterLocation): Handle classes.
 
 2006-03-14  Tim Waugh  <twaugh@redhat.com>
 
