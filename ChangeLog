@@ -1,5 +1,9 @@
 2007-04-04  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.20.
+
+2007-04-04  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_getPrinters): printer-state-reasons
 	is a list.
 
