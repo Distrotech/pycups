@@ -1166,7 +1166,8 @@ Connection_addPrinterOptionDefault (Connection *self, PyObject *args)
   sprintf (opt + optionlen, suffix);
   request = add_modify_printer_request (name);
   for (i = 0; i < 2; i++) {
-    if (PySequence_Check (pyvalue)) {
+    if (!PyString_Check (pyvalue) && !PyUnicode_Check (pyvalue) &&
+	PySequence_Check (pyvalue)) {
       ipp_attribute_t *attr;
       int len = PySequence_Size (pyvalue);
       int j;
