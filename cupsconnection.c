@@ -80,9 +80,12 @@ Connection_init (Connection *self, PyObject *args, PyObject *kwds)
   if (!PyArg_ParseTupleAndKeywords (args, kwds, "", kwlist))
     return -1;
 
+  Py_BEGIN_ALLOW_THREADS;
   self->http = httpConnectEncrypt (cupsServer (),
 				   ippPort (),
 				   cupsEncryption ());
+  Py_END_ALLOW_THREADS;
+
   if (!self->http) {
     PyErr_SetString (PyExc_RuntimeError, "httpConnectionEncrypt failed");
     return -1;
