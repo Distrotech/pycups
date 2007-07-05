@@ -121,6 +121,36 @@ PPD_conflicts (PPD *self)
   return PyInt_FromLong (ppdConflicts (self->ppd));
 }
 
+static PyObject *
+PPD_findOption (PPD *self, PyObject *args)
+{
+  PyObject *ret;
+  const char *option;
+  ppd_option_t *opt;
+
+  if (!PyArg_ParseTuple (args, "s", &option))
+    return NULL;
+
+  opt = ppdFindOption (self->ppd, option);
+  if (opt) {
+    PyObject *args = Py_BuildValue ("()");
+    PyObject *kwlist = Py_BuildValue ("{}");
+    Option *optobj = (Option *) PyType_GenericNew (&cups_OptionType,
+						   args, kwlist);
+    Py_DECREF (args);
+    Py_DECREF (kwlist);
+    optobj->option = opt;
+    optobj->ppd = self;
+    Py_INCREF (self);
+    ret = (PyObject *) optobj;
+  } else {
+    ret = Py_None;
+    Py_INCREF (ret);
+  }
+
+  return ret;
+}
+
 PyObject *
 PPD_writeFd (PPD *self, PyObject *args)
 {
@@ -261,6 +291,10 @@ PyMethodDef PPD_methods[] =
     { "conflicts",
       (PyCFunction) PPD_conflicts, METH_NOARGS,
       "Returns number of conflicts." },
+
+    { "findOption",
+      (PyCFunction) PPD_findOption, METH_VARARGS,
+      "findOption(name) -> cups.Option or None." },
 
     { "writeFd",
       (PyCFunction) PPD_writeFd, METH_VARARGS,

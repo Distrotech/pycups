@@ -3,6 +3,7 @@
 	* cupsppd.h (PPD): Moved this here from..
 	* cupsppd.c: ..here.
 	(PPD_writeFd): No longer static.
+	(PPD_findOption): Implemented.
 
 	* cupsconnection.c (Connection_addPrinter): Accept 'ppd' keyword,
 	for cups.PPD object.
