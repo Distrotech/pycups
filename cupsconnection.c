@@ -2079,31 +2079,37 @@ Connection_adminSetServerSettings (Connection *self, PyObject *args)
     return NULL;
   }
 
+  debugprintf ("-> Connection_adminSetServerSettings()\n");
   while (PyDict_Next (dict, &pos, &key, &val)) {
     char *name, *value;
     if (!PyString_Check (key) ||
 	!PyString_Check (val)) {
       cupsFreeOptions (num_settings, settings);
       PyErr_SetString (PyExc_TypeError, "Keys and values must be strings");
+      debugprintf ("<- Connection_adminSetServerSettings() EXCEPTION\n");
       return NULL;
     }
 
     name = PyString_AsString (key);
     value = PyString_AsString (val);
+    debugprintf ("%s: %s\n", name, value);
     num_settings = cupsAddOption (name,
 				  value,
 				  num_settings,
 				  &settings);
   }
 
+  debugprintf ("num_settings=%d, settings=%p\n", num_settings, settings);
   if (!_cupsAdminSetServerSettings (self->http, num_settings, settings)) {
     cupsFreeOptions (num_settings, settings);
     PyErr_SetString (PyExc_RuntimeError, "Failed to set settings");
+    debugprintf ("<- Connection_adminSetServerSettings() EXCEPTION\n");
     return NULL;
   }
 
   cupsFreeOptions (num_settings, settings);
   Py_INCREF (Py_None);
+  debugprintf ("<- Connection_adminSetServerSettings()\n");
   return Py_None;
 }
 

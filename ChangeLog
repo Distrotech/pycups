@@ -1,5 +1,8 @@
 2007-06-07  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_adminSetServerSettings): Debug
+	output.
+
 	* cupsppd.c (cautious_PyUnicode_DecodeUTF8): New function to
 	safe-guard against supposed UTF-8 strings that are incorrect (bug
 	#242962).
