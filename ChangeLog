@@ -1,5 +1,9 @@
 2006-04-15  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.7.
+
+2006-04-15  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_getPrinterAttributes): Fetch all of
 	the printer attributes, not just a named selection.
 	(Connection_deletePrinterOptionDefault): Implemented.
