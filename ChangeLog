@@ -1,3 +1,9 @@
+2007-05-16  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getPPDs): Allow threads during
+	cupsDoRequest.
+	(Connection_getDevices): Likewise.
+
 2007-05-04  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_printTestPage): New optional

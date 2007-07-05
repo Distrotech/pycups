@@ -478,7 +478,9 @@ Connection_getPPDs (Connection *self)
 
   debugprintf ("-> Connection_getPPDs()\n");
   debugprintf ("cupsDoRequest(\"/\")\n");
+  Py_BEGIN_ALLOW_THREADS;
   answer = cupsDoRequest (self->http, request, "/");
+  Py_END_ALLOW_THREADS;
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -571,7 +573,9 @@ Connection_getDevices (Connection *self)
 
   debugprintf ("-> Connection_getDevices()\n");
   debugprintf ("cupsDoRequest(\"/\")\n");
+  Py_BEGIN_ALLOW_THREADS;
   answer = cupsDoRequest (self->http, request, "/");
+  Py_END_ALLOW_THREADS;
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
