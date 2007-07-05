@@ -1,3 +1,7 @@
+2006-10-24  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsmodule.h: Removed bit-rotten CUPS 1.1.x compatibility code.
+
 2006-10-02  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Version 1.9.13.

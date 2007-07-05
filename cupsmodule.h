@@ -39,30 +39,7 @@ extern void debugprintf (const char *fmt, ...) FORMAT ((__printf__, 1, 2));
 #endif
 
 #ifndef HAVE_CUPS_1_2
-#warning Compiling against CUPS 1.1.x
-#define CUPS_ADD_MODIFY_PRINTER CUPS_ADD_PRINTER
-#define CUPS_ADD_MODIFY_CLASS CUPS_ADD_CLASS
-
-#define CUPS_PRINTER_DELETE 0x100000
-#define CUPS_PRINTER_NOT_SHARED 0x200000
-#define CUPS_PRINTER_AUTHENTICATED 0x400000
-#define CUPS_PRINTER_COMMANDS 0x800000
-
-#define IPP_OK_EVENTS_COMPLETE 7
-
-static ipp_t *
-ippNewRequest (ipp_op_t op)
-{
-  ipp_t *request = ippNew ();
-  cups_lang_t *language = cupsLangDefault ();
-  request->request.op.operation_id = op;
-  request->request.op.request_id = 1;
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
-		"attributes-charset", NULL, cupsLangEncoding (language));
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
-		"attributes-natural-language", NULL, language->language);
-  return request;
-}
+#error pycups requires CUPS 1.2.x
 #endif
 
 #endif /* HAVE_CUPSMODULE_H */
