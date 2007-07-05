@@ -21,11 +21,21 @@
 #define HAVE_CUPSPPD_H
 
 #include <Python.h>
+#include <cups/ppd.h>
 
 extern PyMethodDef PPD_methods[];
 extern PyTypeObject cups_PPDType;
 extern PyTypeObject cups_OptionType;
 extern PyTypeObject cups_GroupType;
 extern PyTypeObject cups_ConstraintType;
+
+typedef struct
+{
+  PyObject_HEAD
+  ppd_file_t *ppd;
+  FILE *file;
+} PPD;
+
+extern PyObject *PPD_writeFd (PPD *self, PyObject *args);
 
 #endif /* HAVE_CUPSPPD_H */

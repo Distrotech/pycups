@@ -18,7 +18,12 @@
  */
 
 #include "cupsconnection.h"
+#include "cupsppd.h"
 #include "cupsmodule.h"
+
+#include <paths.h>
+#include <stdlib.h>
+#include <string.h>
 
 PyObject *HTTPError;
 PyObject *IPPError;
@@ -537,24 +542,67 @@ static PyObject *
 Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
 {
   const char *name;
-  const char *ppdfile = NULL;
+  char *ppdfile = NULL;
   const char *ppdname = NULL;
   const char *info = NULL;
   const char *location = NULL;
   const char *device = NULL;
+  PyObject *ppd;
   ipp_t *request, *answer;
+  int ppds_specified = 0;
   static char *kwlist[] = { "name", "filename", "ppdname", "info",
-			    "location", "device", NULL };
+			    "location", "device", "ppd", NULL };
 
-  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|sssss", kwlist,
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|sssssO", kwlist,
 				    &name, &ppdfile, &ppdname, &info,
-				    &location, &device))
+				    &location, &device, &ppd))
     return NULL;
 
-  if (ppdfile && ppdname) {
+  if (ppdfile)
+    ppds_specified++;
+  if (ppdname)
+    ppds_specified++;
+  if (ppd) {
+    if (!PyObject_TypeCheck (ppd, &cups_PPDType)) {
+      PyErr_SetString (PyExc_TypeError, "Expecting cups.PPD");
+      return NULL;
+    }
+
+    ppds_specified++;
+  }
+  if (ppds_specified > 1) {
     PyErr_SetString (PyExc_RuntimeError,
-		     "Only filename or ppdname can be specified, not both");
+		     "Only one PPD may be given");
     return NULL;
+  }
+
+  if (ppd) {
+    // We've been given a cups.PPD object.  Construct a PPD file.
+    const char *template = "scp-ppd-XXXXXX";
+    size_t len = strlen (_PATH_TMP) + strlen (template) + 1;
+    char *p;
+    int fd;
+    PyObject *args, *result;
+    ppdfile = malloc (len);
+    p = stpcpy (ppdfile, _PATH_TMP);
+    strcpy (p, template);
+    fd = mkstemp (ppdfile);
+    if (fd < 0) {
+      free (ppdfile);
+      PyErr_SetFromErrno (PyExc_RuntimeError);
+      return NULL;
+    }
+
+    args = Py_BuildValue ("(i)", fd);
+    result = PPD_writeFd ((PPD *) ppd, args);
+    Py_DECREF (args);
+    close (fd);
+
+    if (result == NULL) {
+      unlink (ppdfile);
+      free (ppdfile);
+      return NULL;
+    }
   }
 
   request = add_modify_printer_request (name);
@@ -575,6 +623,11 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
     answer = cupsDoFileRequest (self->http, request, "/admin/", ppdfile);
   else
     answer = cupsDoRequest (self->http, request, "/admin/");
+
+  if (ppd) {
+    unlink (ppdfile);
+    free (ppdfile);
+  }
 
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
@@ -946,7 +999,7 @@ PyMethodDef Connection_methods[] =
     { "addPrinter",
       (PyCFunction) Connection_addPrinter, METH_VARARGS | METH_KEYWORDS,
       "addPrinter(name, filename=None, ppdname=None, info=None,\n"
-      "location=None, device=None) -> None" },
+      "location=None, device=None, ppd=None) -> None" },
 
     { "deletePrinter",
       (PyCFunction) Connection_deletePrinter, METH_VARARGS,

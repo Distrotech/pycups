@@ -23,13 +23,6 @@
 typedef struct
 {
   PyObject_HEAD
-  ppd_file_t *ppd;
-  FILE *file;
-} PPD;
-
-typedef struct
-{
-  PyObject_HEAD
   ppd_option_t *option;
   PPD *ppd;
 } Option;
@@ -128,7 +121,7 @@ PPD_conflicts (PPD *self)
   return PyInt_FromLong (ppdConflicts (self->ppd));
 }
 
-static PyObject *
+PyObject *
 PPD_writeFd (PPD *self, PyObject *args)
 {
   char *line = NULL;
