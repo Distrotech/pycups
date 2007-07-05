@@ -1,5 +1,9 @@
 2006-05-04  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.9.
+
+2006-05-04  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_getPrinterAttributes): Make
 	'requesting-user-name-*' attributes lists.
 	(Connection_getPrinters): Handle IPP_NOT_FOUND, which is returned
