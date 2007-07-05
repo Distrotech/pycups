@@ -1,3 +1,18 @@
+2006-03-03  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (do_printer_request): Watch out for exceptions
+	from the password callback.
+	(Connection_addPrinter): Likewise.
+	(Connection_setPrinterDevice): Likewise.
+	(Connection_setPrinterInfo): Likewise.
+	(Connection_setPrinterLocation): Likewise.
+	(Connection_setPrinterPublished): Likewise.
+	(Connection_setPrinterJobSheets): Likewise.
+	(Connection_setPrinterErrorPolicy): Likewise.
+	(Connection_setPrinterOpPolicy): Likewise.
+	(Connection_addPrinterToClass): Likewise.
+	(Connection_deletePrinterFromClass): Likewise.
+
 2006-03-01  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (set_ipp_error): Use ippErrorString().

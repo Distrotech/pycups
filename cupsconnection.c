@@ -119,6 +119,12 @@ do_printer_request (Connection *self, PyObject *args, ipp_op_t op)
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, uri);
   answer = cupsDoRequest (self->http, request, "/admin/");
+  if (PyErr_Occurred ()) {
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -596,6 +602,12 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
     free (ppdfile);
   }
 
+  if (PyErr_Occurred ()) {
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -624,6 +636,12 @@ Connection_setPrinterDevice (Connection *self, PyObject *args)
   ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_URI,
 		"device-uri", NULL, device_uri);
   answer = cupsDoRequest (self->http, request, "/admin/");
+  if (PyErr_Occurred ()) {
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -652,6 +670,12 @@ Connection_setPrinterInfo (Connection *self, PyObject *args)
   ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		"printer-info", NULL, info);
   answer = cupsDoRequest (self->http, request, "/admin/");
+  if (PyErr_Occurred ()) {
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -680,6 +704,12 @@ Connection_setPrinterLocation (Connection *self, PyObject *args)
   ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		"printer-location", NULL, location);
   answer = cupsDoRequest (self->http, request, "/admin/");
+  if (PyErr_Occurred ()) {
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -707,6 +737,12 @@ Connection_setPrinterPublished (Connection *self, PyObject *args)
   request = add_modify_printer_request (name);
   ippAddBoolean (request, IPP_TAG_OPERATION, "printer-is-shared", sharing);
   answer = cupsDoRequest (self->http, request, "/admin/");
+  if (PyErr_Occurred ()) {
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -739,6 +775,12 @@ Connection_setPrinterJobSheets (Connection *self, PyObject *args)
   a->values[0].string.text = strdup (start);
   a->values[0].string.text = strdup (end);
   answer = cupsDoRequest (self->http, request, "/admin/");
+  if (PyErr_Occurred ()) {
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -767,6 +809,12 @@ Connection_setPrinterErrorPolicy (Connection *self, PyObject *args)
   ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
 		"printer-error-policy", NULL, policy);
   answer = cupsDoRequest (self->http, request, "/admin/");
+  if (PyErr_Occurred ()) {
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -795,6 +843,12 @@ Connection_setPrinterOpPolicy (Connection *self, PyObject *args)
   ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
 		"printer-op-policy", NULL, policy);
   answer = cupsDoRequest (self->http, request, "/admin/");
+  if (PyErr_Occurred ()) {
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -952,6 +1006,12 @@ Connection_addPrinterToClass (Connection *self, PyObject *args)
 		  "member-uris", NULL, printeruri);
 
   answer = cupsDoRequest (self->http, request, "/admin/");
+  if (PyErr_Occurred ()) {
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -1027,6 +1087,12 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
 
   ippDelete (answer);
   answer = cupsDoRequest (self->http, request, "/admin/");
+  if (PyErr_Occurred ()) {
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
