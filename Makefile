@@ -28,7 +28,9 @@ dist:
 	rm -rf $(NAME)-$(VERSION) $(NAME)
 
 install:
-	python setup.py install
+	ROOT= ; \
+	if [ -n "$$DESTDIR" ]; then ROOT="--root $$DESTDIR"; fi; \
+	python setup.py install $$ROOT
 
 .PHONY: clean tag dist install
 
