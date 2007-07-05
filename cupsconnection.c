@@ -1041,6 +1041,57 @@ Connection_setPrinterUsersDenied (Connection *self, PyObject *args)
 }
 
 static PyObject *
+Connection_setPrinterOptionDefault (Connection *self, PyObject *args)
+{
+  const char *name;
+  const char *option;
+  const char *value;
+  const char *const suffix = "-default";
+  char *opt;
+  ipp_t *request, *answer;
+  int i;
+  size_t optionlen;
+
+  if (!PyArg_ParseTuple (args, "sss", &name, &option, &value))
+    return NULL;
+
+  optionlen = strlen (option);
+  opt = malloc (optionlen + sizeof (suffix) + 1);
+  memcpy (opt, option, optionlen);
+  sprintf (opt + optionlen, suffix);
+  request = add_modify_printer_request (name);
+  for (i = 0; i < 2; i++) {
+    ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
+		  opt, NULL, value);
+    answer = cupsDoRequest (self->http, request, "/admin/");
+    if (PyErr_Occurred ()) {
+      if (answer)
+	ippDelete (answer);
+      return NULL;
+    }
+
+    if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
+      ippDelete (answer);
+      // Perhaps it's a class, not a printer.
+      request = add_modify_class_request (name);
+    } else break;
+  }
+
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  ippDelete (answer);
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
+static PyObject *
 Connection_deletePrinter (Connection *self, PyObject *args)
 {
   return do_printer_request (self, args, CUPS_DELETE_PRINTER);
@@ -1537,6 +1588,11 @@ PyMethodDef Connection_methods[] =
       "string list is a list of user-names.\n"
       "The special string 'none' means that there will be no user-name\n"
       "restriction."},
+
+    { "setPrinterOptionDefault",
+      (PyCFunction) Connection_setPrinterOptionDefault, METH_VARARGS,
+      "setPrinterOptionDefault(name, option, value) -> None\n\n"
+      "CUPS 1.2.\n" },
 
     { "deletePrinter",
       (PyCFunction) Connection_deletePrinter, METH_VARARGS,

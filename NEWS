@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New since 1.9.6:
+
+* threading support
+* cups.Connection.setPrinterOptionDefault()
+
 New since 1.9.5:
 
 * cups.Attribute object
