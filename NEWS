@@ -4,6 +4,7 @@ NEWS
 New since 1.9.9:
 
 * cups.Connection getClasses() handles IPP_NOT_FOUND
+* PYCUPS_DEBUG environment variable controls debugging output
 
 New since 1.9.8:
 
