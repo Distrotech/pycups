@@ -25,4 +25,4 @@ New since 1.9.0:
 * cups.Connection.getClasses()
 * cups.Connection.setPrinterInfo()
 * cups.Connection.setPrinterLocation()
-* cups.Connectoin.setPrinterPublished()
+* cups.Connection.setPrinterPublished()
