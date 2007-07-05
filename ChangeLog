@@ -1,5 +1,9 @@
 2006-11-02  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.14.
+
+2006-11-02  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsppd.c (Option_getChoices): Handle enum values already set
 	outside the range (bug #213136).
 
