@@ -1,0 +1,5 @@
+* cups.getDevices
+* cups.Connection.setSharing
+* cups.getPPDs
+* cups.PPD.markConflicts
+* expose conflicts through cups.PPD
