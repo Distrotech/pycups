@@ -17,6 +17,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef HAVE_CUPSPPD_H
+#define HAVE_CUPSPPD_H
+
 #include <Python.h>
 
 extern PyMethodDef PPD_methods[];
@@ -24,3 +27,5 @@ extern PyTypeObject cups_PPDType;
 extern PyTypeObject cups_OptionType;
 extern PyTypeObject cups_GroupType;
 extern PyTypeObject cups_ConstraintType;
+
+#endif /* HAVE_CUPSPPD_H */

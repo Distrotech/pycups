@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2006  Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,15 +17,20 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#ifndef HAVE_CUPSCONNECTION_H
-#define HAVE_CUPSCONNECTION_H
+#ifndef HAVE_CUPSMODULE_H
+#define HAVE_CUPSMODULE_H
 
-#include <Python.h>
+#include <cups/cups.h>
+#include <cups/language.h>
 
-extern PyMethodDef Connection_methods[];
-extern PyTypeObject cups_ConnectionType;
+#if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MINOR > 1)
+#define HAVE_CUPS_1_2
+#endif
 
-extern PyObject *HTTPError;
-extern PyObject *IPPError;
+#ifndef HAVE_CUPS_1_2
+#warning Compiling against CUPS 1.1.x
+#define CUPS_ADD_MODIFY_PRINTER CUPS_ADD_PRINTER
+#define CUPS_ADD_MODIFY_CLASS CUPS_ADD_CLASS
+#endif
 
-#endif /* HAVE_CUPSCONNECTION_H */
+#endif /* HAVE_CUPSMODULE_H */

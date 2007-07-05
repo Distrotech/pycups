@@ -3,7 +3,7 @@ VERSION=1.9.0
 PYTHONVERS = python2.4
 
 SOURCES=cupsmodule.c cupsconnection.c cupsppd.c setup.py \
-	cupsppd.h
+	cupsppd.h cupsconnection.h cupsmodule.h
 
 DIST=Makefile test.py \
 	COPYING NEWS README TODO ChangeLog

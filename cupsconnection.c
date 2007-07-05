@@ -18,9 +18,7 @@
  */
 
 #include "cupsconnection.h"
-
-#include <cups/cups.h>
-#include <cups/language.h>
+#include "cupsmodule.h"
 
 PyObject *HTTPError;
 PyObject *IPPError;
@@ -452,7 +450,7 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   }
 
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
-  request->request.op.operation_id = CUPS_ADD_PRINTER;
+  request->request.op.operation_id = CUPS_ADD_MODIFY_PRINTER;
   request->request.op.request_id = 1;
   language = cupsLangDefault ();
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,

@@ -21,6 +21,8 @@
 #include <cups/cups.h>
 #include <cups/language.h>
 
+#include "cupsmodule.h"
+
 #include <locale.h>
 
 #include "cupsconnection.h"

@@ -18,9 +18,7 @@
  */
 
 #include "cupsppd.h"
-
-#include <cups/cups.h>
-#include <cups/language.h>
+#include "cupsmodule.h"
 
 typedef struct
 {
