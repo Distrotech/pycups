@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New since 1.9.4:
+
+* cups.Connection.setPrinterShared() now handles classes
+
 New since 1.9.3:
 
 * cups.Connection.enablePrinter() uses IPP_PAUSE_PRINTER
