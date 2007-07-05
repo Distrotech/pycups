@@ -1,5 +1,9 @@
 2006-04-19  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.8.
+
+2006-04-19  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsmodule.c (initcups): String constants from adminutil.h.
 
 	* cupsconnection.c (Connection_addPrinterOptionDefault): Handle
