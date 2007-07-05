@@ -1,3 +1,8 @@
+2006-05-03  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getPrinterAttributes): Multi-valued
+	network default options should appear as lists.
+
 2006-04-21  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_addPrinterOptionDefault): Support
