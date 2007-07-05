@@ -1,3 +1,12 @@
+2006-03-09  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsmodule.c (initcups): Always define CUPS 1.2.x CUPS_PRINTER_*
+	constants.
+	(initcups): New constant CUPS_PRINTER_COMMANDS.
+
+	* cupsmodule.h (CUPS_PRINTER_*): More CUPS 1.1.x compatibility
+	stuff.
+
 2006-03-08  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsppd.c (PPD_init): Handle fopen failure.
