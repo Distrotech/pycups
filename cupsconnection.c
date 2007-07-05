@@ -2083,6 +2083,400 @@ Connection_adminSetServerSettings (Connection *self, PyObject *args)
   return Py_None;
 }
 
+static PyObject *
+Connection_getSubscriptions (Connection *self, PyObject *args, PyObject *kwds)
+{
+  const char *uri;
+  PyObject *my_subscriptions = Py_False;
+  int job_id = -1;
+  ipp_t *request, *answer;
+  ipp_attribute_t *attr;
+  PyObject *result, *subscription;
+  int i;
+  static char *kwlist[] = { "uri", "my_subscriptions", "job_id", NULL };
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|Oi", kwlist,
+				    &uri, &my_subscriptions, &job_id))
+    return NULL;
+
+  if (my_subscriptions && !PyBool_Check (my_subscriptions)) {
+    PyErr_SetString (PyExc_TypeError, "my_subscriptions must be a bool");
+    return NULL;
+  }
+
+  debugprintf ("-> Connection_getSubscriptions()\n");
+  request = ippNewRequest (IPP_GET_SUBSCRIPTIONS);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
+		"printer-uri", NULL, uri);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		"requesting-user-name", NULL, cupsUser ());
+
+  if (my_subscriptions == Py_True)
+    ippAddBoolean (request, IPP_TAG_OPERATION, "my-subscriptions", 1);
+
+  if (job_id != -1)
+    ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+		   "job-id", job_id);
+
+  answer = cupsDoRequest (self->http, request, "/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ? answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    debugprintf ("<- Connection_getSubscriptions() EXCEPTION\n");
+    return NULL;
+  }
+
+  result = PyList_New (0);
+  for (attr = answer->attrs; attr; attr = attr->next)
+    if (attr->group_tag == IPP_TAG_SUBSCRIPTION)
+      break;
+
+  subscription = NULL;
+  for (; attr; attr = attr->next) {
+    PyObject *obj;
+    if (attr->group_tag == IPP_TAG_ZERO) {
+      // End of subscription.
+      if (subscription)
+	PyList_Append (result, subscription);
+
+      subscription = NULL;
+      continue;
+    }
+
+    if (attr->num_values > 1 || !strcmp (attr->name, "notify-events")) {
+      obj = PyList_New (0);
+      for (i = 0; i < attr->num_values; i++) {
+	PyObject *item = PyObject_from_attr_value (attr, i);
+	if (item)
+	  PyList_Append (obj, item);
+      }
+    }
+    else
+      obj = PyObject_from_attr_value (attr, 0);
+
+    if (!obj)
+      // Can't represent this.
+      continue;
+
+    if (!subscription)
+      subscription = PyDict_New ();
+    PyDict_SetItemString (subscription, attr->name, obj);
+  }
+
+  if (subscription)
+    PyList_Append (result, subscription);
+
+  ippDelete (answer);
+  debugprintf ("<- Connection_getSubscriptions()\n");
+  return result;
+}
+
+static PyObject *
+Connection_createSubscription (Connection *self, PyObject *args,
+			       PyObject *kwds)
+{
+  const char *resource_uri;
+  PyObject *events = NULL;
+  int job_id = -1, lease_duration = -1, time_interval = -1;
+  const char *recipient_uri = NULL, *user_data = NULL;
+  ipp_t *request, *answer;
+  int i, n = 0;
+  ipp_attribute_t *attr;
+  static char *kwlist[] = { "uri", "events", "job_id", "recipient_uri",
+			    "lease_duration", "time_interval", "user_data",
+			    NULL };
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|Oisiis", kwlist,
+				    &resource_uri, &events, &job_id,
+				    &recipient_uri, &lease_duration,
+				    &time_interval, &user_data))
+    return NULL;
+
+  if (events) {
+    if (!PyList_Check (events)) {
+      PyErr_SetString (PyExc_TypeError, "events must be a list");
+      return NULL;
+    }
+
+    n = PyList_Size (events);
+    for (i = 0; i < n; i++) {
+      PyObject *event = PyList_GetItem (events, i);
+      if (!PyString_Check (event)) {
+	PyErr_SetString (PyExc_TypeError, "events must be a list of strings");
+	return NULL;
+      }
+    }
+  }
+
+  debugprintf ("-> Connection_createSubscription(%s)\n", resource_uri);
+  request = ippNewRequest (IPP_CREATE_PRINTER_SUBSCRIPTION);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
+		"printer-uri", NULL, resource_uri);
+  ippAddString (request, IPP_TAG_SUBSCRIPTION, IPP_TAG_KEYWORD,
+		"notify-pull-method", NULL, "ippget");
+  ippAddString (request, IPP_TAG_SUBSCRIPTION, IPP_TAG_CHARSET,
+		"notify-charset", NULL, "utf-8");
+  ippAddString (request, IPP_TAG_SUBSCRIPTION, IPP_TAG_NAME,
+		"requesting-user-name", NULL, cupsUser ());
+
+  if (recipient_uri)
+    ippAddString (request, IPP_TAG_SUBSCRIPTION, IPP_TAG_URI,
+		  "notify-recipient-uri", NULL, recipient_uri);
+
+  if (user_data)
+    ippAddString (request, IPP_TAG_SUBSCRIPTION, IPP_TAG_STRING,
+		  "notify-user-data", NULL, user_data);
+
+  if (events) {
+    attr = ippAddStrings (request, IPP_TAG_SUBSCRIPTION,
+			  IPP_TAG_KEYWORD, "notify-events",
+			  n, NULL, NULL);
+    for (i = 0; i < n; i++) {
+      PyObject *event = PyList_GetItem (events, i);
+      attr->values[i].string.text = strdup (PyString_AsString (event));
+    }
+  }
+
+  if (lease_duration != -1)
+    ippAddInteger (request, IPP_TAG_SUBSCRIPTION, IPP_TAG_INTEGER,
+		   "notify-lease-duration", lease_duration);
+
+  if (time_interval != -1)
+    ippAddInteger (request, IPP_TAG_SUBSCRIPTION, IPP_TAG_INTEGER,
+		   "notify-time-interval", time_interval);
+
+  if (job_id != -1)
+    ippAddInteger (request, IPP_TAG_SUBSCRIPTION, IPP_TAG_INTEGER,
+		   "notify-job-id", job_id);
+
+  answer = cupsDoRequest (self->http, request, "/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ? answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    debugprintf ("<- Connection_createSubscription() EXCEPTION\n");
+    return NULL;
+  }
+
+  i = -1;
+  for (attr = answer->attrs; attr; attr = attr->next) {
+    if (attr->group_tag == IPP_TAG_SUBSCRIPTION) {
+      if (attr->value_tag == IPP_TAG_INTEGER &&
+	  !strcmp (attr->name, "notify-subscription-id"))
+	i = attr->values[0].integer;
+      else if (attr->value_tag == IPP_TAG_ENUM &&
+	       !strcmp (attr->name, "notify-status-code"))
+	debugprintf ("notify-status-code = %d\n", attr->values[0].integer);
+    }
+  }
+
+  ippDelete (answer);
+  debugprintf ("<- Connection_createSubscription() = %d\n", i);
+  return PyInt_FromLong (i);
+}
+
+static PyObject *
+Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
+{
+  PyObject *subscription_ids, *sequence_numbers = NULL;
+  ipp_t *request, *answer;
+  int i, num_ids, num_seqs;
+  ipp_attribute_t *attr;
+  PyObject *result, *events, *event;
+  static char *kwlist[] = { "subscription_ids", "sequence_numbers", NULL };
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|O", kwlist,
+				    &subscription_ids, &sequence_numbers))
+    return NULL;
+
+  if (!PyList_Check (subscription_ids)) {
+    PyErr_SetString (PyExc_TypeError, "subscriptions_ids must be a list");
+    return NULL;
+  }
+
+  num_ids = PyList_Size (subscription_ids);
+  for (i = 0; i < num_ids; i++) {
+    PyObject *id = PyList_GetItem (subscription_ids, i);
+    if (!PyInt_Check (id)) {
+      PyErr_SetString (PyExc_TypeError, "subscription_ids must be a list "
+		       "of integers");
+      return NULL;
+    }
+  }
+
+  if (sequence_numbers) {
+    if (!PyList_Check (sequence_numbers)) {
+      PyErr_SetString (PyExc_TypeError, "sequence_numbers must be a list");
+      return NULL;
+    }
+
+    num_seqs = PyList_Size (sequence_numbers);
+    for (i = 0; i < num_seqs; i++) {
+      PyObject *id = PyList_GetItem (sequence_numbers, i);
+      if (!PyInt_Check (id)) {
+	PyErr_SetString (PyExc_TypeError, "sequence_numbers must be a list "
+			 "of integers");
+	return NULL;
+      }
+    }
+  }
+
+  debugprintf ("-> Connection_getNotifications()\n");
+  request = ippNewRequest (IPP_GET_NOTIFICATIONS);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
+		"printer-uri", NULL, "/");
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		"requesting-user-name", NULL, cupsUser ());
+
+  attr = ippAddIntegers (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+			 "notify-subscription-ids", num_ids, NULL);
+  for (i = 0; i < num_ids; i++) {
+    PyObject *id = PyList_GetItem (subscription_ids, i);
+    attr->values[i].integer = PyInt_AsLong (id);
+  }
+  
+  answer = cupsDoRequest (self->http, request, "/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ? answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    debugprintf ("<- Connection_getNotifications() EXCEPTION\n");
+    return NULL;
+  }
+
+  result = PyDict_New ();
+
+  // Result-wide attributes.
+  attr = ippFindAttribute (answer, "notify-get-interval", IPP_TAG_INTEGER);
+  if (attr)
+    PyDict_SetItemString (result, attr->name,
+			   PyInt_FromLong (attr->values[0].integer));
+
+  attr = ippFindAttribute (answer, "printer-up-time", IPP_TAG_INTEGER);
+  if (attr)
+    PyDict_SetItemString (result, attr->name,
+			  PyInt_FromLong (attr->values[0].integer));
+
+  events = PyList_New (0);
+  for (attr = answer->attrs; attr; attr = attr->next)
+    if (attr->group_tag == IPP_TAG_EVENT_NOTIFICATION)
+      break;
+
+  event = NULL;
+  for (; attr; attr = attr->next) {
+    PyObject *obj;
+    if (attr->group_tag == IPP_TAG_ZERO) {
+      // End of event notification.
+      if (event)
+	PyList_Append (events, event);
+
+      event = NULL;
+      continue;
+    }
+
+    if (attr->num_values > 1 || !strcmp (attr->name, "notify-events")) {
+      obj = PyList_New (0);
+      for (i = 0; i < attr->num_values; i++) {
+	PyObject *item = PyObject_from_attr_value (attr, i);
+	if (item)
+	  PyList_Append (obj, item);
+      }
+    }
+    else
+      obj = PyObject_from_attr_value (attr, 0);
+
+    if (!obj)
+      // Can't represent this.
+      continue;
+
+    if (!event)
+      event = PyDict_New ();
+    PyDict_SetItemString (event, attr->name, obj);
+  }
+
+  if (event)
+    PyList_Append (events, event);
+
+  ippDelete (answer);
+  PyDict_SetItemString (result, "events", events);
+  debugprintf ("<- Connection_getNotifications()\n");
+  return result;
+}
+
+static PyObject *
+Connection_renewSubscription (Connection *self, PyObject *args)
+{
+  int id;
+  ipp_t *request, *answer;
+  ipp_attribute_t *attr;
+
+  if (!PyArg_ParseTuple (args, "i", &id))
+    return NULL;
+
+  debugprintf ("-> Connection_renewSubscription()\n");
+  request = ippNewRequest (IPP_RENEW_SUBSCRIPTION);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
+		"printer-uri", NULL, "/");
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		"requesting-user-name", NULL, cupsUser ());
+  attr = ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+			 "notify-subscription-id", id);
+
+  answer = cupsDoRequest (self->http, request, "/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ? answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    debugprintf ("<- Connection_renewSubscription() EXCEPTION\n");
+    return NULL;
+  }
+
+  ippDelete (answer);
+  debugprintf ("<- Connection_renewSubscription()\n");
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
+static PyObject *
+Connection_cancelSubscription (Connection *self, PyObject *args)
+{
+  int id;
+  ipp_t *request, *answer;
+  ipp_attribute_t *attr;
+
+  if (!PyArg_ParseTuple (args, "i", &id))
+    return NULL;
+
+  debugprintf ("-> Connection_cancelSubscription()\n");
+  request = ippNewRequest (IPP_CANCEL_SUBSCRIPTION);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
+		"printer-uri", NULL, "/");
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		"requesting-user-name", NULL, cupsUser ());
+  attr = ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+			 "notify-subscription-id", id);
+
+  answer = cupsDoRequest (self->http, request, "/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ? answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    debugprintf ("<- Connection_cancelSubscription() EXCEPTION\n");
+    return NULL;
+  }
+
+  ippDelete (answer);
+  debugprintf ("<- Connection_cancelSubscription()\n");
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
 PyMethodDef Connection_methods[] =
   {
     { "getPrinters",
@@ -2270,6 +2664,30 @@ PyMethodDef Connection_methods[] =
     { "adminSetServerSettings",
       (PyCFunction) Connection_adminSetServerSettings, METH_VARARGS,
       "adminSetServerSettings() -> None\n" },
+
+    { "getSubscriptions",
+      (PyCFunction) Connection_getSubscriptions, METH_VARARGS | METH_KEYWORDS,
+      "getSubscription(uri, my_subscriptions=False,\n"
+      "                job_id=None) -> list\n" },
+
+    { "createSubscription",
+      (PyCFunction) Connection_createSubscription,
+      METH_VARARGS | METH_KEYWORDS,
+      "createSubscription(uri, events=[], job_id=None, recipient_uri=[],\n"
+      "                   lease_duration=None, time_interval=None,\n"
+      "                   user_data=None) -> int\n" },
+
+    { "getNotifications",
+      (PyCFunction) Connection_getNotifications, METH_VARARGS | METH_KEYWORDS,
+      "getNotifications(subscription_ids=[]) -> list" },
+
+    { "cancelSubscription",
+      (PyCFunction) Connection_cancelSubscription, METH_VARARGS,
+      "cancelSubscription(id) -> None\n" },
+
+    { "renewSubscription",
+      (PyCFunction) Connection_renewSubscription, METH_VARARGS,
+      "renewSubscription(id) -> None\n" },
 
     { NULL } /* Sentinel */
   };

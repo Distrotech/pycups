@@ -1,3 +1,11 @@
+2007-04-11  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getSubscriptions): New method.
+	(Connection_createSubscription): New method.
+	(Connection_getNotifications): New method.
+	(Connection_renewSubscription): New method.
+	(Connection_cancelSubscription): New method.
+
 2007-04-10  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsmodule.c (initcups): CUPS_PRINTER_COMMANDS.

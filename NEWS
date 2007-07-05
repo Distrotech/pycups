@@ -1,6 +1,11 @@
 NEWS
 ----
 
+* cups.Connection.getSubscriptions()
+* cups.Connection.createSubscription()
+* cups.Connection.getNotifications()
+* cups.Connection.renewSubscription()
+* cups.Connection.cancelSubscription()
 * cups.CUPS_PRINTER_COMMANDS
 
 New in 1.9.20:
