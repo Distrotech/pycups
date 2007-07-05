@@ -1,5 +1,9 @@
 2007-03-18  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.18.
+
+2007-03-18  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_getJobs): Include job-state
 	attribute.
 	(Connection_getJobs): Include job-preserved attribute.

@@ -1,6 +1,16 @@
 NEWS
 ----
 
+New in 1.9.18:
+
+* cups.Connection.getJobs() now includes job-state, job-preserved,
+  time-at-creation, time-at-processing, time-at-completed, job-media-sheets,
+  and job-media-sheets-completed attributes.
+* cups.Connection.getJobs() has new optional parameters which_jobs and
+  my_jobs.
+* cups.Connection.setJobHoldUntil()
+* cups.Connection.restartJob()
+
 New in 1.9.17:
 
 * cups.PPD.localize()
