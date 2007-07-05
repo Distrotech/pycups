@@ -1,5 +1,9 @@
 2006-03-10  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.3.
+
+2006-03-10  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_setPrinterShared): Renamed.
 	(Connection_getPrinterAttributes): Find
 	requesting-user-name-allowed and requesting-user-name-denied
