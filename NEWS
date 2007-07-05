@@ -3,8 +3,10 @@ NEWS
 
 New in 1.9.22:
 
+* cups.Connection.getPPDs() and cups.Connection.getDevices() now allow
+  threads during the IO request
 * cups.Connection.printTestPage() now optionally takes more parameters
-  than just the printer name.
+  than just the printer name
 
 New in 1.9.21:
 
