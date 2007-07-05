@@ -1340,9 +1340,17 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
       // Check for '-supported' suffix.  Any xxx-supported attribute
       // that is a text type must be a list.
       //
-      // Also check for multi-valued network default options.  Currently
-      // only notify-events-default acts like this.
+      // Also check for attributes that are known to allow multiple
+      // string values, and make them lists.
       if (!is_list && namelen > 10) {
+	const char *multivalue_options[] =
+	  {
+	    "notify-events-default",
+	    "requesting-user-name-allowed",
+	    "requesting-user-name-denied",
+	    NULL
+	  };
+
 	switch (attr->value_tag) {
 	case IPP_TAG_NAME:
 	case IPP_TAG_TEXT:
@@ -1353,8 +1361,11 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
 	case IPP_TAG_LANGUAGE:
 	  is_list = !strcmp (attr->name + namelen - 10, "-supported");
 
-	  if (!is_list)
-	    is_list = !strncmp (attr->name, "notify-events", namelen - 8);
+	  if (!is_list) {
+	    const char **opt;
+	    for (opt = multivalue_options; !is_list && *opt; opt++)
+	      is_list = !strcmp (attr->name, *opt);
+	  }
 
 	default:
 	  break;
