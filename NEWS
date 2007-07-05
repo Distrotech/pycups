@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New since 1.9.8:
+
+* cups.Connection.addPrinterOptionDefault() now supports lists and tuples
+
 New since 1.9.7:
 
 * cups.Connection.adminGetServerSettings()
