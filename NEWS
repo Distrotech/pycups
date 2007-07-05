@@ -3,6 +3,8 @@ NEWS
 
 New since 1.9.1:
 
+* fixed cups.Connection.setPrinterInfo()
+* fixed cups.Connection.setPrinterLocation()
 * cups.Connection.getPrinterAttributes()
 * cups.Connection.setPrinterJobSheets()
 * cups.Connection.setPrinterErrorPolicy()

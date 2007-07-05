@@ -652,7 +652,7 @@ Connection_setPrinterInfo (Connection *self, PyObject *args)
     return NULL;
 
   request = add_modify_printer_request (name);
-  ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_URI,
+  ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		"printer-info", NULL, info);
   answer = cupsDoRequest (self->http, request, "/admin/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
@@ -680,7 +680,7 @@ Connection_setPrinterLocation (Connection *self, PyObject *args)
     return NULL;
 
   request = add_modify_printer_request (name);
-  ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_URI,
+  ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		"printer-location", NULL, location);
   answer = cupsDoRequest (self->http, request, "/admin/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
