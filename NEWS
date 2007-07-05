@@ -23,5 +23,6 @@ New since 1.9.0:
 * cups.Connection.getPPDs()
 * cups.Connection.getDevices()
 * cups.Connection.getClasses()
-* cups.Connection.setPrinterInfo
-* cups.Connection.setPrinterLocation
+* cups.Connection.setPrinterInfo()
+* cups.Connection.setPrinterLocation()
+* cups.Connectoin.setPrinterPublished()
