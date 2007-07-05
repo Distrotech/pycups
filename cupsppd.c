@@ -101,6 +101,7 @@ PPD_markDefaults (PPD *self)
   return Py_None;
 }
 
+#include <stdio.h>
 static PyObject *
 PPD_markOption (PPD *self, PyObject *args)
 {
@@ -110,8 +111,10 @@ PPD_markOption (PPD *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "ss", &name, &value))
     return NULL;
 
+  printf ("%s=%s\n", name, value);
   conflicts = ppdMarkOption (self->ppd, name, value);
   ret = Py_BuildValue ("i", conflicts);
+  printf ("%s\n", ppdFindMarkedChoice (self->ppd, name)->choice);
   return ret;
 }
 
@@ -149,6 +152,59 @@ PPD_findOption (PPD *self, PyObject *args)
   }
 
   return ret;
+}
+
+static int
+nondefaults_are_marked (ppd_group_t *g)
+{
+  ppd_option_t *o;
+  int oi;
+  for (oi = 0, o = g->options;
+       oi < g->num_options;
+       oi++, o++) {
+    ppd_choice_t *c;
+    int ci;
+    for (ci = 0, c = o->choices;
+	 ci < o->num_choices;
+	 ci++, c++) {
+      if (c->marked) {
+	if (strcmp (c->choice, o->defchoice))
+	  return 1;
+	break;
+      }
+    }  
+  }
+
+  return 0;
+}
+
+static PyObject *
+PPD_nondefaultsMarked (PPD *self)
+{
+  int nondefaults_marked = 0;
+  ppd_group_t *g;
+  int gi;
+  for (gi = 0, g = self->ppd->groups;
+       gi < self->ppd->num_groups && !nondefaults_marked;
+       gi++, g++) {
+    ppd_group_t *sg;
+    int sgi;  
+    if (nondefaults_are_marked (g)) {
+      nondefaults_marked = 1;
+      break;
+    }
+
+    for (sgi = 0, sg = g->subgroups;
+	 sgi < g->num_subgroups;
+	 sgi++, sg++) {
+      if (nondefaults_are_marked (sg)) {
+	nondefaults_marked = 1;
+	break;
+      }
+    }
+  }
+
+  return PyBool_FromLong (nondefaults_marked);
 }
 
 PyObject *
@@ -191,6 +247,12 @@ PPD_writeFd (PPD *self, PyObject *args)
 	  break;
       keyword = strndup (start, end-start);
       choice = ppdFindMarkedChoice (self->ppd, keyword);
+
+      // Treat PageRegion specially: if not marked, use PageSize
+      // option.
+      if (!choice && !strcmp (keyword, "PageRegion"))
+	choice = ppdFindMarkedChoice (self->ppd, "PageSize");
+
       if (choice) {
 	fprintf (out, "*Default%s: %s", keyword, choice->choice);
 	if (strchr (end, '\r'))
@@ -295,6 +357,11 @@ PyMethodDef PPD_methods[] =
     { "findOption",
       (PyCFunction) PPD_findOption, METH_VARARGS,
       "findOption(name) -> cups.Option or None." },
+
+    { "nondefaultsMarked",
+      (PyCFunction) PPD_nondefaultsMarked, METH_NOARGS,
+      "nondefaultsMarked() -> Boolean.\n\n"
+      "Returns true if any non-default option choices are marked." },
 
     { "writeFd",
       (PyCFunction) PPD_writeFd, METH_VARARGS,

@@ -1,3 +1,10 @@
+2006-03-01  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsppd.c (PPD_writeFd): Treat PageRegion specially, like CUPS
+	does.
+	(nondefaults_are_marked): New function.
+	(PPD_nondefaultsMarked): Implemented.
+
 2006-02-27  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_setPrinterInfo): Use IPP_TAG_TEXT

@@ -9,6 +9,7 @@ New since 1.9.1:
 * cups.Connection.setPrinterJobSheets()
 * cups.Connection.setPrinterErrorPolicy()
 * cups.Connection.setPrinterOpPolicy()
+* cups.PPD.nondefaultsMarked()
 
 New since 1.9.0:
 
