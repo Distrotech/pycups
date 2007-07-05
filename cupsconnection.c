@@ -1394,7 +1394,9 @@ Connection_printTestPage (Connection *self, PyObject *args)
   char filename[PATH_MAX];
   char uri[HTTP_MAX_URI];
   ipp_t *request, *answer;
+  ipp_attribute_t *attr;
   char *resource;
+  int jobid = 0;
   int i;
 
   if (!PyArg_ParseTuple (args, "s", &printer))
@@ -1433,9 +1435,12 @@ Connection_printTestPage (Connection *self, PyObject *args)
     return NULL;
   }
 
+  attr = ippFindAttribute (answer, "job-id", IPP_TAG_INTEGER);
+  if (attr)
+    jobid = attr->values[0].integer;
+
   ippDelete (answer);
-  Py_INCREF (Py_None);
-  return Py_None;
+  return Py_BuildValue ("i", jobid);
 }
 
 PyMethodDef Connection_methods[] =
@@ -1582,7 +1587,7 @@ PyMethodDef Connection_methods[] =
 
     { "printTestPage",
       (PyCFunction) Connection_printTestPage, METH_VARARGS,
-      "printTestPage(printer) -> None\nPrint a test page." },
+      "printTestPage(printer) -> job ID\nPrint a test page." },
 
     { NULL } /* Sentinel */
   };

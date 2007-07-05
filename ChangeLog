@@ -3,6 +3,7 @@
 	* cupsconnection.c (Connection_printTestPage): Implemented.
 	(Connection_getPPDs): Handle broken UTF-8 strings, since CUPS
 	1.1.x doesn't transcode PPD strings for CUPS_GET_PPDS.
+	(Connection_printTestPage): Return job ID.
 
 2006-03-22  Tim Waugh  <twaugh@redhat.com>
 
