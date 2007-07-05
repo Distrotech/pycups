@@ -1,5 +1,6 @@
+NAME=pycups
 VERSION=1.9.3
-TAG=pycups-`echo $(VERSION) | tr . _`
+TAG=`echo $(NAME)-$(VERSION) | tr . _`
 
 PYTHONVERS = python2.4
 
@@ -20,11 +21,11 @@ tag:
 	cvs tag -c $(TAG)
 
 dist:
-	cvs export -r $(TAG) pycups
-	mkdir pycups-$(VERSION)
-	cd pycups; cp -a $(SOURCES) $(DIST) ../pycups-$(VERSION); cd ..
-	tar jcf pycups-$(VERSION).tar.bz2 pycups-$(VERSION)
-	rm -rf pycups-$(VERSION) pycups
+	cvs export -r $(TAG) $(NAME)
+	mkdir $(NAME)-$(VERSION)
+	cd $(NAME); cp -a $(SOURCES) $(DIST) ../$(NAME)-$(VERSION); cd ..
+	tar jcf $(NAME)-$(VERSION).tar.bz2 $(NAME)-$(VERSION)
+	rm -rf $(NAME)-$(VERSION) $(NAME)
 
 install:
 	python setup.py install
