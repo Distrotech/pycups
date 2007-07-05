@@ -359,6 +359,10 @@ PyGetSetDef Option_getseters[] =
       (getter) Option_getConflicted, (setter) NULL,
       "conflicted status", NULL },
   
+    { "keyword",
+      (getter) Option_getKeyword, (setter) NULL,
+      "keyword", NULL },
+  
     { "defchoice",
       (getter) Option_getDefchoice, (setter) NULL,
       "defchoice", NULL },
@@ -547,6 +551,10 @@ PyGetSetDef Group_getseters[] =
     { "options",
       (getter) Group_getOptions, (setter) NULL,
       "options", NULL },
+  
+    { "subgroups",
+      (getter) Group_getSubgroups, (setter) NULL,
+      "subgroups", NULL },
   
     { NULL }
   };
