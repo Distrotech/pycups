@@ -265,6 +265,18 @@ Connection_getPrinters (Connection *self)
 }
 
 static PyObject *
+build_list_from_attribute_strings (ipp_attribute_t *attr)
+{
+  PyObject *list = PyList_New (0);
+  int i;
+  for (i = 0; i < attr->num_values; i++) {
+    PyObject *val = PyString_FromString (attr->values[i].string.text);
+    PyList_Append (list, val);
+  }
+  return list;
+}
+
+static PyObject *
 Connection_getClasses (Connection *self)
 {
   PyObject *result;
@@ -298,7 +310,7 @@ Connection_getClasses (Connection *self)
 
   result = PyDict_New ();
   for (attr = answer->attrs; attr; attr = attr->next) {
-    PyObject *members;
+    PyObject *members = NULL;
     char *classname = NULL;
     char *printer_uri = NULL;
 
@@ -308,8 +320,7 @@ Connection_getClasses (Connection *self)
     if (!attr)
       break;
 
-    members = PyList_New (0);
-    for (; attr && attr->group_tag == IPP_TAG_PRINTER;
+     for (; attr && attr->group_tag == IPP_TAG_PRINTER;
 	 attr = attr->next) {
       if (!strcmp (attr->name, "printer-name") &&
 	  attr->value_tag == IPP_TAG_NAME)
@@ -319,22 +330,20 @@ Connection_getClasses (Connection *self)
 	printer_uri = attr->values[0].string.text;
       else if (!strcmp (attr->name, "member-names") &&
 	       attr->value_tag == IPP_TAG_NAME) {
-	int i;
-	for (i = 0; i < attr->num_values; i++)
-	  PyList_Append (members,
-			 PyString_FromString (attr->values[i].string.text));
+	Py_XDECREF (members);
+	members = build_list_from_attribute_strings (attr);
       }
     }
 
     if (printer_uri) {
-      Py_DECREF (members);
+      Py_XDECREF (members);
       members = PyString_FromString (printer_uri);
     }
 
     if (classname) {
       PyDict_SetItemString (result, classname, members);
     } else
-      Py_DECREF (members);
+      Py_XDECREF (members);
 
     if (!attr)
       break;
@@ -859,18 +868,6 @@ get_printer_attributes_request (const char *name)
   ipp_t *request = add_modify_printer_request (name);
   request->request.op.operation_id = IPP_GET_PRINTER_ATTRIBUTES;
   return request;
-}
-
-static PyObject *
-build_list_from_attribute_strings (ipp_attribute_t *attr)
-{
-  PyObject *list = PyList_New (0);
-  int i;
-  for (i = 0; i < attr->num_values; i++) {
-    PyObject *val = PyString_FromString (attr->values[i].string.text);
-    PyList_Append (list, val);
-  }
-  return list;
 }
 
 static PyObject *

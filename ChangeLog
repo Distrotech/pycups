@@ -6,6 +6,7 @@
 	(Connection_setPrinterJobSheets): Implemented.
 	(Connection_setPrinterErrorPolicy): Implemented.
 	(Connection_setPrinterOpPolicy): Implemented.
+	(Connection_getClasses): Use build_list_from_attribute_strings().
 
 2006-02-23  Tim Waugh  <twaugh@redhat.com>
 
