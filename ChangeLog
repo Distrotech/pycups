@@ -7,6 +7,8 @@
 	and time-at-completed attributes.
 	(Connection_getJobs): Include job-media-sheets and
 	job-media-sheets-completed attributes.
+	(Connection_getJobs): New optional parameters 'which_jobs' and
+	'my_jobs'.
 
 2007-01-03  Tim Waugh  <twaugh@redhat.com>
 

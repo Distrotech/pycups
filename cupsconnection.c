@@ -637,18 +637,30 @@ Connection_getDevices (Connection *self)
 }
 
 static PyObject *
-Connection_getJobs (Connection *self)
+Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
 {
   PyObject *result;
   ipp_t *request = ippNewRequest(IPP_GET_JOBS), *answer;
   ipp_attribute_t *attr;
+  char *which = NULL;
+  int my_jobs = 0;
+  static char *kwlist[] = { "which_jobs", "my_jobs", NULL };
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "|si", kwlist,
+				    &which, &my_jobs))
+	  return NULL;
 
-  debugprintf ("-> Connection_getJobs()\n");
+  debugprintf ("-> Connection_getJobs(%s,%d)\n",
+	       which ? which : "(null)", my_jobs);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri",
 		NULL, "ipp://localhost/jobs/");
 
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD, "which-jobs",
-		NULL, "not-completed");
+		NULL, which ? which : "not-completed");
+
+  ippAddBoolean (request, IPP_TAG_OPERATION, "my-jobs", my_jobs);
+  if (my_jobs)
+    ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		  "requesting-user-name", NULL, cupsUser());
 
   debugprintf ("cupsDoRequest(\"/\")\n");
   answer = cupsDoRequest (self->http, request, "/");
@@ -2029,8 +2041,9 @@ PyMethodDef Connection_methods[] =
       "devices, indexed by attribute." },
 
     { "getJobs",
-      (PyCFunction) Connection_getJobs, METH_NOARGS,
-      "REturns a dict, indexed by job ID, of dicts representing job\n"
+      (PyCFunction) Connection_getJobs, METH_VARARGS | METH_KEYWORDS,
+      "getJobs(which_jobs='not-completed', my_jobs=False) -> dict\n"
+      "Returns a dict, indexed by job ID, of dicts representing job\n"
       "attributes." },
 
     { "cancelJob",
