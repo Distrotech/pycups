@@ -24,6 +24,16 @@
 #include <cups/language.h>
 #include <cups/adminutil.h>
 
+/* GCC attributes */
+#if !defined(__GNUC__) || __GNUC__ < 2 || \
+    (__GNUC__ == 2 && __GNUC_MINOR__ < 5) || __STRICT_ANSI__
+# define FORMAT(x)
+#else /* GNU C: */
+# define FORMAT(x) __attribute__ ((__format__ x))
+#endif
+
+extern void debugprintf (const char *fmt, ...) FORMAT ((__printf__, 1, 2));
+
 #if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MINOR > 1)
 #define HAVE_CUPS_1_2 1
 #endif

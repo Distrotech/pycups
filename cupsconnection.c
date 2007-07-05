@@ -90,8 +90,11 @@ static int
 Connection_init (Connection *self, PyObject *args, PyObject *kwds)
 {
   static char *kwlist[] = { NULL };
+
   if (!PyArg_ParseTupleAndKeywords (args, kwds, "", kwlist))
     return -1;
+
+  debugprintf ("-> Connection_init()\n");
 
   Py_BEGIN_ALLOW_THREADS;
   self->http = httpConnectEncrypt (cupsServer (),
@@ -101,9 +104,11 @@ Connection_init (Connection *self, PyObject *args, PyObject *kwds)
 
   if (!self->http) {
     PyErr_SetString (PyExc_RuntimeError, "httpConnectionEncrypt failed");
+    debugprintf ("<- Connection_init() = -1\n");
     return -1;
   }
 
+  debugprintf ("<- Connection_init() = 0\n");
   return 0;
 }
 
@@ -634,6 +639,11 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
 				    &location, &device, &ppd))
     return NULL;
 
+  debugprintf ("-> Connection_addPrinter(%s,%s,%s,%s,%s,%s,%s)\n",
+	       name, ppdfile ? ppdfile: "", ppdname ? ppdname: "",
+	       info ? info: "", location ? location: "",
+	       device ? device: "", ppd ? "(PPD object)": "");
+
   if (ppdfile)
     ppds_specified++;
   if (ppdname)
@@ -641,6 +651,7 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   if (ppd) {
     if (!PyObject_TypeCheck (ppd, &cups_PPDType)) {
       PyErr_SetString (PyExc_TypeError, "Expecting cups.PPD");
+      debugprintf ("<- Connection_addPrinter() EXCEPTION\n");
       return NULL;
     }
 
@@ -649,6 +660,7 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   if (ppds_specified > 1) {
     PyErr_SetString (PyExc_RuntimeError,
 		     "Only one PPD may be given");
+      debugprintf ("<- Connection_addPrinter() EXCEPTION\n");
     return NULL;
   }
 
@@ -666,6 +678,7 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
     if (fd < 0) {
       free (ppdfile);
       PyErr_SetFromErrno (PyExc_RuntimeError);
+      debugprintf ("<- Connection_addPrinter() EXCEPTION\n");
       return NULL;
     }
 
@@ -677,6 +690,7 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
     if (result == NULL) {
       unlink (ppdfile);
       free (ppdfile);
+      debugprintf ("<- Connection_addPrinter() EXCEPTION\n");
       return NULL;
     }
   }
@@ -708,6 +722,7 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   if (PyErr_Occurred ()) {
     if (answer)
       ippDelete (answer);
+    debugprintf ("<- Connection_addPrinter() EXCEPTION\n");
     return NULL;
   }
 
@@ -717,11 +732,14 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
 		   cupsLastError ());
     if (answer)
       ippDelete (answer);
+
+    debugprintf ("<- Connection_addPrinter() EXCEPTION\n");
     return NULL;
   }
 
   ippDelete (answer);
   Py_INCREF (Py_None);
+  debugprintf ("<- Connection_addPrinter() = None\n");
   return Py_None;
 }
 

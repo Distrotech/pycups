@@ -1,3 +1,12 @@
+2006-05-15  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_addPrinter): Put debug messages
+	in.
+
+	* cupsmodule.c (debugprintf): Implemented.
+
+	* cupsmodule.h: Declare debugprintf().
+
 2006-05-05  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_getClasses): Handle IPP_NOT_FOUND,

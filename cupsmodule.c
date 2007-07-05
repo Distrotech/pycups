@@ -17,6 +17,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdarg.h>
 #include <Python.h>
 #include <cups/cups.h>
 #include <cups/language.h>
@@ -480,4 +481,36 @@ initcups (void)
     return;
   Py_INCREF (IPPError);
   PyModule_AddObject (m, "IPPError", IPPError);
+}
+
+///////////////
+// Debugging //
+///////////////
+
+#define ENVAR "PYCUPS_DEBUG"
+static int debugging_enabled = -1;
+
+void
+debugprintf (const char *fmt, ...)
+{
+  if (!debugging_enabled)
+    return;
+
+  if (debugging_enabled == -1)
+    {
+      if (!getenv (ENVAR))
+	{
+	  debugging_enabled = 0;
+	  return;
+	}
+
+      debugging_enabled = 1;
+    }
+  
+  {
+    va_list ap;
+    va_start (ap, fmt);
+    vfprintf (stderr, fmt, ap);
+    va_end (ap);
+  }
 }
