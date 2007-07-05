@@ -3,6 +3,7 @@
 	* cupsconnection.c (Connection_setPrinterInfo): Use IPP_TAG_TEXT
 	here.
 	(Connection_setPrinterLocation): Likewise.
+	(get_printer_attributes_request): Removed.
 
 	* cupsconnection.c (do_printer_request): Use ippNewRequest().
 	(Connection_getPrinters): Likewise.

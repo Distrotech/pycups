@@ -818,14 +818,6 @@ Connection_deletePrinter (Connection *self, PyObject *args)
   return do_printer_request (self, args, CUPS_DELETE_PRINTER);
 }
 
-static ipp_t *
-get_printer_attributes_request (const char *name)
-{
-  ipp_t *request = add_modify_printer_request (name);
-  request->request.op.operation_id = IPP_GET_PRINTER_ATTRIBUTES;
-  return request;
-}
-
 static PyObject *
 Connection_getPrinterAttributes (Connection *self, PyObject *args)
 {
@@ -833,11 +825,15 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
   const char *name;
   ipp_t *request, *answer;
   ipp_attribute_t *attr;
+  char uri[HTTP_MAX_URI];
 
   if (!PyArg_ParseTuple (args, "s", &name))
     return NULL;
 
-  request = get_printer_attributes_request (name);
+  request = ippNewRequest (IPP_GET_PRINTER_ATTRIBUTES);
+  snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
+		"printer-uri", NULL, uri);
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
