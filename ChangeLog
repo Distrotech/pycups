@@ -5,6 +5,7 @@
 	(Connection_getPrinterAttributes): Implemented.
 	(Connection_setPrinterJobSheets): Implemented.
 	(Connection_setPrinterErrorPolicy): Implemented.
+	(Connection_setPrinterOpPolicy): Implemented.
 
 2006-02-23  Tim Waugh  <twaugh@redhat.com>
 
