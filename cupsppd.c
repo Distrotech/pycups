@@ -662,7 +662,7 @@ PyGetSetDef Option_getseters[] =
   {
     { "conflicted",
       (getter) Option_getConflicted, (setter) NULL,
-      "conflicted status", NULL },
+      "Whether this option is in conflict", NULL },
   
     { "keyword",
       (getter) Option_getKeyword, (setter) NULL,

@@ -2,6 +2,7 @@
 
 	* cupsppd.c (PPD_init): Handle fopen failure.
 	(utf8_to_ppd_encoding): Nul-terminate the string.
+	(Option_getseters) Better docstring for conflicted attribute.
 
 2006-03-07  Tim Waugh  <twaugh@redhat.com>
 
