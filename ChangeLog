@@ -2,6 +2,8 @@
 
 	* cupsconnection.c (Connection_getPPDs): Include ppd-make
 	attribute.
+	(Connection_getPPDs): Use Unicode objects for any string that
+	comes from a PPD file.
 
 	* cupsmodule.c (do_model_compare): Fix comparisons where one
 	string is a substring of the other.

@@ -381,7 +381,9 @@ Connection_getPPDs (Connection *self)
 		attr->value_tag == IPP_TAG_TEXT) ||
 	       (!strcmp (attr->name, "ppd-device-id") &&
 		attr->value_tag == IPP_TAG_TEXT))
-	val = PyString_FromString (attr->values[0].string.text);
+	val = PyUnicode_DecodeUTF8 (attr->values[0].string.text,
+				    strlen (attr->values[0].string.text),
+				    NULL);
 
       if (val) {
 	PyDict_SetItemString (dict, attr->name, val);
