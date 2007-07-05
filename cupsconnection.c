@@ -1359,11 +1359,13 @@ PyMethodDef Connection_methods[] =
 
     { "addPrinterToClass",
       (PyCFunction) Connection_addPrinterToClass, METH_VARARGS,
-      "addPrinterToClass(name, class) -> None" },
+      "addPrinterToClass(name, class) -> None\n\n"
+      "If the class does not yet exist, it is created."},
 
     { "deletePrinterFromClass",
       (PyCFunction) Connection_deletePrinterFromClass, METH_VARARGS,
-      "deletePrinterFromClass(name, class) -> None" },
+      "deletePrinterFromClass(name, class) -> None\n\n"
+      "If the class would be left empty, it is removed." },
 
     { "setDefault",
       (PyCFunction) Connection_setDefault, METH_VARARGS,

@@ -2,6 +2,8 @@
 
 	* cupsconnection.c (Connection_addPrinter): Initialise local ppd
 	variable.
+	(docstrings): Better doc strings for addPrinterToClass and
+	deletePrinterFromClass.
 
 2006-03-14  Tim Waugh  <twaugh@redhat.com>
 
