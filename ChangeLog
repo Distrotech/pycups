@@ -1,5 +1,9 @@
 2006-10-02  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.13.
+
+2006-10-02  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsmodule.c (initcups): Export HTTP_FORBIDDEN as well.
 
 2006-07-05  Tim Waugh  <twaugh@redhat.com>

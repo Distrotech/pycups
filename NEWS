@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New since 1.9.10:
+
+* cups.HTTP_* status codes
+
 New since 1.9.9:
 
 * cups.Connection getClasses() handles IPP_NOT_FOUND
