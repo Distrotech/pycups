@@ -5,7 +5,8 @@ PYTHONVERS = python2.4
 SOURCES=cupsmodule.c cupsconnection.c cupsppd.c setup.py \
 	cupsppd.h
 
-DIST=Makefile test.py
+DIST=Makefile test.py \
+	COPYING NEWS README TODO ChangeLog
 
 cups.so: $(SOURCES)
 	python setup.py build
