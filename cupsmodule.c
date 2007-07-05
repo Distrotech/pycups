@@ -85,11 +85,12 @@ do_model_compare (const char *a, const char *b)
     return cmp;
   }
 
-  if (quick_a == '\0' && quick_b == '\0')
-    return 0;
+  if (quick_a == '\0') {
+    if (*b == '\0')
+      return 0;
 
-  if (quick_a == '\0')
     return -1;
+  }
 
   return 1;
 }
