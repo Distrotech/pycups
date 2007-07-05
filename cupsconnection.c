@@ -49,11 +49,7 @@ set_ipp_error (ipp_status_t status)
 {
   const char *last_error;
 
-#ifdef HAVE_CUPS_1_2
-  last_error = cupsLastErrorString ();
-#else
-  last_error = "(not built against cups-1.2.x so no description)";
-#endif
+  last_error = ippErrorString (status);
 
   PyObject *v = Py_BuildValue ("(is)", status, last_error);
   if (v != NULL) {

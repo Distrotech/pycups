@@ -1,5 +1,7 @@
 2006-03-01  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (set_ipp_error): Use ippErrorString().
+
 	* cupsmodule.c (initcups): IPP error codes.
 
 	* cupsppd.c (PPD_writeFd): Treat PageRegion specially, like CUPS
