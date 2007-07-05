@@ -160,6 +160,7 @@ Connection_getPrinters (Connection *self)
     "printer-state",
     "printer-uri",
     "device-uri",
+    "printer-is-shared",
   };
   char *lang = setlocale (LC_MESSAGES, NULL);
 
@@ -238,6 +239,10 @@ Connection_getPrinters (Connection *self)
       else if (!strcmp (attr->name, "device-uri") &&
 	       attr->value_tag == IPP_TAG_URI) {
 	val = PyString_FromString (attr->values[0].string.text);
+      }
+      else if (!strcmp (attr->name, "printer-is-shared") &&
+	       attr->value_tag == IPP_TAG_BOOLEAN) {
+	val = PyBool_FromLong (attr->values[0].boolean);
       }
 
       if (val) {
@@ -728,6 +733,33 @@ Connection_setPrinterLocation (Connection *self, PyObject *args)
 }
 
 static PyObject *
+Connection_setPrinterPublished (Connection *self, PyObject *args)
+{
+  const char *name;
+  int sharing;
+  ipp_t *request, *answer;
+
+  if (!PyArg_ParseTuple (args, "si", &name, &sharing))
+    return NULL;
+
+  request = add_modify_printer_request (name);
+  ippAddBoolean (request, IPP_TAG_OPERATION, "printer-is-shared", sharing);
+  answer = cupsDoRequest (self->http, request, "/admin/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  ippDelete (answer);
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
+static PyObject *
 Connection_deletePrinter (Connection *self, PyObject *args)
 {
   return do_printer_request (self, args, CUPS_DELETE_PRINTER);
@@ -1007,6 +1039,22 @@ PyMethodDef Connection_methods[] =
       "device: device URI string\n"
       "ppd: cups.PPD object" },
 
+    { "setPrinterDevice",
+      (PyCFunction) Connection_setPrinterDevice, METH_VARARGS,
+      "setPrinterDevice(name, device_uri) -> None" },
+
+    { "setPrinterInfo",
+      (PyCFunction) Connection_setPrinterInfo, METH_VARARGS,
+      "setPrinterInfo(name, info) -> None" },
+
+    { "setPrinterLocation",
+      (PyCFunction) Connection_setPrinterLocation, METH_VARARGS,
+      "setPrinterLocation(name, info) -> None" },
+
+    { "setPrinterPublished",
+      (PyCFunction) Connection_setPrinterPublished, METH_VARARGS,
+      "setPrinterPublished(name, bool) -> None" },
+
     { "deletePrinter",
       (PyCFunction) Connection_deletePrinter, METH_VARARGS,
       "deletePrinter(name, ppdfile, device_uri) -> None" },
@@ -1022,18 +1070,6 @@ PyMethodDef Connection_methods[] =
     { "setDefault",
       (PyCFunction) Connection_setDefault, METH_VARARGS,
       "setDefault(name) -> None" },
-
-    { "setPrinterDevice",
-      (PyCFunction) Connection_setPrinterDevice, METH_VARARGS,
-      "setPrinterDevice(name, device_uri) -> None" },
-
-    { "setPrinterInfo",
-      (PyCFunction) Connection_setPrinterInfo, METH_VARARGS,
-      "setPrinterInfo(name, info) -> None" },
-
-    { "setPrinterLocation",
-      (PyCFunction) Connection_setPrinterLocation, METH_VARARGS,
-      "setPrinterLocation(name, info) -> None" },
 
     { "getPPD",
       (PyCFunction) Connection_getPPD, METH_VARARGS,

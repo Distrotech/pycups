@@ -1,5 +1,9 @@
 2006-02-23  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_setPrinterPublished): Implemented.
+	(Connection_getPrinters): Add 'printer-is-shared' Boolean into
+	requested attributes.
+
 	* cupsmodule.c (cups_getUser): Implemented.
 	(cups_getServer): Implemented.
 	(cups_getPort): Implemented.
