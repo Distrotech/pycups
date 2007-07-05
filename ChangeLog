@@ -1,5 +1,8 @@
 2006-02-21  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_addPrinter): Allow adding a printer
+	from a ppd-name instead of a filename.
+
 	* cupsconnection.c (Connection_getFile): Fixed ipp_t leak.
 
 	* cupsppd.c (PPD_getOptionGroups): Make this an attribute not a

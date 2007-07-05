@@ -293,18 +293,27 @@ Connection_putFile (Connection *self, PyObject *args)
 }
 
 static PyObject *
-Connection_addPrinter (Connection *self, PyObject *args)
+Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
 {
   PyObject *ret;
   const char *name;
-  const char *ppdfile;
+  const char *ppdfile = NULL;
+  const char *ppdname = NULL;
   char uri[HTTP_MAX_URI];
   cups_lang_t *language;
   ipp_t *request = ippNew(), *answer;
   ipp_status_t status;
+  static char *kwlist[] = { "name", "filename", "ppdname", NULL };
 
-  if (!PyArg_ParseTuple (args, "ss", &name, &ppdfile))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|ss", kwlist,
+				    &name, &ppdfile, &ppdname))
     return NULL;
+
+  if (ppdfile && ppdname) {
+    PyErr_SetString (PyExc_RuntimeError,
+		     "Only filename or ppdname can be specified, not both");
+    return NULL;
+  }
 
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
   request->request.op.operation_id = CUPS_ADD_PRINTER;
@@ -316,11 +325,15 @@ Connection_addPrinter (Connection *self, PyObject *args)
 		"attributes-natural-language", NULL, language->language);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, uri);
-  ippAddInteger (request, IPP_TAG_PRINTER, IPP_TAG_ENUM,
-		 "printer-state", IPP_PRINTER_IDLE);
-  ippAddBoolean (request, IPP_TAG_PRINTER,
-		 "printer-is-accepting-jobs", 1);
-  answer = cupsDoFileRequest (self->http, request, "/admin/", ppdfile);
+
+  if (ppdname) {
+    ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		  "ppd-name", NULL, ppdname);
+    answer = cupsDoRequest (self->http, request, "/admin/");
+  } else {
+    answer = cupsDoFileRequest (self->http, request, "/admin/", ppdfile);
+  }
+
   if (!answer) {
     PyErr_SetString (PyExc_RuntimeError, "cupsDoFileRequest failed");
     return NULL;
@@ -454,8 +467,8 @@ PyMethodDef Connection_methods[] =
       "putFile(resource, filename) -> None" },
 
     { "addPrinter",
-      (PyCFunction) Connection_addPrinter, METH_VARARGS,
-      "addPrinter(name, ppdfile) -> None" },
+      (PyCFunction) Connection_addPrinter, METH_VARARGS | METH_KEYWORDS,
+      "addPrinter(name, filename=None, ppdname=None) -> None" },
 
     { "deletePrinter",
       (PyCFunction) Connection_deletePrinter, METH_VARARGS,
