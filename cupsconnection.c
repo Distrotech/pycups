@@ -1133,7 +1133,7 @@ Connection_addPrinterOptionDefault (Connection *self, PyObject *args)
   const char *name;
   const char *option;
   PyObject *pyvalue;
-  const char *const suffix = "-default";
+  const char const suffix[] = "-default";
   char *opt;
   ipp_t *request, *answer;
   int i;

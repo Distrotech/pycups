@@ -4,6 +4,7 @@
 	which is returned when there are no classes.
 	(Connection_getPrinterAttributes): 'finishings-supported' is a
 	list.
+	(Connection_addPrinterOptionDefault): Prevent buffer overrun.
 
 2006-05-04  Tim Waugh  <twaugh@redhat.com>
 
