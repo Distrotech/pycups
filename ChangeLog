@@ -2,6 +2,8 @@
 
 	* cupsppd.c, cupsppd.h, cupsmodule.c: Added Attribute object,
 	  and PPD.attributes attribute.
+	  (PPD_findAttr): Implemented.
+	  (PPD_findNextAttr): Implemented.
 
 2006-03-24  Tim Waugh  <twaugh@redhat.com>
 

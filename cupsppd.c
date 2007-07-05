@@ -295,6 +295,72 @@ PPD_findOption (PPD *self, PyObject *args)
   return ret;
 }
 
+static PyObject *
+PPD_findAttr (PPD *self, PyObject *args, PyObject *kwds)
+{
+  PyObject *ret;
+  const char *name;
+  const char *spec = NULL;
+  ppd_attr_t *attr;
+  static char *kwlist[] = { "name", "spec", NULL };
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|s", kwlist,
+				    &name, &spec))
+    return NULL;
+
+  attr = ppdFindAttr (self->ppd, name, spec);
+  if (attr) {
+    PyObject *largs = Py_BuildValue ("()");
+    PyObject *lkwlist = Py_BuildValue ("{}");
+    Attribute *attrobj = (Attribute *) PyType_GenericNew (&cups_AttributeType,
+							  largs, lkwlist);
+    Py_DECREF (largs);
+    Py_DECREF (lkwlist);
+    attrobj->attribute = attr;
+    attrobj->ppd = self;
+    Py_INCREF (self);
+    ret = (PyObject *) attrobj;
+  } else {
+    ret = Py_None;
+    Py_INCREF (ret);
+  }
+
+  return ret;
+}
+
+static PyObject *
+PPD_findNextAttr (PPD *self, PyObject *args, PyObject *kwds)
+{
+  PyObject *ret;
+  const char *name;
+  const char *spec = NULL;
+  ppd_attr_t *attr;
+  static char *kwlist[] = { "name", "spec", NULL };
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|s", kwlist,
+				    &name, &spec))
+    return NULL;
+
+  attr = ppdFindNextAttr (self->ppd, name, spec);
+  if (attr) {
+    PyObject *largs = Py_BuildValue ("()");
+    PyObject *lkwlist = Py_BuildValue ("{}");
+    Attribute *attrobj = (Attribute *) PyType_GenericNew (&cups_AttributeType,
+							  largs, lkwlist);
+    Py_DECREF (largs);
+    Py_DECREF (lkwlist);
+    attrobj->attribute = attr;
+    attrobj->ppd = self;
+    Py_INCREF (self);
+    ret = (PyObject *) attrobj;
+  } else {
+    ret = Py_None;
+    Py_INCREF (ret);
+  }
+
+  return ret;
+}
+
 static int
 nondefaults_are_marked (ppd_group_t *g)
 {
@@ -524,6 +590,14 @@ PyMethodDef PPD_methods[] =
     { "findOption",
       (PyCFunction) PPD_findOption, METH_VARARGS,
       "findOption(name) -> cups.Option or None." },
+
+    { "findAttr",
+      (PyCFunction) PPD_findAttr, METH_VARARGS | METH_KEYWORDS,
+      "findAttr(name, spec=None) -> cups.Attribute or None." },
+
+    { "findNextAttr",
+      (PyCFunction) PPD_findNextAttr, METH_VARARGS | METH_KEYWORDS,
+      "findNextAttr(name, spec=None) -> cups.Attribute or None." },
 
     { "nondefaultsMarked",
       (PyCFunction) PPD_nondefaultsMarked, METH_NOARGS,
