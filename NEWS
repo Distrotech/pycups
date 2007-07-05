@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.22:
+
+* cups.Connection.printTestPage() now optionally takes more parameters
+  than just the printer name.
+
 New in 1.9.21:
 
 * cups.Connection.getSubscriptions()

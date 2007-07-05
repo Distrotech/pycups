@@ -1970,9 +1970,13 @@ Connection_getPPD (Connection *self, PyObject *args)
 }
 
 static PyObject *
-Connection_printTestPage (Connection *self, PyObject *args)
+Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
 {
   const char *printer;
+  const char *file = NULL;
+  const char *title = NULL;
+  const char *format = NULL;
+  const char *user = NULL;
   const char *datadir;
   char filename[PATH_MAX];
   char uri[HTTP_MAX_URI];
@@ -1981,14 +1985,30 @@ Connection_printTestPage (Connection *self, PyObject *args)
   char *resource;
   int jobid = 0;
   int i;
+  static char *kwlist[] = { "name", "file", "title", "format", "user", NULL };
 
-  if (!PyArg_ParseTuple (args, "s", &printer))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|ssss", kwlist,
+				    &printer, &file, &title, &format, &user))
     return NULL;
 
-  if ((datadir = getenv ("CUPS_DATADIR")) == NULL)
-    datadir = "/usr/share/cups";
+  if (!file)
+  {
+    if ((datadir = getenv ("CUPS_DATADIR")) == NULL)
+      datadir = "/usr/share/cups";
 
-  snprintf (filename, sizeof (filename), "%s/data/testprint.ps", datadir);
+    snprintf (filename, sizeof (filename), "%s/data/testprint.ps", datadir);
+    file = filename;
+  }
+
+  if (!title)
+    title = "Test Page";
+
+  if (!format)
+    format = "application/postscript";
+
+  if (!user)
+    user = "guest";
+
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", printer);
   resource = uri + strlen ("ipp://localhost");
   for (i = 0; i < 2; i++) {
@@ -1996,12 +2016,12 @@ Connection_printTestPage (Connection *self, PyObject *args)
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "printer-uri",
 		  NULL, uri);
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
-		  "requesting-user-name", NULL, "guest");
+		  "requesting-user-name", NULL, user);
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME, "job-name",
-		  NULL, "Test Page");
+		  NULL, title);
     ippAddString (request, IPP_TAG_JOB, IPP_TAG_MIMETYPE, "document-format",
-		  NULL, "application/postscript");
-    answer = cupsDoFileRequest (self->http, request, resource, filename);
+		  NULL, format);
+    answer = cupsDoFileRequest (self->http, request, resource, file);
     if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
       ippDelete (answer);
       // Perhaps it's a class, not a printer.
@@ -2654,8 +2674,9 @@ PyMethodDef Connection_methods[] =
       "Causes named printer to reject jobs." },
 
     { "printTestPage",
-      (PyCFunction) Connection_printTestPage, METH_VARARGS,
-      "printTestPage(printer) -> job ID\nPrint a test page." },
+      (PyCFunction) Connection_printTestPage, METH_VARARGS | METH_KEYWORDS,
+      "printTestPage(name[,file,title,format,user]) -> job ID\n"
+      "Print a test page." },
 
     { "adminGetServerSettings",
       (PyCFunction) Connection_adminGetServerSettings, METH_NOARGS,
