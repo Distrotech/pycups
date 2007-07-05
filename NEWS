@@ -3,7 +3,7 @@ NEWS
 
 New since 1.9.5:
 
-* cups.Attrbute object
+* cups.Attribute object
 * cups.PPD.attributes
 * cups.PPD.findAttr()
 * cups.PPD.findNextAttr()
