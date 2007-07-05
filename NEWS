@@ -1,13 +1,18 @@
 NEWS
 ----
 
+New since 1.9.3:
+
+* cups.Connection.enablePrinter() uses IPP_PAUSE_PRINTER
+* cups.Connection.disablePrinter() uses IPP_RESUME_PRINTER
+
 New since 1.9.2:
 
 * cups.PPD.* now convert from the PPD character set encoding
-* cups.Connection.setPrinterPublished is now renamed to
-  cups.Connection.setPrinterShared
-* cups.Connection.setPrinterUsersAllowed
-* cups.Connection.setPrinterUsersDenied
+* cups.Connection.setPrinterPublished() is now renamed to
+  cups.Connection.setPrinterShared()
+* cups.Connection.setPrinterUsersAllowed()
+* cups.Connection.setPrinterUsersDenied()
 
 New since 1.9.1:
 
