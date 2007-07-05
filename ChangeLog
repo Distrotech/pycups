@@ -1,3 +1,8 @@
+2006-03-28  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsppd.c, cupsppd.h, cupsmodule.c: Added Attribute object,
+	  and PPD.attributes attribute.
+
 2006-03-24  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Version 1.9.5.

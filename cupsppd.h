@@ -29,6 +29,7 @@ extern PyTypeObject cups_PPDType;
 extern PyTypeObject cups_OptionType;
 extern PyTypeObject cups_GroupType;
 extern PyTypeObject cups_ConstraintType;
+extern PyTypeObject cups_AttributeType;
 
 typedef struct
 {

@@ -43,6 +43,13 @@ typedef struct
   PPD *ppd;
 } Group;
 
+typedef struct
+{
+  PyObject_HEAD
+  ppd_attr_t *attribute;
+  PPD *ppd;
+} Attribute;
+
 /////////////////////////
 // Encoding conversion //
 /////////////////////////
@@ -437,6 +444,28 @@ PPD_getConstraints (PPD *self, void *closure)
 }
 
 static PyObject *
+PPD_getAttributes (PPD *self, void *closure)
+{
+  PyObject *ret = PyList_New (0);
+  int i;
+  for (i = 0; i < self->ppd->num_attrs; i++) {
+    PyObject *args = Py_BuildValue ("()");
+    PyObject *kwlist = Py_BuildValue ("{}");
+    Attribute *as = (Attribute *) PyType_GenericNew (&cups_AttributeType,
+						     args, kwlist);
+    ppd_attr_t *a = self->ppd->attrs[i];
+    Py_DECREF (args);
+    Py_DECREF (kwlist);
+    as->attribute = a;
+    as->ppd = self;
+    Py_INCREF (self);
+    PyList_Append (ret, (PyObject *) as);
+  }
+
+  return ret;
+}
+
+static PyObject *
 PPD_getOptionGroups (PPD *self, void *closure)
 {
   PyObject *ret = PyList_New (0);
@@ -466,6 +495,10 @@ PyGetSetDef PPD_getseters[] =
     { "constraints",
       (getter) PPD_getConstraints, (setter) NULL,
       "List of constraints", NULL },
+
+    { "attributes",
+      (getter) PPD_getAttributes, (setter) NULL,
+      "List of attributes", NULL },
 
     { "optionGroups",
       (getter) PPD_getOptionGroups, (setter) NULL,
@@ -1048,4 +1081,142 @@ PyTypeObject cups_ConstraintType =
     (initproc)Constraint_init, /* tp_init */
     0,                         /* tp_alloc */
     Constraint_new,            /* tp_new */
+  };
+
+///////////////
+// Attribute //
+///////////////
+
+static PyObject *
+Attribute_new (PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+  Attribute *self;
+  self = (Attribute *) type->tp_alloc (type, 0);
+  return (PyObject *) self;
+}
+
+static int
+Attribute_init (Attribute *self, PyObject *args, PyObject *kwds)
+{    
+  self->attribute = NULL;
+  return 0;
+}
+
+static void
+Attribute_dealloc (Attribute *self)
+{
+  Py_XDECREF (self->ppd);
+  self->ob_type->tp_free ((PyObject *) self);
+}
+
+///////////////
+// Attribute // ATTRIBUTES
+///////////////
+
+static PyObject *
+Attribute_getName (Attribute *self, void *closure)
+{
+  if (!self->attribute) {
+    Py_INCREF (Py_None);
+    return Py_None;
+  }
+
+  return make_PyUnicode_from_ppd_string (self->ppd, self->attribute->name);
+}
+
+static PyObject *
+Attribute_getSpec (Attribute *self, void *closure)
+{
+  if (!self->attribute) {
+    Py_INCREF (Py_None);
+    return Py_None;
+  }
+
+  return make_PyUnicode_from_ppd_string (self->ppd, self->attribute->spec);
+}
+
+static PyObject *
+Attribute_getText (Attribute *self, void *closure)
+{
+  if (!self->attribute) {
+    Py_INCREF (Py_None);
+    return Py_None;
+  }
+
+  return make_PyUnicode_from_ppd_string (self->ppd, self->attribute->text);
+}
+
+static PyObject *
+Attribute_getValue (Attribute *self, void *closure)
+{
+  if (!self->attribute) {
+    Py_INCREF (Py_None);
+    return Py_None;
+  }
+
+  return make_PyUnicode_from_ppd_string (self->ppd, self->attribute->value);
+}
+
+PyGetSetDef Attribute_getseters[] =
+  {
+    { "name",
+      (getter) Attribute_getName, (setter) NULL,
+      "name", NULL },
+  
+    { "spec",
+      (getter) Attribute_getSpec, (setter) NULL,
+      "spec", NULL },
+  
+    { "text",
+      (getter) Attribute_getText, (setter) NULL,
+      "text", NULL },
+  
+    { "value",
+      (getter) Attribute_getValue, (setter) NULL,
+      "value", NULL },
+  
+    { NULL }
+  };
+
+PyTypeObject cups_AttributeType =
+  {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "cups.Attribute",          /*tp_name*/
+    sizeof(Attribute),         /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    (destructor)Attribute_dealloc, /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT,        /*tp_flags*/
+    "PPD attribute",          /* tp_doc */
+    0,                         /* tp_traverse */
+    0,                         /* tp_clear */
+    0,                         /* tp_richcompare */
+    0,                         /* tp_weaklistoffset */
+    0,                         /* tp_iter */
+    0,                         /* tp_iternext */
+    0,                         /* tp_methods */
+    0,                         /* tp_members */
+    Attribute_getseters,      /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)Attribute_init, /* tp_init */
+    0,                         /* tp_alloc */
+    Attribute_new,            /* tp_new */
   };

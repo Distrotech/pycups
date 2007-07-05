@@ -315,6 +315,14 @@ initcups (void)
   PyModule_AddObject (m, "Constraint",
 		      (PyObject *)&cups_ConstraintType);
 
+  // Attribute type
+  cups_AttributeType.tp_new = PyType_GenericNew;
+  if (PyType_Ready (&cups_AttributeType) < 0)
+    return;
+
+  PyModule_AddObject (m, "Attribute",
+		      (PyObject *)&cups_AttributeType);
+
   // Constants
 
 #define INT_CONSTANT(name)					\
