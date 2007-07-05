@@ -6,3 +6,6 @@ New since 1.9.0:
 * cups.Constraint type
 * cups.PPD.constraints attribute
 * cups.PPD.getOptionGroups() method changed to optionGroups attribute
+* cups.Connection.addPrinter now allows (name, ppdname="foo.ppd") for
+  installed PPDs
+* cups.PPD.Group.options is not a list, not a dict
