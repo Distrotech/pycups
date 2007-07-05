@@ -11,7 +11,7 @@ DIST=Makefile test.py \
 	COPYING NEWS README TODO ChangeLog
 
 cups.so: $(SOURCES)
-	python setup.py build
+	CFLAGS=-DVERSION=\\\"$(VERSION)\\\" python setup.py build
 	mv build/lib*/$@ .
 
 clean:

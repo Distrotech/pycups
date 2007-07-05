@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New since last release:
+
+* cups.require()
+
 New in 1.9.22:
 
 * cups.Connection.getPPDs() and cups.Connection.getDevices() now allow

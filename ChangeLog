@@ -1,5 +1,11 @@
 2007-05-17  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsmodule.c (cups_require): New method.
+
+	* Makefile: Build with VERSION set.
+
+2007-05-17  Tim Waugh  <twaugh@redhat.com>
+
 	* Makefile: Version 1.9.22.
 
 2007-05-16  Tim Waugh  <twaugh@redhat.com>

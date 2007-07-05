@@ -236,6 +236,43 @@ cups_setPasswordCB (PyObject *self, PyObject *args)
   return Py_None;
 }
 
+static PyObject *
+cups_require (PyObject *self, PyObject *args)
+{
+  const char *version = VERSION;
+  const char *required;
+  const char *pver, *preq;
+  char *end;
+  unsigned long nreq, nver;
+
+  if (!PyArg_ParseTuple (args, "s", &required))
+    return NULL;
+
+  pver = version;
+  preq = required;
+  nreq = strtoul (preq, &end, 0);
+  while (preq != end)
+  {
+    preq = end + 1;
+
+    nver = strtoul (pver, &end, 0);
+    if (pver == end)
+      goto fail;
+    else
+      pver = end + 1;
+
+    if (nver < nreq)
+      goto fail;
+
+    nreq = strtoul (preq, &end, 0);
+  }
+
+  return Py_None;
+fail:
+  PyErr_SetString (PyExc_RuntimeError, "I am version " VERSION);
+  return NULL;
+}
+
 static PyMethodDef CupsMethods[] = {
   { "modelSort", cups_modelSort, METH_VARARGS,
     "Sort two model strings." },
@@ -266,6 +303,9 @@ static PyMethodDef CupsMethods[] = {
 
   { "setPasswordCB", cups_setPasswordCB, METH_VARARGS,
     "Set user to connect as." },
+
+  { "require", cups_require, METH_VARARGS,
+    "Require pycups version." },  
 
   { NULL, NULL, 0, NULL }
 };
