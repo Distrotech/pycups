@@ -1,3 +1,8 @@
+2006-04-19  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_addPrinterOptionDefault): Handle
+	different types for the value.
+
 2006-04-15  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Version 1.9.7.

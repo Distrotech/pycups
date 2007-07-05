@@ -1098,15 +1098,34 @@ Connection_addPrinterOptionDefault (Connection *self, PyObject *args)
 {
   const char *name;
   const char *option;
-  const char *value;
+  char *value;
+  PyObject *pyvalue;
   const char *const suffix = "-default";
   char *opt;
   ipp_t *request, *answer;
   int i;
   size_t optionlen;
 
-  if (!PyArg_ParseTuple (args, "sss", &name, &option, &value))
+  if (!PyArg_ParseTuple (args, "ssO", &name, &option, &pyvalue))
     return NULL;
+
+  if (PyString_Check (pyvalue) ||
+      PyUnicode_Check (pyvalue)) {
+    value = PyString_AsString (pyvalue);
+  } else if (PyBool_Check (pyvalue)) {
+    value = (pyvalue == Py_True) ? "true" : "false";
+  } else if (PyInt_Check (pyvalue)) {
+    long v = PyInt_AsLong (pyvalue);
+    value = alloca (20);
+    snprintf (value, 20, "%ld", v);
+  } else if (PyFloat_Check (pyvalue)) {
+    double v = PyFloat_AsDouble (pyvalue);
+    value = alloca (100);
+    snprintf (value, 100, "%f", v);
+  } else {
+    PyErr_SetString (PyExc_TypeError, "cannot convert arg to string");
+    return NULL;
+  }
 
   optionlen = strlen (option);
   opt = malloc (optionlen + sizeof (suffix) + 1);
