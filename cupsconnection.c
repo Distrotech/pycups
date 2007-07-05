@@ -126,19 +126,40 @@ Connection_dealloc (Connection *self)
 ////////////////
 
 static PyObject *
-do_printer_request (Connection *self, PyObject *args, ipp_op_t op)
+do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
+		    ipp_op_t op)
 {
   const char *name;
+  const char *reason = NULL;
   char uri[HTTP_MAX_URI];
   ipp_t *request, *answer;
 
-  if (!PyArg_ParseTuple (args, "s", &name))
-    return NULL;
+  switch (op) {
+  case IPP_PAUSE_PRINTER:
+  case CUPS_REJECT_JOBS:
+    {
+      static char *kwlist[] = { "name", "reason", NULL };
+      if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|s", kwlist,
+					&name, &reason))
+	return NULL;
+      break;
+    }
+
+  default:
+    if (!PyArg_ParseTuple (args, "s", &name))
+      return NULL;
+    break;
+  }
 
   request = ippNewRequest (op);
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, uri);
+
+  if (reason)
+    ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_TEXT,
+		  "printer-state-message", NULL, reason);
+
   answer = cupsDoRequest (self->http, request, "/admin/");
   if (PyErr_Occurred ()) {
     if (answer)
@@ -1378,9 +1399,9 @@ Connection_deletePrinterOptionDefault (Connection *self, PyObject *args)
 }
 
 static PyObject *
-Connection_deletePrinter (Connection *self, PyObject *args)
+Connection_deletePrinter (Connection *self, PyObject *args, PyObject *kwds)
 {
-  return do_printer_request (self, args, CUPS_DELETE_PRINTER);
+  return do_printer_request (self, args, kwds, CUPS_DELETE_PRINTER);
 }
 
 static PyObject *
@@ -1740,33 +1761,33 @@ Connection_deleteClass (Connection *self, PyObject *args)
 }
 
 static PyObject *
-Connection_enablePrinter (Connection *self, PyObject *args)
+Connection_enablePrinter (Connection *self, PyObject *args, PyObject *kwds)
 {
-  return do_printer_request (self, args, IPP_RESUME_PRINTER);
+  return do_printer_request (self, args, kwds, IPP_RESUME_PRINTER);
 }
 
 static PyObject *
-Connection_disablePrinter (Connection *self, PyObject *args)
+Connection_disablePrinter (Connection *self, PyObject *args, PyObject *kwds)
 {
-  return do_printer_request (self, args, IPP_PAUSE_PRINTER);
+  return do_printer_request (self, args, kwds, IPP_PAUSE_PRINTER);
 }
 
 static PyObject *
-Connection_acceptJobs (Connection *self, PyObject *args)
+Connection_acceptJobs (Connection *self, PyObject *args, PyObject *kwds)
 {
-  return do_printer_request (self, args, CUPS_ACCEPT_JOBS);
+  return do_printer_request (self, args, kwds, CUPS_ACCEPT_JOBS);
 }
 
 static PyObject *
-Connection_rejectJobs (Connection *self, PyObject *args)
+Connection_rejectJobs (Connection *self, PyObject *args, PyObject *kwds)
 {
-  return do_printer_request (self, args, CUPS_REJECT_JOBS);
+  return do_printer_request (self, args, kwds, CUPS_REJECT_JOBS);
 }
 
 static PyObject *
-Connection_setDefault (Connection *self, PyObject *args)
+Connection_setDefault (Connection *self, PyObject *args, PyObject *kwds)
 {
-  return do_printer_request (self, args, CUPS_SET_DEFAULT);
+  return do_printer_request (self, args, kwds, CUPS_SET_DEFAULT);
 }
 
 static PyObject *
@@ -2017,8 +2038,8 @@ PyMethodDef Connection_methods[] =
       "CUPS 1.2.\n" },
 
     { "deletePrinter",
-      (PyCFunction) Connection_deletePrinter, METH_VARARGS,
-      "deletePrinter(name, ppdfile, device_uri) -> None" },
+      (PyCFunction) Connection_deletePrinter, METH_VARARGS | METH_KEYWORDS,
+      "deletePrinter(name) -> None" },
 
     { "getPrinterAttributes",
       (PyCFunction) Connection_getPrinterAttributes, METH_VARARGS,
@@ -2048,7 +2069,7 @@ PyMethodDef Connection_methods[] =
       "deleteClass(class) -> None" },
 
     { "setDefault",
-      (PyCFunction) Connection_setDefault, METH_VARARGS,
+      (PyCFunction) Connection_setDefault, METH_VARARGS | METH_KEYWORDS,
       "setDefault(name) -> None" },
 
     { "getPPD",
@@ -2056,19 +2077,21 @@ PyMethodDef Connection_methods[] =
       "Returns PPD file name" },
 
     { "enablePrinter",
-      (PyCFunction) Connection_enablePrinter, METH_VARARGS,
+      (PyCFunction) Connection_enablePrinter, METH_VARARGS | METH_KEYWORDS,
       "Enables named printer." },
 
     { "disablePrinter",
-      (PyCFunction) Connection_disablePrinter, METH_VARARGS,
+      (PyCFunction) Connection_disablePrinter, METH_VARARGS | METH_KEYWORDS,
+      "disablePrinter(name[,reason]) -> None\n\n"
       "Disables named printer." },
 
     { "acceptJobs",
-      (PyCFunction) Connection_acceptJobs, METH_VARARGS,
+      (PyCFunction) Connection_acceptJobs, METH_VARARGS | METH_KEYWORDS,
       "Causes named printer to accept jobs." },
 
     { "rejectJobs",
-      (PyCFunction) Connection_rejectJobs, METH_VARARGS,
+      (PyCFunction) Connection_rejectJobs, METH_VARARGS | METH_KEYWORDS,
+      "rejectJobs(name[,reason])\n\n"
       "Causes named printer to reject jobs." },
 
     { "printTestPage",

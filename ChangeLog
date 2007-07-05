@@ -2,6 +2,8 @@
 
 	* cupsconnection.c (Connection_getPrinters): Include
 	printer-state-message attribute.
+	(do_printer_request): Set printer-state-message if reason given.
+	(Connection_methods): Updated help strings.
 
 2006-11-29  Tim Waugh  <twaugh@redhat.com>
 
