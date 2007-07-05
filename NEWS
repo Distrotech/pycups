@@ -7,6 +7,10 @@ New since 1.9.0:
 * cups.IPPError now includes the cupsLastErrorString()
 * cups.IPP_PRINTER_* constants
 * cups.setPort()
+* cups.getUser()
+* cups.getServer()
+* cups.getPort()
+* cups.getEncryption()
 
 * cups.PPD.constraints attribute
 * cups.PPD.getOptionGroups() method changed to optionGroups attribute

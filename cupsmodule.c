@@ -184,6 +184,30 @@ cups_setEncryption (PyObject *self, PyObject *args)
 }
 
 static PyObject *
+cups_getUser (PyObject *self)
+{
+  return PyString_FromString (cupsUser ());
+}
+
+static PyObject *
+cups_getServer (PyObject *self)
+{
+  return PyString_FromString (cupsServer ());
+}
+
+static PyObject *
+cups_getPort (PyObject *self)
+{
+  return Py_BuildValue ("i", ippPort ());
+}
+
+static PyObject *
+cups_getEncryption (PyObject *self)
+{
+  return Py_BuildValue ("i", cupsEncryption ());
+}
+
+static PyObject *
 cups_setPasswordCB (PyObject *self, PyObject *args)
 {
   PyObject *cb;
@@ -219,6 +243,18 @@ static PyMethodDef CupsMethods[] = {
 
   { "setEncryption", cups_setEncryption, METH_VARARGS,
     "Set encryption policy." },
+
+  { "getUser", (PyCFunction) cups_getUser, METH_NOARGS,
+    "Get user to connect as." },
+
+  { "getServer", (PyCFunction) cups_getServer, METH_NOARGS,
+    "Get server to connect to." },
+
+  { "getPort", (PyCFunction) cups_getPort, METH_NOARGS,
+    "Get IPP port to connect to." },
+
+  { "getEncryption", (PyCFunction) cups_getEncryption, METH_NOARGS,
+    "Get encryption policy." },
 
   { "setPasswordCB", cups_setPasswordCB, METH_VARARGS,
     "Set user to connect as." },
