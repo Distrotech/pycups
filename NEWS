@@ -10,6 +10,7 @@ New since 1.9.1:
 * cups.Connection.setPrinterErrorPolicy()
 * cups.Connection.setPrinterOpPolicy()
 * cups.PPD.nondefaultsMarked()
+* cups.IPP_* error constants
 
 New since 1.9.0:
 
