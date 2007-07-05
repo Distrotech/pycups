@@ -1,5 +1,9 @@
 2006-02-23  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Better 'dist' target.
+
+2006-02-23  Tim Waugh  <twaugh@redhat.com>
+
 	* Makefile: Version 1.9.1.
 
 2006-02-23  Tim Waugh  <twaugh@redhat.com>
