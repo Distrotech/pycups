@@ -224,6 +224,14 @@ PPD_dealloc (PPD *self)
 /////////
 
 static PyObject *
+PPD_localize (PPD *self)
+{
+  if (!ppdLocalize (self->ppd))
+    return Py_None;
+  return PyErr_SetFromErrno (PyExc_RuntimeError);
+}
+
+static PyObject *
 PPD_markDefaults (PPD *self)
 {
   ppdMarkDefaults (self->ppd);
@@ -578,6 +586,10 @@ PyGetSetDef PPD_getseters[] =
 
 PyMethodDef PPD_methods[] =
   {
+    { "localize",
+      (PyCFunction) PPD_localize, METH_NOARGS,
+      "Localize PPD." },
+
     { "markDefaults",
       (PyCFunction) PPD_markDefaults, METH_NOARGS,
       "Mark default options.  Returns number of conflicts." },

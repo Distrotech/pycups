@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New in 1.9.17:
+
+* cups.PPD.localize()
+
 New in 1.9.16:
 
 * cups.Connection.getPrinters() now includes printer-state-message and
