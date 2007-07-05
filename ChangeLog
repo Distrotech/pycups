@@ -2,6 +2,8 @@
 
 	* cupsconnection.c (Dest_new): cups.Dest type.
 	(Connection_getDests): Use cups.Dest type.
+	(Dest_getName): New method.
+	(Dest_getInstance): New method.
 
 2006-04-13  Tim Waugh  <twaugh@redhat.com>
 

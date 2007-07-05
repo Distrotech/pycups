@@ -38,6 +38,10 @@ typedef struct
 {
   PyObject_HEAD
   int is_default;
+  char *destname;
+  char *instance;
+
+  // Options
   int num_options;
   char **name;
   char **value;
@@ -135,8 +139,8 @@ do_printer_request (Connection *self, PyObject *args, ipp_op_t op)
     if (answer)
       ippDelete (answer);
     return NULL;
-  }
-
+  
+}
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -173,6 +177,9 @@ Connection_getDests (Connection *self)
     int j;
 
     destobj->is_default = dests[i].is_default;
+    destobj->destname = strdup (dests[i].name);
+    destobj->instance = (dests[i].instance ? strdup (dests[i].instance)
+			 : NULL );
     destobj->num_options = dests[i].num_options;
     destobj->name = malloc (dests[i].num_options * sizeof (char *));
     destobj->value = malloc (dests[i].num_options * sizeof (char *));
@@ -1781,6 +1788,9 @@ Dest_dealloc (Dest *self)
     free (self->name);
     free (self->value);
     self->num_options = 0;
+
+    free (self->destname);
+    free (self->instance);
   }
   self->ob_type->tp_free ((PyObject *) self);
 }
@@ -1788,6 +1798,22 @@ Dest_dealloc (Dest *self)
 //////////
 // Dest // ATTRIBUTES
 //////////
+
+static PyObject *
+Dest_getName (Dest *self, void *closure)
+{
+  return PyString_FromString (self->destname);
+}
+
+static PyObject *
+Dest_getInstance (Dest *self, void *closure)
+{
+  if (self->instance)
+    return PyString_FromString (self->instance);
+
+  Py_INCREF (Py_None);
+  return Py_None;
+}
 
 static PyObject *
 Dest_getIsDefault (Dest *self, void *closure)
@@ -1809,6 +1835,14 @@ Dest_getOptions (Dest *self, void *closure)
 
 PyGetSetDef Dest_getseters[] =
   {
+    { "name",
+      (getter) Dest_getName, (setter) NULL,
+      "name", NULL },
+
+    { "instance",
+      (getter) Dest_getInstance, (setter) NULL,
+      "instance", NULL },
+
     { "is_default",
       (getter) Dest_getIsDefault, (setter) NULL,
       "is_default", NULL },
