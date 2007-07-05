@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New in 1.9.19:
+
+* cups.IPP_JOB_* job states
+
 New in 1.9.18:
 
 * cups.Connection.getJobs() now includes job-state, job-preserved,

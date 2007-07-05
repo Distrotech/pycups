@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2002, 2005, 2006, 2007  Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -388,6 +388,15 @@ initcups (void)
   INT_CONSTANT (PPD_UI_BOOLEAN);
   INT_CONSTANT (PPD_UI_PICKONE);
   INT_CONSTANT (PPD_UI_PICKMANY);
+
+  // Job states
+  INT_CONSTANT (IPP_JOB_PENDING);
+  INT_CONSTANT (IPP_JOB_HELD);
+  INT_CONSTANT (IPP_JOB_PROCESSING);
+  INT_CONSTANT (IPP_JOB_STOPPED);
+  INT_CONSTANT (IPP_JOB_CANCELED);
+  INT_CONSTANT (IPP_JOB_ABORTED);
+  INT_CONSTANT (IPP_JOB_COMPLETED);
 
   // Printer states
   INT_CONSTANT (IPP_PRINTER_IDLE);
