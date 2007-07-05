@@ -255,6 +255,86 @@ Connection_getPrinters (Connection *self)
 }
 
 static PyObject *
+Connection_getClasses (Connection *self)
+{
+  PyObject *result;
+  ipp_t *request = ippNew(), *answer;
+  ipp_attribute_t *attr;
+  const char *attributes[] = {
+    "printer-name",
+    "member-names",
+  };
+  char *lang = setlocale (LC_MESSAGES, NULL);
+
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
+		"attributes-charset", NULL, "utf-8");
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
+		"attributes-natural-language", NULL, lang);
+  ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
+		 "requested-attributes",
+		 sizeof (attributes) / sizeof (attributes[0]),
+		 NULL, attributes);
+  request->request.op.operation_id = CUPS_GET_CLASSES;
+  request->request.op.request_id = 1;
+  answer = cupsDoRequest (self->http, request, "/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  result = PyDict_New ();
+  for (attr = answer->attrs; attr; attr = attr->next) {
+    PyObject *members;
+    char *classname = NULL;
+    char *printer_uri = NULL;
+
+    while (attr && attr->group_tag != IPP_TAG_PRINTER)
+      attr = attr->next;
+
+    if (!attr)
+      break;
+
+    members = PyList_New (0);
+    for (; attr && attr->group_tag == IPP_TAG_PRINTER;
+	 attr = attr->next) {
+      if (!strcmp (attr->name, "printer-name") &&
+	  attr->value_tag == IPP_TAG_NAME)
+	classname = attr->values[0].string.text;
+      else if (!strcmp (attr->name, "printer-uri-supported") &&
+	       attr->value_tag == IPP_TAG_URI)
+	printer_uri = attr->values[0].string.text;
+      else if (!strcmp (attr->name, "member-names") &&
+	       attr->value_tag == IPP_TAG_NAME) {
+	int i;
+	for (i = 0; i < attr->num_values; i++)
+	  PyList_Append (members,
+			 PyString_FromString (attr->values[i].string.text));
+      }
+    }
+
+    if (printer_uri) {
+      Py_DECREF (members);
+      members = PyString_FromString (printer_uri);
+    }
+
+    if (classname) {
+      PyDict_SetItemString (result, classname, members);
+    } else
+      Py_DECREF (members);
+
+    if (!attr)
+      break;
+  }
+
+  ippDelete (answer);
+  return result;
+}
+
+static PyObject *
 Connection_getPPDs (Connection *self)
 {
   PyObject *result;
@@ -837,6 +917,13 @@ PyMethodDef Connection_methods[] =
       (PyCFunction) Connection_getPrinters, METH_NOARGS,
       "Returns a dict, indexed by name, of dicts representing\n"
       "queues, indexed by attribute." },
+
+    { "getClasses",
+      (PyCFunction) Connection_getClasses, METH_NOARGS,
+      "Returns a dict, indexed by name, of objects representing\n"
+      "classes.  Each class object is either a string, in which case it\n"
+      "is for the remote class; or a list, in which case it is a list of\n"
+      "queue names." },
 
     { "getPPDs",
       (PyCFunction) Connection_getPPDs, METH_NOARGS,
