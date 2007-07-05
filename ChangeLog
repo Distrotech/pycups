@@ -1,5 +1,9 @@
 2007-06-08  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Ship examples directory correctly.
+
+2007-06-08  Tim Waugh  <twaugh@redhat.com>
+
 	* Makefile: Version 1.9.24.
 
 2007-06-08  Tim Waugh  <twaugh@redhat.com>
