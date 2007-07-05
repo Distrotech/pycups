@@ -1369,6 +1369,58 @@ Connection_getPPD (Connection *self, PyObject *args)
   return ret;
 }
 
+static PyObject *
+Connection_printTestPage (Connection *self, PyObject *args)
+{
+  const char *printer;
+  const char *datadir;
+  char filename[PATH_MAX];
+  char uri[HTTP_MAX_URI];
+  ipp_t *request, *answer;
+  char *resource;
+  int i;
+
+  if (!PyArg_ParseTuple (args, "s", &printer))
+    return NULL;
+
+  if ((datadir = getenv ("CUPS_DATADIR")) == NULL)
+    datadir = "/usr/share/cups";
+
+  snprintf (filename, sizeof (filename), "%s/data/testprint.ps", datadir);
+  snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", printer);
+  resource = uri + strlen ("ipp://localhost");
+  for (i = 0; i < 2; i++) {
+    request = ippNewRequest (IPP_PRINT_JOB);
+    ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "printer-uri",
+		  NULL, uri);
+    ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		  "requesting-user-name", NULL, "guest");
+    ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME, "job-name",
+		  NULL, "Test Page");
+    ippAddString (request, IPP_TAG_JOB, IPP_TAG_MIMETYPE, "document-format",
+		  NULL, "application/postscript");
+    answer = cupsDoFileRequest (self->http, request, resource, filename);
+    if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
+      ippDelete (answer);
+      // Perhaps it's a class, not a printer.
+      snprintf (uri, sizeof (uri), "ipp://localhost/classes/%s", printer);
+    } else break;
+  }
+
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  ippDelete (answer);
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
 PyMethodDef Connection_methods[] =
   {
     { "getPrinters",
@@ -1510,6 +1562,10 @@ PyMethodDef Connection_methods[] =
     { "rejectJobs",
       (PyCFunction) Connection_rejectJobs, METH_VARARGS,
       "Causes named printer to reject jobs." },
+
+    { "printTestPage",
+      (PyCFunction) Connection_printTestPage, METH_VARARGS,
+      "printTestPage(printer) -> None\nPrint a test page." },
 
     { NULL } /* Sentinel */
   };

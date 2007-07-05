@@ -4,6 +4,7 @@ NEWS
 New since 1.9.4:
 
 * cups.Connection.setPrinterShared() now handles classes
+* cups.Connection.printTestPage()
 
 New since 1.9.3:
 
