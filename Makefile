@@ -8,6 +8,7 @@ SOURCES=cupsmodule.c cupsconnection.c cupsppd.c setup.py \
 	cupsppd.h cupsconnection.h cupsmodule.h
 
 DIST=Makefile test.py \
+	examples/cupstree.py \
 	COPYING NEWS README TODO ChangeLog
 
 cups.so: $(SOURCES)
