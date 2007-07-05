@@ -5,6 +5,7 @@ New since 1.9.1:
 
 * cups.Connection.getPrinterAttributes()
 * cups.Connection.setPrinterJobSheets()
+* cups.Connection.setPrinterErrorPolicy()
 
 New since 1.9.0:
 

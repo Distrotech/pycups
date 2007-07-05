@@ -792,6 +792,34 @@ Connection_setPrinterJobSheets (Connection *self, PyObject *args)
 }
 
 static PyObject *
+Connection_setPrinterErrorPolicy (Connection *self, PyObject *args)
+{
+  const char *name;
+  const char *policy;
+  ipp_t *request, *answer;
+
+  if (!PyArg_ParseTuple (args, "ss", &name, &policy))
+    return NULL;
+
+  request = add_modify_printer_request (name);
+  ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
+		     "printer-error-policy", NULL, policy);
+  answer = cupsDoRequest (self->http, request, "/admin/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  ippDelete (answer);
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
+static PyObject *
 Connection_deletePrinter (Connection *self, PyObject *args)
 {
   return do_printer_request (self, args, CUPS_DELETE_PRINTER);
@@ -1181,6 +1209,10 @@ PyMethodDef Connection_methods[] =
     { "setPrinterJobSheets",
       (PyCFunction) Connection_setPrinterJobSheets, METH_VARARGS,
       "setPrinterJobSheets(name, start, end) -> None" },
+
+    { "setPrinterErrorPolicy",
+      (PyCFunction) Connection_setPrinterErrorPolicy, METH_VARARGS,
+      "setPrinterErrorPolicy(name, start, end) -> None" },
 
     { "deletePrinter",
       (PyCFunction) Connection_deletePrinter, METH_VARARGS,
