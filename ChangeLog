@@ -1,3 +1,7 @@
+2007-04-16  Tim Waugh  <twaugh@redhat.com>
+
+	* Makefile: Version 1.9.21.
+
 2007-04-11  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_getSubscriptions): New method.
