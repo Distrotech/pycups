@@ -1,3 +1,7 @@
+2006-03-24  Tim Waugh  <twaugh@redhat.com>
+
+	* Makefile: Version 1.9.5.
+
 2006-03-23  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_printTestPage): Implemented.
