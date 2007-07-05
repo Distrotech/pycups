@@ -1,5 +1,9 @@
 2006-03-03  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.2.
+
+2006-03-03  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (do_printer_request): Watch out for exceptions
 	from the password callback.
 	(Connection_addPrinter): Likewise.
