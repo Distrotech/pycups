@@ -380,10 +380,22 @@ Connection_getPPDs (Connection *self)
 	       (!strcmp (attr->name, "ppd-make") &&
 		attr->value_tag == IPP_TAG_TEXT) ||
 	       (!strcmp (attr->name, "ppd-device-id") &&
-		attr->value_tag == IPP_TAG_TEXT))
+		attr->value_tag == IPP_TAG_TEXT)) {
 	val = PyUnicode_DecodeUTF8 (attr->values[0].string.text,
 				    strlen (attr->values[0].string.text),
 				    NULL);
+	if (!val) {
+	  char *ascii, *orig = attr->values[0].string.text;
+	  int i;
+	  PyErr_Clear ();
+	  ascii = malloc (1 + strlen (orig));
+	  for (i = 0; orig[i]; i++)
+	    ascii[i] = orig[i] & 0x7f;
+	  ascii[i] = '\0';
+	  val = PyString_FromString (ascii);
+	  free (ascii);
+	}
+      }
 
       if (val) {
 	PyDict_SetItemString (dict, attr->name, val);
