@@ -253,6 +253,7 @@ Connection_getPrinters (Connection *self)
     "printer-make-and-model",
     "printer-state",
     "printer-state-message",
+    "printer-state-reasons",
     "printer-uri-supported",
     "device-uri",
     "printer-is-shared",
