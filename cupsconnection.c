@@ -1206,13 +1206,13 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
 static PyObject *
 Connection_enablePrinter (Connection *self, PyObject *args)
 {
-  return do_printer_request (self, args, IPP_ENABLE_PRINTER);
+  return do_printer_request (self, args, IPP_RESUME_PRINTER);
 }
 
 static PyObject *
 Connection_disablePrinter (Connection *self, PyObject *args)
 {
-  return do_printer_request (self, args, IPP_DISABLE_PRINTER);
+  return do_printer_request (self, args, IPP_PAUSE_PRINTER);
 }
 
 static PyObject *
