@@ -1,6 +1,8 @@
 NEWS
 ----
 
+* cups.CUPS_PRINTER_COMMANDS
+
 New in 1.9.20:
 
 * cups.Connection.getPrinters() 'printer-state-reasons' attribute is now a
