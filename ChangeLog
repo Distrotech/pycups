@@ -2,7 +2,6 @@
 
 	* cupsmodule.c (initcups): Always define CUPS 1.2.x CUPS_PRINTER_*
 	constants.
-	(initcups): New constant CUPS_PRINTER_COMMANDS.
 
 	* cupsmodule.h (CUPS_PRINTER_*): More CUPS 1.1.x compatibility
 	stuff.
