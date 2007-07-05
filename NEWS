@@ -1,6 +1,15 @@
 NEWS
 ----
 
+New in 1.9.16:
+
+* cups.Connection.getPrinters() now includes printer-state-message and
+  printer-state-reasons attributes
+* cups.Connection.disablePrinter() and cups.Connection.rejectJobs()
+  now take an optional 'reason' keyword argument and use it to set
+  printer-state-message
+* cups.Connection.getJobs() now includes job-priority attribute
+
 New in 1.9.15:
 
 * cups.Connection.getJobs()

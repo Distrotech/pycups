@@ -1,5 +1,5 @@
 NAME=pycups
-VERSION=1.9.15
+VERSION=1.9.16
 TAG=`echo $(NAME)-$(VERSION) | tr . _`
 
 PYTHONVERS = python2.4
