@@ -3,3 +3,4 @@
 * cups.getPPDs
 * cups.PPD.markConflicts
 * expose conflicts through cups.PPD
+* Write all the doc strings!
