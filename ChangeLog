@@ -1,5 +1,9 @@
 2006-02-23  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsppd.c (PPD_init): Open handle to PPD file.
+	(PPD_dealloc): Close it.
+	(PPD_writeFd): Implemented.
+
 	* cupsmodule.c (cups_setPort): Implemented.
 
 2006-02-22  Tim Waugh  <twaugh@redhat.com>

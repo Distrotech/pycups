@@ -24,6 +24,7 @@ typedef struct
 {
   PyObject_HEAD
   ppd_file_t *ppd;
+  FILE *file;
 } PPD;
 
 typedef struct
@@ -56,8 +57,10 @@ PPD_new (PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
   PPD *self;
   self = (PPD *) type->tp_alloc (type, 0);
-  if (self != NULL)
+  if (self != NULL) {
     self->ppd = NULL;
+    self->file = NULL;
+  }
 
   return (PyObject *) self;
 }
@@ -70,8 +73,11 @@ PPD_init (PPD *self, PyObject *args, PyObject *kwds)
   if (!PyArg_ParseTuple (args, "s", &filename))
     return -1;
 
+  self->file = fopen (filename, "r");
   self->ppd = ppdOpenFile (filename);
   if (!self->ppd) {
+    fclose (self->file);
+    self->file = NULL;
     PyErr_SetString (PyExc_RuntimeError, "ppdOpenFile failed");
     return -1;
   }
@@ -82,6 +88,8 @@ PPD_init (PPD *self, PyObject *args, PyObject *kwds)
 static void
 PPD_dealloc (PPD *self)
 {
+  if (self->file)
+    fclose (self->file);
   if (self->ppd)
     ppdClose (self->ppd);
 
@@ -118,6 +126,67 @@ static PyObject *
 PPD_conflicts (PPD *self)
 {
   return PyInt_FromLong (ppdConflicts (self->ppd));
+}
+
+static PyObject *
+PPD_writeFd (PPD *self, PyObject *args)
+{
+  char *line = NULL;
+  size_t linelen = 0;
+  FILE *out;
+  int fd;
+  int dfd;
+  if (!PyArg_ParseTuple (args, "i", &fd))
+    return NULL;
+
+  dfd = dup (fd);
+  if (!dfd) {
+    PyErr_SetFromErrno (PyExc_RuntimeError);
+    return NULL;
+  }
+
+  out = fdopen (dfd, "w");
+  if (!out) {
+    PyErr_SetFromErrno (PyExc_RuntimeError);
+    return NULL;
+  }
+
+  rewind (self->file);
+  while (!feof (self->file)) {
+    int written = 0;
+    ssize_t got = getline (&line, &linelen, self->file);
+    if (got == -1)
+      break;
+
+    if (!strncmp (line, "*Default", 8)) {
+      char *keyword;
+      char *start = line + 8;
+      char *end;
+      ppd_choice_t *choice;
+      for (end = start; *end; end++)
+	if (isspace (*end) || *end == ':')
+	  break;
+      keyword = strndup (start, end-start);
+      choice = ppdFindMarkedChoice (self->ppd, keyword);
+      if (choice) {
+	fprintf (out, "*Default%s: %s", keyword, choice->choice);
+	if (strchr (end, '\r'))
+	  fputs ("\r", out);
+	fputs ("\n", out);
+	written = 1;
+      }
+    }
+
+    if (!written)
+      fputs (line, out);
+  }
+
+  fclose (out);
+  if (line)
+    free (line);
+
+  Py_INCREF (Py_None);
+  return Py_None;
 }
 
 /////////
@@ -199,6 +268,12 @@ PyMethodDef PPD_methods[] =
     { "conflicts",
       (PyCFunction) PPD_conflicts, METH_NOARGS,
       "Returns number of conflicts." },
+
+    { "writeFd",
+      (PyCFunction) PPD_writeFd, METH_VARARGS,
+      "writeFd (fd) -> None\n"
+      "Write PPD file, with marked choices as defaults, to file\n"
+      "descriptor." },
 
     { NULL } /* Sentinel */
   };
