@@ -461,13 +461,14 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   const char *ppdname = NULL;
   const char *info = NULL;
   const char *location = NULL;
+  const char *device = NULL;
   ipp_t *request, *answer;
   static char *kwlist[] = { "name", "filename", "ppdname", "info",
-			    "location", NULL };
+			    "location", "device", NULL };
 
-  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|ssss", kwlist,
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|sssss", kwlist,
 				    &name, &ppdfile, &ppdname, &info,
-				    &location))
+				    &location, &device))
     return NULL;
 
   if (ppdfile && ppdname) {
@@ -486,6 +487,9 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   if (location)
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		  "printer-location", NULL, location);
+  if (device)
+    ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_URI,
+		  "device-uri", NULL, device);
   
   if (ppdfile)
     answer = cupsDoFileRequest (self->http, request, "/admin/", ppdfile);
@@ -855,7 +859,7 @@ PyMethodDef Connection_methods[] =
     { "addPrinter",
       (PyCFunction) Connection_addPrinter, METH_VARARGS | METH_KEYWORDS,
       "addPrinter(name, filename=None, ppdname=None, info=None,\n"
-      "location=None) -> None" },
+      "location=None, device=None) -> None" },
 
     { "deletePrinter",
       (PyCFunction) Connection_deletePrinter, METH_VARARGS,
