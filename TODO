@@ -1,1 +1,4 @@
 * Write all the doc strings!
+
+* cups.Connection.printFile() is needed for sending CUPS command
+  (maintenance) files
