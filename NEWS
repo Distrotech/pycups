@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New since 1.9.2:
+
+* cups.PPD.* now convert from the PPD character set encoding
+
 New since 1.9.1:
 
 * fixed cups.Connection.setPrinterInfo()
