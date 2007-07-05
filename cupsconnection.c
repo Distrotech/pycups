@@ -42,7 +42,7 @@ set_http_error (http_status_t status)
 static void
 set_ipp_error (ipp_status_t status)
 {
-  PyObject *v = Py_BuildValue ("i", status);
+  PyObject *v = Py_BuildValue ("(is)", status, cupsLastErrorString ());
   if (v != NULL) {
     PyErr_SetObject (IPPError, v);
     Py_DECREF (v);
@@ -468,7 +468,7 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   }
 
   if (!answer) {
-    PyErr_SetString (PyExc_RuntimeError, "cupsDoFileRequest failed");
+    set_ipp_error (cupsLastError ());
     return NULL;
   }
 

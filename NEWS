@@ -11,3 +11,4 @@ New since 1.9.0:
 * cups.PPD.Group.options is not a list, not a dict
 * cups.Connection.getPPDs()
 * cups.Connection.getDevices()
+* cups.IPPError now includes the cupsLastErrorString()
