@@ -322,7 +322,7 @@ Connection_getClasses (Connection *self)
     }
 
     if (!members)
-      members = PyList_new (0);
+      members = PyList_New (0);
 
     if (classname) {
       PyDict_SetItemString (result, classname, members);
