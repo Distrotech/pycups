@@ -1,5 +1,8 @@
 2006-02-22  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_addPrinterToClass): Implemented.
+	(Connection_deletePrinterFromClass): Implemented.
+
 	* cupsmodule.c (initcups): Added printer states constants.
 
 	* cupsconnection.c: More consistent error handling.

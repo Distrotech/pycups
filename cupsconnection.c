@@ -536,6 +536,187 @@ Connection_deletePrinter (Connection *self, PyObject *args)
 }
 
 static PyObject *
+Connection_addPrinterToClass (Connection *self, PyObject *args)
+{
+  const char *printername;
+  const char *classname;
+  char classuri[HTTP_MAX_URI];
+  char printeruri[HTTP_MAX_URI];
+  cups_lang_t *language;
+  ipp_t *request, *answer;
+
+  if (!PyArg_ParseTuple (args, "ss", &printername, &classname))
+    return NULL;
+
+  // Does the class exist, and is the printer already in it?
+  request = ippNew ();
+  snprintf (classuri, sizeof (classuri),
+	    "ipp://localhost/classes/%s", classname);
+  request->request.op.operation_id = IPP_GET_PRINTER_ATTRIBUTES;
+  request->request.op.request_id = 1;
+  language = cupsLangDefault ();
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
+		"attributes-charset", NULL, cupsLangEncoding (language));
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
+		"attributes-natural-language", NULL, language->language);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
+		"printer-uri", NULL, classuri);
+  answer = cupsDoRequest (self->http, request, "/");
+  if (answer) {
+    ipp_attribute_t *printers;
+    printers = ippFindAttribute (answer, "member-names", IPP_TAG_NAME);
+    if (printers) {
+      int i;
+      for (i = 0; i < printers->num_values; i++) {
+	if (!strcasecmp (printers->values[i].string.text, printername)) {
+	  ippDelete (answer);
+	  PyErr_SetString (PyExc_RuntimeError, "Printer already in class");
+	  return NULL;
+	}
+      }
+    }
+  }
+
+  request = ippNew ();
+  request->request.op.operation_id = CUPS_ADD_CLASS;
+  request->request.op.request_id = 1;
+  language = cupsLangDefault ();
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
+		"attributes-charset", NULL, cupsLangEncoding (language));
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
+		"attributes-natural-language", NULL, language->language);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
+		"printer-uri", NULL, classuri);
+  snprintf (printeruri, sizeof (printeruri),
+	    "ipp://localhost/printers/%s", printername);
+  if (answer) {
+    ipp_attribute_t *printers;
+    printers = ippFindAttribute (answer, "member-uris", IPP_TAG_URI);
+    if (printers) {
+      ipp_attribute_t *attr;
+      int i;
+      attr = ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_URI,
+			    "member-uris", printers->num_values + 1,
+			    NULL, NULL);
+      for (i = 0; i < printers->num_values; i++)
+	attr->values[i].string.text = strdup (printers->values[i].string.text);
+      attr->values[printers->num_values].string.text = strdup (printeruri);
+    }
+
+    ippDelete (answer);
+  }
+
+  // If the class didn't exist, create a new one.
+  if (!ippFindAttribute (request, "member-uris", IPP_TAG_URI))
+    ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_URI,
+		  "member-uris", NULL, printeruri);
+
+  answer = cupsDoRequest (self->http, request, "/admin/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  ippDelete (answer);
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
+static PyObject *
+Connection_deletePrinterFromClass (Connection *self, PyObject *args)
+{
+  const char *printername;
+  const char *classname;
+  char classuri[HTTP_MAX_URI];
+  cups_lang_t *language;
+  ipp_t *request, *answer;
+  ipp_attribute_t *printers;
+  int i;
+
+  if (!PyArg_ParseTuple (args, "ss", &printername, &classname))
+    return NULL;
+
+  // Does the class exist, and is the printer in it?
+  request = ippNew ();
+  snprintf (classuri, sizeof (classuri),
+	    "ipp://localhost/classes/%s", classname);
+  request->request.op.operation_id = IPP_GET_PRINTER_ATTRIBUTES;
+  request->request.op.request_id = 1;
+  language = cupsLangDefault ();
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
+		"attributes-charset", NULL, cupsLangEncoding (language));
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
+		"attributes-natural-language", NULL, language->language);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
+		"printer-uri", NULL, classuri);
+  answer = cupsDoRequest (self->http, request, "/");
+  if (!answer) {
+    set_ipp_error (cupsLastError ());
+    return NULL;
+  }
+
+  printers = ippFindAttribute (answer, "member-names", IPP_TAG_NAME);
+  for (i = 0; printers && i < printers->num_values; i++)
+    if (!strcasecmp (printers->values[i].string.text, printername))
+      break;
+
+  if (!printers || i == printers->num_values) {
+    ippDelete (answer);
+    PyErr_SetString (PyExc_RuntimeError, "Printer not in class");
+    return NULL;
+  }
+
+  request = ippNew ();
+  request->request.op.request_id = 1;
+  language = cupsLangDefault ();
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
+		"attributes-charset", NULL, cupsLangEncoding (language));
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
+		"attributes-natural-language", NULL, language->language);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
+		"printer-uri", NULL, classuri);
+
+  // Only printer in class?  Delete the class.
+  if (printers->num_values == 1)
+    request->request.op.operation_id = CUPS_DELETE_CLASS;
+  else {
+    // Trim the printer from the list.
+    ipp_attribute_t *newlist;
+    int j;
+    request->request.op.operation_id = CUPS_ADD_CLASS;
+    printers = ippFindAttribute (answer, "member-uris", IPP_TAG_URI);
+    newlist = ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_URI,
+			     "member-uris", printers->num_values - 1,
+			     NULL, NULL);
+    for (j = 0; j < i; j++)
+      newlist->values[j].string.text =
+	strdup (printers->values[j].string.text);
+    for (j = i; j < newlist->num_values; j++)
+      newlist->values[j].string.text =
+	strdup (printers->values[j + 1].string.text);
+  }
+
+  ippDelete (answer);
+  answer = cupsDoRequest (self->http, request, "/admin/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  ippDelete (answer);
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
+static PyObject *
 Connection_enablePrinter (Connection *self, PyObject *args)
 {
   return do_printer_request (self, args, IPP_ENABLE_PRINTER);
@@ -617,6 +798,14 @@ PyMethodDef Connection_methods[] =
     { "deletePrinter",
       (PyCFunction) Connection_deletePrinter, METH_VARARGS,
       "deletePrinter(name, ppdfile, device_uri) -> None" },
+
+    { "addPrinterToClass",
+      (PyCFunction) Connection_addPrinterToClass, METH_VARARGS,
+      "addPrinterToClass(name, class) -> None" },
+
+    { "deletePrinterFromClass",
+      (PyCFunction) Connection_deletePrinterFromClass, METH_VARARGS,
+      "deletePrinterFromClass(name, class) -> None" },
 
     { "setDefault",
       (PyCFunction) Connection_setDefault, METH_VARARGS,
