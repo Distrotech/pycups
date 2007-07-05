@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.20:
+
+* cups.Connection.getPrinters() 'printer-state-reasons' attribute is now a
+  list (as it ought to have been originally).
+
 New in 1.9.19:
 
 * cups.IPP_JOB_* job states

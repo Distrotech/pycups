@@ -240,6 +240,21 @@ Connection_getDests (Connection *self)
 }
 
 static PyObject *
+build_list_from_attribute_strings (ipp_attribute_t *attr)
+{
+  PyObject *list = PyList_New (0);
+  int i;
+  debugprintf ("-> build_list_from_attribute_strings()\n");
+  for (i = 0; i < attr->num_values; i++) {
+    PyObject *val = PyString_FromString (attr->values[i].string.text);
+    PyList_Append (list, val);
+    debugprintf ("%s\n", attr->values[i].string.text);
+  }
+  debugprintf ("<- build_list_from_attribute_strings()\n");
+  return list;
+}
+
+static PyObject *
 Connection_getPrinters (Connection *self)
 {
   PyObject *result;
@@ -321,7 +336,7 @@ Connection_getPrinters (Connection *self)
       else if (!strcmp (attr->name,
 			"printer-state-reasons") &&
 	       attr->value_tag == IPP_TAG_KEYWORD) {
-	val = PyString_FromString (attr->values[0].string.text);
+	val = build_list_from_attribute_strings (attr);
       }
       else if (!strcmp (attr->name,
 			"printer-is-accepting-jobs") &&
@@ -366,21 +381,6 @@ Connection_getPrinters (Connection *self)
   ippDelete (answer);
   debugprintf ("<- Connection_getPrinters() = dict\n");
   return result;
-}
-
-static PyObject *
-build_list_from_attribute_strings (ipp_attribute_t *attr)
-{
-  PyObject *list = PyList_New (0);
-  int i;
-  debugprintf ("-> build_list_from_attribute_strings()\n");
-  for (i = 0; i < attr->num_values; i++) {
-    PyObject *val = PyString_FromString (attr->values[i].string.text);
-    PyList_Append (list, val);
-    debugprintf ("%s\n", attr->values[i].string.text);
-  }
-  debugprintf ("<- build_list_from_attribute_strings()\n");
-  return list;
 }
 
 static PyObject *
