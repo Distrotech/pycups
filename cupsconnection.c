@@ -103,7 +103,6 @@ do_printer_request (Connection *self, PyObject *args, ipp_op_t op)
   char uri[HTTP_MAX_URI];
   cups_lang_t *language;
   ipp_t *request = ippNew(), *answer;
-  ipp_status_t status;
 
   if (!PyArg_ParseTuple (args, "s", &name))
     return NULL;
@@ -119,15 +118,12 @@ do_printer_request (Connection *self, PyObject *args, ipp_op_t op)
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, uri);
   answer = cupsDoRequest (self->http, request, "/admin/");
-  if (!answer) {
-    PyErr_SetString (PyExc_RuntimeError, "cupsDoRequest failed");
-    return NULL;
-  }
-
-  status = answer->request.status.status_code;
-  ippDelete (answer);
-  if (status > IPP_OK_CONFLICT) {
-    set_ipp_error (status);
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
     return NULL;
   }
 
@@ -166,8 +162,11 @@ Connection_getPrinters (Connection *self)
   request->request.op.request_id = 1;
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
-    set_ipp_error (answer->request.status.status_code);
-    ippDelete (answer);
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
     return NULL;
   }
 
@@ -263,8 +262,11 @@ Connection_getPPDs (Connection *self)
   request->request.op.request_id = 1;
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
-    set_ipp_error (answer->request.status.status_code);
-    ippDelete (answer);
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
     return NULL;
   }
 
@@ -330,8 +332,11 @@ Connection_getDevices (Connection *self)
   request->request.op.request_id = 1;
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
-    set_ipp_error (answer->request.status.status_code);
-    ippDelete (answer);
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
     return NULL;
   }
 
@@ -435,7 +440,6 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   char uri[HTTP_MAX_URI];
   cups_lang_t *language;
   ipp_t *request = ippNew(), *answer;
-  ipp_status_t status;
   static char *kwlist[] = { "name", "filename", "ppdname", NULL };
 
   if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|ss", kwlist,
@@ -467,15 +471,12 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
     answer = cupsDoFileRequest (self->http, request, "/admin/", ppdfile);
   }
 
-  if (!answer) {
-    set_ipp_error (cupsLastError ());
-    return NULL;
-  }
-
-  status = answer->request.status.status_code;
-  ippDelete (answer);
-  if (status > IPP_OK_CONFLICT) {
-    set_ipp_error (status);
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
     return NULL;
   }
 
@@ -493,7 +494,6 @@ Connection_setPrinterDevice (Connection *self, PyObject *args)
   char uri[HTTP_MAX_URI];
   cups_lang_t *language;
   ipp_t *request = ippNew(), *answer;
-  ipp_status_t status;
 
   if (!PyArg_ParseTuple (args, "ss", &name, &device_uri))
     return NULL;
@@ -511,15 +511,12 @@ Connection_setPrinterDevice (Connection *self, PyObject *args)
   ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_URI,
 		"device-uri", NULL, device_uri);
   answer = cupsDoRequest (self->http, request, "/admin/");
-  if (!answer) {
-    PyErr_SetString (PyExc_RuntimeError, "cupsDoRequest failed");
-    return NULL;
-  }
-
-  status = answer->request.status.status_code;
-  ippDelete (answer);
-  if (status > IPP_OK_CONFLICT) {
-    set_ipp_error (status);
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
     return NULL;
   }
 
@@ -576,7 +573,7 @@ Connection_getPPD (Connection *self, PyObject *args)
 
   ppdfile = cupsGetPPD2 (self->http, printer);
   if (!ppdfile) {
-    PyErr_SetString (PyExc_RuntimeError, "cupsGetPPD2 failed");
+    set_ipp_error (cupsLastError ());
     return NULL;
   }
 
