@@ -802,8 +802,8 @@ Connection_setPrinterErrorPolicy (Connection *self, PyObject *args)
     return NULL;
 
   request = add_modify_printer_request (name);
-  ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
-		     "printer-error-policy", NULL, policy);
+  ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
+		"printer-error-policy", NULL, policy);
   answer = cupsDoRequest (self->http, request, "/admin/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
@@ -830,8 +830,8 @@ Connection_setPrinterOpPolicy (Connection *self, PyObject *args)
     return NULL;
 
   request = add_modify_printer_request (name);
-  ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
-		     "printer-op-policy", NULL, policy);
+  ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
+		"printer-op-policy", NULL, policy);
   answer = cupsDoRequest (self->http, request, "/admin/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
