@@ -14,7 +14,7 @@ New since 1.9.0:
 * cups.PPD.writeFd()
 
 * cups.Connection.addPrinter now allows ppdname="foo.ppd" keyword for
-  installed PPDs; also info, location, and device keywords
+  installed PPDs; also info, location, device and ppd keywords
 * cups.Connection.getPPDs()
 * cups.Connection.getDevices()
 * cups.Connection.getClasses()
