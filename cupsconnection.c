@@ -1360,6 +1360,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
 	    "notify-events-default",
 	    "requesting-user-name-allowed",
 	    "requesting-user-name-denied",
+	    "finishings-supported",
 	    NULL
 	  };
 
