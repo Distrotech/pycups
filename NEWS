@@ -1,6 +1,13 @@
 NEWS
 ----
 
+New since 1.9.5:
+
+* cups.Attrbute object
+* cups.PPD.attributes
+* cups.PPD.findAttr()
+* cups.PPD.findNextAttr()
+
 New since 1.9.4:
 
 * cups.Connection.setPrinterShared() now handles classes
