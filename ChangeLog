@@ -1,3 +1,7 @@
+2006-04-04  Tim Waugh  <twaugh@redhat.com>
+
+	* Makefile: Version 1.9.6.
+
 2006-04-03  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_getPPD): Better exception when
