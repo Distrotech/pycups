@@ -571,6 +571,7 @@ Connection_getJobs (Connection *self)
 	  "job-k-octets",
 	  "job-printer-uri",
 	  "job-originating-user-name",
+	  "job-priority",
   };
 
   ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
@@ -613,7 +614,8 @@ Connection_getJobs (Connection *self)
       if (!strcmp (attr->name, "job-id") &&
 	  attr->value_tag == IPP_TAG_INTEGER)
 	job_id = attr->values[0].integer;
-      else if (!strcmp (attr->name, "job-k-octets") &&
+      else if ((!strcmp (attr->name, "job-k-octets") ||
+		!strcmp (attr->name, "job-priority")) &&
 	       attr->value_tag == IPP_TAG_INTEGER)
 	val = PyInt_FromLong (attr->values[0].integer);
       else if ((!strcmp (attr->name, "job-name") &&
