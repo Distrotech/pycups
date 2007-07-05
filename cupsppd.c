@@ -455,9 +455,11 @@ PPD_writeFd (PPD *self, PyObject *args)
       keyword = strndup (start, end-start);
       choice = ppdFindMarkedChoice (self->ppd, keyword);
 
-      // Treat PageRegion specially: if not marked, use PageSize
-      // option.
-      if (!choice && !strcmp (keyword, "PageRegion"))
+      // Treat PageRegion, PaperDimension and ImageableArea specially:
+      // if not marked, use PageSize option.
+      if (!choice && (!strcmp (keyword, "PageRegion") ||
+		      !strcmp (keyword, "PaperDimension") ||
+		      !strcmp (keyword, "ImageableArea")))
 	choice = ppdFindMarkedChoice (self->ppd, "PageSize");
 
       if (choice) {
