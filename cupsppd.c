@@ -101,7 +101,6 @@ PPD_markDefaults (PPD *self)
   return Py_None;
 }
 
-#include <stdio.h>
 static PyObject *
 PPD_markOption (PPD *self, PyObject *args)
 {
@@ -111,10 +110,8 @@ PPD_markOption (PPD *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "ss", &name, &value))
     return NULL;
 
-  printf ("%s=%s\n", name, value);
   conflicts = ppdMarkOption (self->ppd, name, value);
   ret = Py_BuildValue ("i", conflicts);
-  printf ("%s\n", ppdFindMarkedChoice (self->ppd, name)->choice);
   return ret;
 }
 
