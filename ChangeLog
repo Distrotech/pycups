@@ -5,6 +5,20 @@
 	(do_printer_request): Set printer-state-message if reason given.
 	(Connection_methods): Updated help strings.
 	(Connection_adminSetServerSettings): Fixed small memory leak.
+	(Connection_init): More debug.
+	(Connection_dealloc): Likewise.
+	(do_printer_request): Likewise.
+	(Connection_getDests): Likewise.
+	(Connection_getPrinters): Likewise.
+	(set_http_error): Likewise.
+	(set_ipp_error): Likewise.
+	(build_list_from_attribute_strings): Likewise.
+	(Connection_getClasses): Likewise.
+	(Connection_getPPDs): Likewise.
+	(Connection_getDevices): Likewise.
+	(Connection_getJobs): Likewise.
+	(Connection_getFile): Likewise.
+	(Connection_putFile): Likewise.
 
 2006-11-29  Tim Waugh  <twaugh@redhat.com>
 

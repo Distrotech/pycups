@@ -51,6 +51,7 @@ static void
 set_http_error (http_status_t status)
 {
   PyObject *v = Py_BuildValue ("i", status);
+  debugprintf("set_http_error: %d\n", (int) status);
   if (v != NULL) {
     PyErr_SetObject (HTTPError, v);
     Py_DECREF (v);
@@ -64,6 +65,7 @@ set_ipp_error (ipp_status_t status)
 
   last_error = ippErrorString (status);
 
+  debugprintf("set_ipp_error: %d, %s\n", (int) status, last_error);
   PyObject *v = Py_BuildValue ("(is)", status, last_error);
   if (v != NULL) {
     PyErr_SetObject (IPPError, v);
@@ -97,6 +99,7 @@ Connection_init (Connection *self, PyObject *args, PyObject *kwds)
   debugprintf ("-> Connection_init()\n");
 
   Py_BEGIN_ALLOW_THREADS;
+  debugprintf ("httpConnectEncrypt(...)\n");
   self->http = httpConnectEncrypt (cupsServer (),
 				   ippPort (),
 				   cupsEncryption ());
@@ -115,8 +118,10 @@ Connection_init (Connection *self, PyObject *args, PyObject *kwds)
 static void
 Connection_dealloc (Connection *self)
 {
-  if (self->http)
+  if (self->http) {  
+    debugprintf ("httpClose()\n");
     httpClose (self->http);
+  }
 
   self->ob_type->tp_free ((PyObject *) self);
 }
@@ -142,12 +147,15 @@ do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
       if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|s", kwlist,
 					&name, &reason))
 	return NULL;
+      debugprintf ("-> do_printer_request(op:%d, name:%s, reason:%s)\n",
+		   (int) op, name, reason ? reason : "(null)");
       break;
     }
 
   default:
     if (!PyArg_ParseTuple (args, "s", &name))
       return NULL;
+      debugprintf ("-> do_printer_request(op:%d, name:%s)\n", (int) op, name)
     break;
   }
 
@@ -160,24 +168,28 @@ do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_TEXT,
 		  "printer-state-message", NULL, reason);
 
+  debugprintf ("cupsDoRequest(\"/admin/\")\n");
   answer = cupsDoRequest (self->http, request, "/admin/");
   if (PyErr_Occurred ()) {
     if (answer)
       ippDelete (answer);
+    debugprintf("<- do_printer_request (error)\n");
     return NULL;
-  
-}
+  }
+
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
 		   cupsLastError ());
     if (answer)
       ippDelete (answer);
+    debugprintf("<- do_printer_request (error)\n");
     return NULL;
   }
 
   ippDelete (answer);
   Py_INCREF (Py_None);
+  debugprintf("<- do_printer_request (None)\n");
   return Py_None;
 }
 
@@ -185,9 +197,13 @@ static PyObject *
 Connection_getDests (Connection *self)
 {
   cups_dest_t *dests;
-  int num_dests = cupsGetDests2 (self->http, &dests);
+  int num_dests;
   PyObject *pydests = PyDict_New ();
   int i;
+
+  debugprintf ("-> Connection_getDests()\n");
+  debugprintf ("cupsGetDests2()\n");
+  num_dests = cupsGetDests2 (self->http, &dests);
 
   // Create a dict indexed by (name,instance)
   for (i = 0; i < num_dests; i++) {
@@ -217,7 +233,9 @@ Connection_getDests (Connection *self)
     PyDict_SetItem (pydests, nameinstance, (PyObject *) destobj);
   }
 
+  debugprintf ("cupsFreeDests()\n");
   cupsFreeDests (num_dests, dests);
+  debugprintf ("<- Connection_getDests()\n");
   return pydests;
 }
 
@@ -240,14 +258,18 @@ Connection_getPrinters (Connection *self)
     "printer-is-shared",
   };
 
+  debugprintf ("-> Connection_getPrinters()\n");
+
   ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
 		 "requested-attributes",
 		 sizeof (attributes) / sizeof (attributes[0]),
 		 NULL, attributes);
+  debugprintf ("cupsDoRequest(\"/\")\n");
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     if (answer && answer->request.status.status_code == IPP_NOT_FOUND) {
       // No printers.
+      debugprintf ("<- Connection_getPrinters() = {} (no printers)\n");
       ippDelete (answer);
       return PyDict_New ();
     }
@@ -257,6 +279,7 @@ Connection_getPrinters (Connection *self)
 		   cupsLastError ());
     if (answer)
       ippDelete (answer);
+    debugprintf ("<- Connection_getPrinters() (error)\n");
     return NULL;
   }
 
@@ -276,6 +299,7 @@ Connection_getPrinters (Connection *self)
 	 attr = attr->next) {
       PyObject *val = NULL;
 
+      debugprintf ("Attribute: %s\n", attr->name);
       if (!strcmp (attr->name, "printer-name") &&
 	  attr->value_tag == IPP_TAG_NAME)
 	printer = attr->values[0].string.text;
@@ -323,6 +347,7 @@ Connection_getPrinters (Connection *self)
       }
 
       if (val) {
+	debugprintf ("Added %s to dict\n", attr->name);
 	PyDict_SetItemString (dict, attr->name, val);
 	Py_DECREF (val);
       }
@@ -338,6 +363,7 @@ Connection_getPrinters (Connection *self)
   }
 
   ippDelete (answer);
+  debugprintf ("<- Connection_getPrinters() = dict\n");
   return result;
 }
 
@@ -346,10 +372,13 @@ build_list_from_attribute_strings (ipp_attribute_t *attr)
 {
   PyObject *list = PyList_New (0);
   int i;
+  debugprintf ("-> build_list_from_attribute_strings()\n");
   for (i = 0; i < attr->num_values; i++) {
     PyObject *val = PyString_FromString (attr->values[i].string.text);
     PyList_Append (list, val);
+    debugprintf ("%s\n", attr->values[i].string.text);
   }
+  debugprintf ("<- build_list_from_attribute_strings()\n");
   return list;
 }
 
@@ -364,14 +393,17 @@ Connection_getClasses (Connection *self)
     "member-names",
   };
 
+  debugprintf ("-> Connection_getClasses()");
   ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
 		 "requested-attributes",
 		 sizeof (attributes) / sizeof (attributes[0]),
 		 NULL, attributes);
+  debugprintf ("cupsDoRequest(\"/\")\n");
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     if (answer && answer->request.status.status_code == IPP_NOT_FOUND) {
       // No classes.
+      debugprintf ("<- Connection_getClasses() = {} (no classes)\n");
       ippDelete (answer);
       return PyDict_New ();
     }
@@ -381,6 +413,7 @@ Connection_getClasses (Connection *self)
 		   cupsLastError ());
     if (answer)
       ippDelete (answer);
+    debugprintf ("<- Connection_getClasses() (error)\n");
     return NULL;
   }
 
@@ -398,6 +431,7 @@ Connection_getClasses (Connection *self)
 
      for (; attr && attr->group_tag == IPP_TAG_PRINTER;
 	 attr = attr->next) {
+      debugprintf ("Attribute: %s\n", attr->name);
       if (!strcmp (attr->name, "printer-name") &&
 	  attr->value_tag == IPP_TAG_NAME)
 	classname = attr->values[0].string.text;
@@ -420,6 +454,7 @@ Connection_getClasses (Connection *self)
       members = PyList_New (0);
 
     if (classname) {
+      debugprintf ("Added class %s\n", classname);
       PyDict_SetItemString (result, classname, members);
     } else
       Py_XDECREF (members);
@@ -429,6 +464,7 @@ Connection_getClasses (Connection *self)
   }
 
   ippDelete (answer);
+  debugprintf ("<- Connection_getClasses() = dict\n");
   return result;
 }
 
@@ -439,6 +475,8 @@ Connection_getPPDs (Connection *self)
   ipp_t *request = ippNewRequest(CUPS_GET_PPDS), *answer;
   ipp_attribute_t *attr;
 
+  debugprintf ("-> Connection_getPPDs()\n");
+  debugprintf ("cupsDoRequest(\"/\")\n");
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
@@ -446,6 +484,7 @@ Connection_getPPDs (Connection *self)
 		   cupsLastError ());
     if (answer)
       ippDelete (answer);
+    debugprintf ("<- Connection_getPPDs() (error)\n");
     return NULL;
   }
 
@@ -465,6 +504,7 @@ Connection_getPPDs (Connection *self)
 	 attr = attr->next) {
       PyObject *val = NULL;
 
+      debugprintf ("Attribute: %s\n", attr->name);
       if (!strcmp (attr->name, "ppd-name") &&
 	  attr->value_tag == IPP_TAG_NAME)
 	ppdname = attr->values[0].string.text;
@@ -498,21 +538,26 @@ Connection_getPPDs (Connection *self)
       }
 
       if (val) {
+	debugprintf ("Adding %s to ppd dict\n", attr->name);
 	PyDict_SetItemString (dict, attr->name, val);
 	Py_DECREF (val);
       }
     }
 
     if (ppdname) {
+      debugprintf ("Adding %s to result dict\n", ppdname);
       PyDict_SetItemString (result, ppdname, dict);
-    } else
+    } else {
+      debugprintf ("Discarding ppd dict\n");
       Py_DECREF (dict);
+    }
 
     if (!attr)
       break;
   }
 
   ippDelete (answer);
+  debugprintf ("<- Connection_getPPDs() = dict\n");
   return result;
 }
 
@@ -523,6 +568,8 @@ Connection_getDevices (Connection *self)
   ipp_t *request = ippNewRequest(CUPS_GET_DEVICES), *answer;
   ipp_attribute_t *attr;
 
+  debugprintf ("-> Connection_getDevices()\n");
+  debugprintf ("cupsDoRequest(\"/\")\n");
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
@@ -530,6 +577,7 @@ Connection_getDevices (Connection *self)
 		   cupsLastError ());
     if (answer)
       ippDelete (answer);
+    debugprintf ("<- Connection_getDevices() (error)\n");
     return NULL;
   }
 
@@ -549,6 +597,7 @@ Connection_getDevices (Connection *self)
 	 attr = attr->next) {
       PyObject *val = NULL;
 
+      debugprintf ("Attribute: %s\n", attr->name);
       if (!strcmp (attr->name, "device-uri") &&
 	  attr->value_tag == IPP_TAG_URI)
 	device_uri = attr->values[0].string.text;
@@ -563,21 +612,26 @@ Connection_getDevices (Connection *self)
 	val = PyString_FromString (attr->values[0].string.text);
 
       if (val) {
+	debugprintf ("Adding %s to device dict\n", attr->name);
 	PyDict_SetItemString (dict, attr->name, val);
 	Py_DECREF (val);
       }
     }
 
     if (device_uri) {
+      debugprintf ("Adding %s to result dict\n", device_uri);
       PyDict_SetItemString (result, device_uri, dict);
-    } else
+    } else {
+      debugprintf ("Discarding device dict\n");
       Py_DECREF (dict);
+    }
 
     if (!attr)
       break;
   }
 
   ippDelete (answer);
+  debugprintf ("<- Connection_getDevices() = dict\n");
   return result;
 }
 
@@ -596,6 +650,7 @@ Connection_getJobs (Connection *self)
 	  "job-priority",
   };
 
+  debugprintf ("-> Connection_getJobs()\n");
   ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
 		 "requested-attributes",
 		 sizeof (attributes) / sizeof (attributes[0]),
@@ -607,6 +662,7 @@ Connection_getJobs (Connection *self)
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD, "which-jobs",
 		NULL, "not-completed");
 
+  debugprintf ("cupsDoRequest(\"/\")\n");
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
@@ -614,6 +670,7 @@ Connection_getJobs (Connection *self)
 		   cupsLastError ());
     if (answer)
       ippDelete (answer);
+    debugprintf ("<- Connection_getJobs() (error)\n");
     return NULL;
   }
 
@@ -633,6 +690,7 @@ Connection_getJobs (Connection *self)
 	 attr = attr->next) {
       PyObject *val = NULL;
 
+      debugprintf ("Attribute: %s\n", attr->name);
       if (!strcmp (attr->name, "job-id") &&
 	  attr->value_tag == IPP_TAG_INTEGER)
 	job_id = attr->values[0].integer;
@@ -649,12 +707,14 @@ Connection_getJobs (Connection *self)
 	val = PyString_FromString (attr->values[0].string.text);
 
       if (val) {
+	debugprintf ("Adding %s to job dict\n", attr->name);
 	PyDict_SetItemString (dict, attr->name, val);
 	Py_DECREF (val);
       }
     }
 
     if (job_id != -1) {
+      debugprintf ("Adding %d to result dict\n", job_id);
       PyObject *job_obj = PyInt_FromLong (job_id);
       PyDict_SetItem (result, job_obj, dict);
       Py_DECREF (job_obj);
@@ -667,6 +727,7 @@ Connection_getJobs (Connection *self)
   }
 
   ippDelete (answer);
+  debugprintf ("<- Connection_getJobs() = dict\n");
   return result;
 }
 
@@ -679,11 +740,13 @@ Connection_cancelJob (Connection *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "i", &job_id))
     return NULL;
 
+  debugprintf ("-> Connection_cancelJob(%d)\n", job_id);
   request = ippNewRequest(IPP_CANCEL_JOB);
   snprintf (uri, sizeof (uri), "ipp://localhost/jobs/%d", job_id);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri", NULL, uri);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		"requesting-user-name", NULL, cupsUser ());
+  debugprintf ("cupsDoRequest(\"/jobs/\")\n");
   answer = cupsDoRequest (self->http, request, "/jobs/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
@@ -691,10 +754,12 @@ Connection_cancelJob (Connection *self, PyObject *args)
 		   cupsLastError ());
     if (answer)
       ippDelete (answer);
+    debugprintf ("<- Connection_cancelJob() (error)\n");
     return NULL;
   }
 
   Py_INCREF (Py_None);
+  debugprintf ("<- Connection_cancelJob() = None\n");
   return Py_None;
 }
 
@@ -707,13 +772,17 @@ Connection_getFile (Connection *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "ss", &resource, &filename))
     return NULL;
 
+  debugprintf ("-> Connection_getFile(%s, %s)\n", resource, filename);
+  debugprintf ("cupsGetFile()\n");
   status = cupsGetFile (self->http, resource, filename);
   if (status != HTTP_OK) {
     set_http_error (status);
+    debugprintf ("<- Connection_getFile() (error)\n");
     return NULL;
   }
 
   Py_INCREF (Py_None);
+  debugprintf ("<- Connection_getFile() = None\n");
   return Py_None;
 }
 
@@ -726,13 +795,17 @@ Connection_putFile (Connection *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "ss", &resource, &filename))
     return NULL;
 
+  debugprintf ("-> Connection_putFile(%s, %s)\n", resource, filename);
+  debugprintf ("cupsPutFile()\n");
   status = cupsPutFile (self->http, resource, filename);
   if (status != HTTP_OK && status != HTTP_CREATED) {
     set_http_error (status);
+    debugprintf ("<- Connection_putFile() (error)\n");
     return NULL;
   }
 
   Py_INCREF (Py_None);
+  debugprintf ("<- Connection_putFile() = None\n");
   return Py_None;
 }
 
