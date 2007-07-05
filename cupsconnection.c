@@ -1378,7 +1378,12 @@ Connection_getPPD (Connection *self, PyObject *args)
 
   ppdfile = cupsGetPPD2 (self->http, printer);
   if (!ppdfile) {
-    set_ipp_error (cupsLastError ());
+    ipp_status_t err = cupsLastError ();
+    if (err)
+      set_ipp_error (err);
+    else
+      PyErr_SetString (PyExc_RuntimeError, "cupsGetPPD2 failed");
+
     return NULL;
   }
 
