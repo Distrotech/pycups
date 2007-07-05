@@ -21,6 +21,7 @@
 #include "cupsmodule.h"
 
 #include <iconv.h>
+#include <stdbool.h>
 
 typedef struct
 {
@@ -746,6 +747,7 @@ Option_getChoices (Option *self, void *closure)
 {
   PyObject *choices = PyList_New (0);
   ppd_choice_t *choice;
+  bool defchoice_seen = false;
   int i;
 
   if (!self->option)
@@ -762,7 +764,23 @@ Option_getChoices (Option *self, void *closure)
 			  make_PyUnicode_from_ppd_string (self->ppd,
 							  choice->text));
     PyList_Append (choices, choice_dict);
+    if (!strcmp (choice->choice, self->option->defchoice))
+      defchoice_seen = true;
   }
+
+  if (!defchoice_seen) {
+    // This PPD option has a default choice that isn't one of the choices.
+    // This really happens.
+    const char *defchoice = self->option->defchoice;
+    PyObject *choice_dict = PyDict_New ();
+    PyDict_SetItemString (choice_dict, "choice",
+			  make_PyUnicode_from_ppd_string (self->ppd,
+							    defchoice));
+      PyDict_SetItemString (choice_dict, "text",
+			    make_PyUnicode_from_ppd_string (self->ppd,
+							    defchoice));
+      PyList_Append (choices, choice_dict);
+    }
 
   return choices;
 }
