@@ -1,5 +1,7 @@
 2006-02-22  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_putFile): Fixed ipp_t leak.
+
 	* cupsmodule.h: New file.
 
 	* cupsconnection.c (Connection_getDevices): Implemented.

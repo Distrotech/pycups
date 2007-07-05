@@ -408,7 +408,6 @@ static PyObject *
 Connection_putFile (Connection *self, PyObject *args)
 {
   PyObject *ret;
-  ipp_t *request = ippNew(), *answer;
   const char *resource, *filename;
   http_status_t status;
 
