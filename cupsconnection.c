@@ -394,7 +394,7 @@ Connection_getClasses (Connection *self)
     "member-names",
   };
 
-  debugprintf ("-> Connection_getClasses()");
+  debugprintf ("-> Connection_getClasses()\n");
   ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
 		 "requested-attributes",
 		 sizeof (attributes) / sizeof (attributes[0]),
