@@ -113,21 +113,13 @@ do_printer_request (Connection *self, PyObject *args, ipp_op_t op)
 {
   const char *name;
   char uri[HTTP_MAX_URI];
-  cups_lang_t *language;
   ipp_t *request, *answer;
 
   if (!PyArg_ParseTuple (args, "s", &name))
     return NULL;
 
-  request = ippNew ();
+  request = ippNewRequest (op);
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
-  request->request.op.operation_id = op;
-  request->request.op.request_id = 1;
-  language = cupsLangDefault ();
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
-		"attributes-charset", NULL, cupsLangEncoding (language));
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
-		"attributes-natural-language", NULL, language->language);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, uri);
   answer = cupsDoRequest (self->http, request, "/admin/");
@@ -149,7 +141,7 @@ static PyObject *
 Connection_getPrinters (Connection *self)
 {
   PyObject *result;
-  ipp_t *request = ippNew(), *answer;
+  ipp_t *request = ippNewRequest(CUPS_GET_PRINTERS), *answer;
   ipp_attribute_t *attr;
   const char *attributes[] = {
     "printer-name",
@@ -162,18 +154,11 @@ Connection_getPrinters (Connection *self)
     "device-uri",
     "printer-is-shared",
   };
-  char *lang = setlocale (LC_MESSAGES, NULL);
 
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
-		"attributes-charset", NULL, "utf-8");
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
-		"attributes-natural-language", NULL, lang);
   ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
 		 "requested-attributes",
 		 sizeof (attributes) / sizeof (attributes[0]),
 		 NULL, attributes);
-  request->request.op.operation_id = CUPS_GET_PRINTERS;
-  request->request.op.request_id = 1;
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
@@ -280,24 +265,17 @@ static PyObject *
 Connection_getClasses (Connection *self)
 {
   PyObject *result;
-  ipp_t *request = ippNew(), *answer;
+  ipp_t *request = ippNewRequest(CUPS_GET_CLASSES), *answer;
   ipp_attribute_t *attr;
   const char *attributes[] = {
     "printer-name",
     "member-names",
   };
-  char *lang = setlocale (LC_MESSAGES, NULL);
 
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
-		"attributes-charset", NULL, "utf-8");
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
-		"attributes-natural-language", NULL, lang);
   ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
 		 "requested-attributes",
 		 sizeof (attributes) / sizeof (attributes[0]),
 		 NULL, attributes);
-  request->request.op.operation_id = CUPS_GET_CLASSES;
-  request->request.op.request_id = 1;
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
@@ -357,16 +335,9 @@ static PyObject *
 Connection_getPPDs (Connection *self)
 {
   PyObject *result;
-  ipp_t *request = ippNew(), *answer;
+  ipp_t *request = ippNewRequest(CUPS_GET_PPDS), *answer;
   ipp_attribute_t *attr;
-  char *lang = setlocale (LC_MESSAGES, NULL);
 
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
-		"attributes-charset", NULL, "utf-8");
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
-		"attributes-natural-language", NULL, lang);
-  request->request.op.operation_id = CUPS_GET_PPDS;
-  request->request.op.request_id = 1;
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
@@ -427,16 +398,9 @@ static PyObject *
 Connection_getDevices (Connection *self)
 {
   PyObject *result;
-  ipp_t *request = ippNew(), *answer;
+  ipp_t *request = ippNewRequest(CUPS_GET_DEVICES), *answer;
   ipp_attribute_t *attr;
-  char *lang = setlocale (LC_MESSAGES, NULL);
 
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
-		"attributes-charset", NULL, "utf-8");
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
-		"attributes-natural-language", NULL, lang);
-  request->request.op.operation_id = CUPS_GET_DEVICES;
-  request->request.op.request_id = 1;
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
@@ -537,16 +501,8 @@ static ipp_t *
 add_modify_printer_request (const char *name)
 {
   char uri[HTTP_MAX_URI];
-  ipp_t *request = ippNew ();
-  cups_lang_t *language;
+  ipp_t *request = ippNewRequest (CUPS_ADD_MODIFY_PRINTER);
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
-  request->request.op.operation_id = CUPS_ADD_MODIFY_PRINTER;
-  request->request.op.request_id = 1;
-  language = cupsLangDefault ();
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
-		"attributes-charset", NULL, cupsLangEncoding (language));
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
-		"attributes-natural-language", NULL, language->language);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, uri);
   return request;
@@ -948,23 +904,15 @@ Connection_addPrinterToClass (Connection *self, PyObject *args)
   const char *classname;
   char classuri[HTTP_MAX_URI];
   char printeruri[HTTP_MAX_URI];
-  cups_lang_t *language;
   ipp_t *request, *answer;
 
   if (!PyArg_ParseTuple (args, "ss", &printername, &classname))
     return NULL;
 
   // Does the class exist, and is the printer already in it?
-  request = ippNew ();
+  request = ippNewRequest (IPP_GET_PRINTER_ATTRIBUTES);
   snprintf (classuri, sizeof (classuri),
 	    "ipp://localhost/classes/%s", classname);
-  request->request.op.operation_id = IPP_GET_PRINTER_ATTRIBUTES;
-  request->request.op.request_id = 1;
-  language = cupsLangDefault ();
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
-		"attributes-charset", NULL, cupsLangEncoding (language));
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
-		"attributes-natural-language", NULL, language->language);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
   answer = cupsDoRequest (self->http, request, "/");
@@ -983,14 +931,7 @@ Connection_addPrinterToClass (Connection *self, PyObject *args)
     }
   }
 
-  request = ippNew ();
-  request->request.op.operation_id = CUPS_ADD_CLASS;
-  request->request.op.request_id = 1;
-  language = cupsLangDefault ();
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
-		"attributes-charset", NULL, cupsLangEncoding (language));
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
-		"attributes-natural-language", NULL, language->language);
+  request = ippNewRequest (CUPS_ADD_CLASS);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
   snprintf (printeruri, sizeof (printeruri),
@@ -1038,7 +979,6 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
   const char *printername;
   const char *classname;
   char classuri[HTTP_MAX_URI];
-  cups_lang_t *language;
   ipp_t *request, *answer;
   ipp_attribute_t *printers;
   int i;
@@ -1047,16 +987,9 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
     return NULL;
 
   // Does the class exist, and is the printer in it?
-  request = ippNew ();
+  request = ippNewRequest (IPP_GET_PRINTER_ATTRIBUTES);
   snprintf (classuri, sizeof (classuri),
 	    "ipp://localhost/classes/%s", classname);
-  request->request.op.operation_id = IPP_GET_PRINTER_ATTRIBUTES;
-  request->request.op.request_id = 1;
-  language = cupsLangDefault ();
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
-		"attributes-charset", NULL, cupsLangEncoding (language));
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
-		"attributes-natural-language", NULL, language->language);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
   answer = cupsDoRequest (self->http, request, "/");
@@ -1076,13 +1009,7 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
     return NULL;
   }
 
-  request = ippNew ();
-  request->request.op.request_id = 1;
-  language = cupsLangDefault ();
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
-		"attributes-charset", NULL, cupsLangEncoding (language));
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
-		"attributes-natural-language", NULL, language->language);
+  request = ippNewRequest (CUPS_ADD_CLASS);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
 
@@ -1093,7 +1020,6 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
     // Trim the printer from the list.
     ipp_attribute_t *newlist;
     int j;
-    request->request.op.operation_id = CUPS_ADD_CLASS;
     printers = ippFindAttribute (answer, "member-uris", IPP_TAG_URI);
     newlist = ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_URI,
 			     "member-uris", printers->num_values - 1,

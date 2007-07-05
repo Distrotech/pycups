@@ -31,6 +31,20 @@
 #warning Compiling against CUPS 1.1.x
 #define CUPS_ADD_MODIFY_PRINTER CUPS_ADD_PRINTER
 #define CUPS_ADD_MODIFY_CLASS CUPS_ADD_CLASS
+
+static ipp_t *
+ippNewRequest (ipp_op_t op)
+{
+  ipp_t *request = ippNew ();
+  cups_lang_t *language = cupsLangDefault ();
+  request->request.op.operation_id = op;
+  request->request.op.request_id = 1;
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
+		"attributes-charset", NULL, cupsLangEncoding (language));
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
+		"attributes-natural-language", NULL, language->language);
+  return request;
+}
 #endif
 
 #endif /* HAVE_CUPSMODULE_H */

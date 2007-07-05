@@ -1,5 +1,16 @@
 2006-02-27  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (do_printer_request): Use ippNewRequest().
+	(Connection_getPrinters): Likewise.
+	(Connection_getClasses): Likewise.
+	(Connection_getPPDs): Likewise.
+	(add_modify_printer_request): Likewise.
+	(Connection_addPrinterToClass): Likewise.
+	(Connection_deletePrinterFromClass): Likewise.
+
+	* cupsmodule.h (ippNewRequest): Implemented, for compatibility
+	with CUPS 1.1.x.
+
 	* cupsconnection.c (get_printer_attributes_request): New function.
 	(build_list_from_attribute_strings): New function.
 	(Connection_getPrinterAttributes): Implemented.
