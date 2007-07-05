@@ -1,3 +1,8 @@
+2006-11-10  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getJobs): New method.
+	(Connection_cancelJob): New method.
+
 2006-11-02  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Version 1.9.14.

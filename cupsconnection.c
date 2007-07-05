@@ -560,6 +560,121 @@ Connection_getDevices (Connection *self)
 }
 
 static PyObject *
+Connection_getJobs (Connection *self)
+{
+  PyObject *result;
+  ipp_t *request = ippNewRequest(IPP_GET_JOBS), *answer;
+  ipp_attribute_t *attr;
+  const char *attributes[] = {
+	  "job-id",
+	  "job-name",
+	  "job-k-octets",
+	  "job-printer-uri",
+	  "job-originating-user-name",
+  };
+
+  ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
+		 "requested-attributes",
+		 sizeof (attributes) / sizeof (attributes[0]),
+		 NULL, attributes);
+
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri",
+		NULL, "ipp://localhost/jobs/");
+
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD, "which-jobs",
+		NULL, "not-completed");
+
+  answer = cupsDoRequest (self->http, request, "/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  result = PyDict_New ();
+  for (attr = answer->attrs; attr; attr = attr->next) {
+    PyObject *dict;
+    int job_id = -1;
+
+    while (attr && attr->group_tag != IPP_TAG_JOB)
+      attr = attr->next;
+
+    if (!attr)
+      break;
+
+    dict = PyDict_New ();
+    for (; attr && attr->group_tag == IPP_TAG_JOB;
+	 attr = attr->next) {
+      PyObject *val = NULL;
+
+      if (!strcmp (attr->name, "job-id") &&
+	  attr->value_tag == IPP_TAG_INTEGER)
+	job_id = attr->values[0].integer;
+      else if (!strcmp (attr->name, "job-k-octets") &&
+	       attr->value_tag == IPP_TAG_INTEGER)
+	val = PyInt_FromLong (attr->values[0].integer);
+      else if ((!strcmp (attr->name, "job-name") &&
+		attr->value_tag == IPP_TAG_NAME) ||
+	       (!strcmp (attr->name, "job-originating-user-name") &&
+		attr->value_tag == IPP_TAG_NAME) ||
+	       (!strcmp (attr->name, "job-printer-uri") &&
+		attr->value_tag == IPP_TAG_URI))
+	val = PyString_FromString (attr->values[0].string.text);
+
+      if (val) {
+	PyDict_SetItemString (dict, attr->name, val);
+	Py_DECREF (val);
+      }
+    }
+
+    if (job_id != -1) {
+      PyObject *job_obj = PyInt_FromLong (job_id);
+      PyDict_SetItem (result, job_obj, dict);
+      Py_DECREF (job_obj);
+    }
+
+    Py_DECREF (dict);
+
+    if (!attr)
+      break;
+  }
+
+  ippDelete (answer);
+  return result;
+}
+
+static PyObject *
+Connection_cancelJob (Connection *self, PyObject *args)
+{
+  ipp_t *request, *answer;
+  int job_id;
+  char uri[1024];
+  if (!PyArg_ParseTuple (args, "i", &job_id))
+    return NULL;
+
+  request = ippNewRequest(IPP_CANCEL_JOB);
+  snprintf (uri, sizeof (uri), "ipp://localhost/jobs/%d", job_id);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri", NULL, uri);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		"requesting-user-name", NULL, cupsUser ());
+  answer = cupsDoRequest (self->http, request, "/jobs/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
+static PyObject *
 Connection_getFile (Connection *self, PyObject *args)
 {
   const char *resource, *filename;
@@ -1815,6 +1930,15 @@ PyMethodDef Connection_methods[] =
       (PyCFunction) Connection_getDevices, METH_NOARGS,
       "Returns a dict, indexed by device URI, of dicts representing\n"
       "devices, indexed by attribute." },
+
+    { "getJobs",
+      (PyCFunction) Connection_getJobs, METH_NOARGS,
+      "REturns a dict, indexed by job ID, of dicts representing job\n"
+      "attributes." },
+
+    { "cancelJob",
+      (PyCFunction) Connection_cancelJob, METH_VARARGS,
+      "cancelJob(jobid) -> None" },
 
     { "getFile",
       (PyCFunction) Connection_getFile, METH_VARARGS,
