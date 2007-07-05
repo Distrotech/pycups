@@ -102,11 +102,12 @@ do_printer_request (Connection *self, PyObject *args, ipp_op_t op)
   const char *name;
   char uri[HTTP_MAX_URI];
   cups_lang_t *language;
-  ipp_t *request = ippNew(), *answer;
+  ipp_t *request, *answer;
 
   if (!PyArg_ParseTuple (args, "s", &name))
     return NULL;
 
+  request = ippNew ();
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
   request->request.op.operation_id = op;
   request->request.op.request_id = 1;
@@ -127,6 +128,7 @@ do_printer_request (Connection *self, PyObject *args, ipp_op_t op)
     return NULL;
   }
 
+  ippDelete (answer);
   Py_INCREF (Py_None);
   ret = Py_None;
   return ret;
@@ -439,7 +441,7 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   const char *ppdname = NULL;
   char uri[HTTP_MAX_URI];
   cups_lang_t *language;
-  ipp_t *request = ippNew(), *answer;
+  ipp_t *request, *answer;
   static char *kwlist[] = { "name", "filename", "ppdname", NULL };
 
   if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|ss", kwlist,
@@ -452,6 +454,7 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
     return NULL;
   }
 
+  request = ippNew ();
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
   request->request.op.operation_id = CUPS_ADD_MODIFY_PRINTER;
   request->request.op.request_id = 1;
@@ -480,6 +483,7 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
     return NULL;
   }
 
+  ippDelete (answer);
   Py_INCREF (Py_None);
   ret = Py_None;
   return ret;
@@ -493,11 +497,12 @@ Connection_setPrinterDevice (Connection *self, PyObject *args)
   const char *device_uri;
   char uri[HTTP_MAX_URI];
   cups_lang_t *language;
-  ipp_t *request = ippNew(), *answer;
+  ipp_t *request, *answer;
 
   if (!PyArg_ParseTuple (args, "ss", &name, &device_uri))
     return NULL;
 
+  request = ippNew ();
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
   request->request.op.operation_id = CUPS_ADD_PRINTER;
   request->request.op.request_id = 1;
@@ -520,6 +525,7 @@ Connection_setPrinterDevice (Connection *self, PyObject *args)
     return NULL;
   }
 
+  ippDelete (answer);
   Py_INCREF (Py_None);
   ret = Py_None;
   return ret;
