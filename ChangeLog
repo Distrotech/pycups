@@ -1,0 +1,5 @@
+2006-02-21  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getPrinters): Do this inline
+	instead of in a separate function.
+
