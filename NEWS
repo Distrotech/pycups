@@ -4,6 +4,8 @@ NEWS
 New since 1.9.2:
 
 * cups.PPD.* now convert from the PPD character set encoding
+* cups.Connection.setPrinterPublished is now renamed to
+  cups.Connection.setPrinterShared
 
 New since 1.9.1:
 

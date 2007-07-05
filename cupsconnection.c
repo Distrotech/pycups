@@ -728,7 +728,7 @@ Connection_setPrinterLocation (Connection *self, PyObject *args)
 }
 
 static PyObject *
-Connection_setPrinterPublished (Connection *self, PyObject *args)
+Connection_setPrinterShared (Connection *self, PyObject *args)
 {
   const char *name;
   int sharing;
@@ -1215,9 +1215,9 @@ PyMethodDef Connection_methods[] =
       (PyCFunction) Connection_setPrinterLocation, METH_VARARGS,
       "setPrinterLocation(name, info) -> None" },
 
-    { "setPrinterPublished",
-      (PyCFunction) Connection_setPrinterPublished, METH_VARARGS,
-      "setPrinterPublished(name, bool) -> None" },
+    { "setPrinterShared",
+      (PyCFunction) Connection_setPrinterShared, METH_VARARGS,
+      "setPrinterShared(name, bool) -> None\n\nCUPS 1.2 only" },
 
     { "setPrinterJobSheets",
       (PyCFunction) Connection_setPrinterJobSheets, METH_VARARGS,
