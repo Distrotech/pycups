@@ -4,6 +4,9 @@ NEWS
 New since 1.9.8:
 
 * cups.Connection.addPrinterOptionDefault() now supports lists and tuples
+* cups.Connection.getPrinterAttributes() now handles multi-valued default
+  options as lists
+* cups.IPP_FINISHINGS_* constants
 
 New since 1.9.7:
 
