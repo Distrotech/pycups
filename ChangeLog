@@ -3,6 +3,7 @@
 	* cupsconnection.c (get_printer_attributes_request): New function.
 	(build_list_from_attribute_strings): New function.
 	(Connection_getPrinterAttributes): Implemented.
+	(Connection_setPrinterJobSheets): Implemented.
 
 2006-02-23  Tim Waugh  <twaugh@redhat.com>
 
