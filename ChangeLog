@@ -1,3 +1,8 @@
+2006-03-22  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsmodule.c (do_model_compare): Fix comparisons where one
+	string is a substring of the other.
+
 2006-03-20  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_setPrinterShared): Handle classes.
