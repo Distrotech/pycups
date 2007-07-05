@@ -42,7 +42,15 @@ set_http_error (http_status_t status)
 static void
 set_ipp_error (ipp_status_t status)
 {
-  PyObject *v = Py_BuildValue ("(is)", status, cupsLastErrorString ());
+  const char *last_error;
+
+#ifdef HAVE_CUPS_1_2
+  last_error = cupsLastErrorString ();
+#else
+  last_error = "(not built against cups-1.2.x so no description)";
+#endif
+
+  PyObject *v = Py_BuildValue ("(is)", status, last_error);
   if (v != NULL) {
     PyErr_SetObject (IPPError, v);
     Py_DECREF (v);

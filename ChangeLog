@@ -4,6 +4,8 @@
 	(do_printer_request): Fixed ipp_t leak.
 	(Connection_addPrinter): Likewise.
 	(Connection_setPrinterDevice): Likewise.
+	(set_ipp_error): Make use of cupsLastErrorString conditional on
+	CUPS 1.2.
 
 	* cupsconnection.c (Connection_putFile): Fixed ipp_t leak.
 	(set_ipp_error): "i" -> "(is)" for IPPError.
