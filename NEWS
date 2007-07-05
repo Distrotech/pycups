@@ -1,6 +1,15 @@
 NEWS
 ----
 
+New in 1.9.15:
+
+* cups.Connection.getJobs()
+* cups.Connection.cancelJob()
+
+New in 1.9.13:
+
+* cups.HTTP_FORBIDDEN
+
 New since 1.9.10:
 
 * cups.HTTP_* status codes
