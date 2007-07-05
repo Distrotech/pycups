@@ -1,3 +1,8 @@
+2006-03-16  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_addPrinter): Initialise local ppd
+	variable.
+
 2006-03-14  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Support DESTDIR.

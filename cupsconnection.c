@@ -523,7 +523,7 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   const char *info = NULL;
   const char *location = NULL;
   const char *device = NULL;
-  PyObject *ppd;
+  PyObject *ppd = NULL;
   ipp_t *request, *answer;
   int ppds_specified = 0;
   static char *kwlist[] = { "name", "filename", "ppdname", "info",
