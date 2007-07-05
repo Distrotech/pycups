@@ -1093,22 +1093,10 @@ Connection_setPrinterUsersDenied (Connection *self, PyObject *args)
   return do_requesting_user_names (self, args, "requesting-user-name-denied");
 }
 
-static PyObject *
-Connection_addPrinterOptionDefault (Connection *self, PyObject *args)
+static char *
+PyObject_to_string (PyObject *pyvalue)
 {
-  const char *name;
-  const char *option;
-  char *value;
-  PyObject *pyvalue;
-  const char *const suffix = "-default";
-  char *opt;
-  ipp_t *request, *answer;
-  int i;
-  size_t optionlen;
-
-  if (!PyArg_ParseTuple (args, "ssO", &name, &option, &pyvalue))
-    return NULL;
-
+  char *value = "{unknown type}";
   if (PyString_Check (pyvalue) ||
       PyUnicode_Check (pyvalue)) {
     value = PyString_AsString (pyvalue);
@@ -1122,10 +1110,25 @@ Connection_addPrinterOptionDefault (Connection *self, PyObject *args)
     double v = PyFloat_AsDouble (pyvalue);
     value = alloca (100);
     snprintf (value, 100, "%f", v);
-  } else {
-    PyErr_SetString (PyExc_TypeError, "cannot convert arg to string");
-    return NULL;
   }
+
+  return strdup (value);
+}
+
+static PyObject *
+Connection_addPrinterOptionDefault (Connection *self, PyObject *args)
+{
+  const char *name;
+  const char *option;
+  PyObject *pyvalue;
+  const char *const suffix = "-default";
+  char *opt;
+  ipp_t *request, *answer;
+  int i;
+  size_t optionlen;
+
+  if (!PyArg_ParseTuple (args, "ssO", &name, &option, &pyvalue))
+    return NULL;
 
   optionlen = strlen (option);
   opt = malloc (optionlen + sizeof (suffix) + 1);
@@ -1133,8 +1136,20 @@ Connection_addPrinterOptionDefault (Connection *self, PyObject *args)
   sprintf (opt + optionlen, suffix);
   request = add_modify_printer_request (name);
   for (i = 0; i < 2; i++) {
-    ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
-		  opt, NULL, value);
+    if (PySequence_Check (pyvalue)) {
+      ipp_attribute_t *attr;
+      int len = PySequence_Size (pyvalue);
+      int j;
+      attr = ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
+			    opt, len, NULL, NULL);
+      for (j = 0; j < len; j++) {
+	PyObject *each = PySequence_GetItem (pyvalue, j);
+	attr->values[j].string.text = PyObject_to_string (each);
+      }
+    } else
+      ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
+		    opt, NULL, PyObject_to_string (pyvalue));
+
     answer = cupsDoRequest (self->http, request, "/admin/");
     if (PyErr_Occurred ()) {
       if (answer)
