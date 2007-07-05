@@ -2068,9 +2068,15 @@ Connection_adminGetServerSettings (Connection *self)
 static PyObject *
 Connection_adminSetServerSettings (Connection *self, PyObject *args)
 {
+#if PY_VERSION_HEX < 0x02050000
+#define DICT_POS_TYPE int
+#else
+#define DICT_POS_TYPE Py_ssize_t
+#endif
+
   PyObject *dict, *key, *val;
   int num_settings = 0;
-  int pos = 0;
+  DICT_POS_TYPE pos = 0;
   cups_option_t *settings = NULL;
   if (!PyArg_ParseTuple (args, "O", &dict))
     return NULL;

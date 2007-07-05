@@ -1,5 +1,9 @@
 2007-06-08  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_adminSetServerSettings): In Python
+	2.5, PyDict_Next() uses a ssize_t-like type for the position, not
+	int (bug #239805).
+
 	* cupsconnection.c (Connection_getClasses): Fixed typo in
 	debugging output.
 
