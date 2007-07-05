@@ -1919,10 +1919,12 @@ Connection_adminSetServerSettings (Connection *self, PyObject *args)
   }
 
   if (!_cupsAdminSetServerSettings (self->http, num_settings, settings)) {
+    cupsFreeOptions (num_settings, settings);
     PyErr_SetString (PyExc_RuntimeError, "Failed to set settings");
     return NULL;
   }
 
+  cupsFreeOptions (num_settings, settings);
   Py_INCREF (Py_None);
   return Py_None;
 }
