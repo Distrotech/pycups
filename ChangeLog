@@ -1,5 +1,9 @@
 2006-02-21  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsppd.c (Group_getOptions): Return a list, not a dict, to
+	preserve the order of options.
+	* test.py (test_cups_module): Updated.
+
 	* cupsconnection.c (Connection_addPrinter): Allow adding a printer
 	from a ppd-name instead of a filename.
 

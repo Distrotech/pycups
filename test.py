@@ -29,8 +29,6 @@ def test_cups_module ():
 	groups = ppd.optionGroups
 	for group in groups:
 		for opt in group.options:
-			print opt
-			option = group.options[opt]
-			print map (lambda x: x["text"], option.choices)
+			print map (lambda x: x["text"], opt.choices)
 
 test_cups_module ()

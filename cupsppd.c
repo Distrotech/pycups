@@ -483,7 +483,7 @@ Group_getName (Group *self, void *closure)
 static PyObject *
 Group_getOptions (Group *self, void *closure)
 {
-  PyObject *options = PyDict_New ();
+  PyObject *options = PyList_New (0);
   ppd_option_t *option;
   int i;
 
@@ -502,7 +502,7 @@ Group_getOptions (Group *self, void *closure)
     opt->option = option;
     opt->ppd = self->ppd;
     Py_INCREF (self->ppd);
-    PyDict_SetItemString (options, option->keyword, (PyObject *) opt);
+    PyList_Append (options, (PyObject *) opt);
   }
 
   return options;
