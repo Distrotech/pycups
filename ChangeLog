@@ -2,6 +2,7 @@
 
 	* cupsconnection.c (Connection_addPrinterToClass): Implemented.
 	(Connection_deletePrinterFromClass): Implemented.
+	(Connection_addPrinter): Added 'info' and 'location' keywords.
 
 	* cupsmodule.c (initcups): Added printer states constants.
 

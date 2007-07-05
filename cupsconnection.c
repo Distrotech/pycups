@@ -440,13 +440,17 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   const char *name;
   const char *ppdfile = NULL;
   const char *ppdname = NULL;
+  const char *info = NULL;
+  const char *location = NULL;
   char uri[HTTP_MAX_URI];
   cups_lang_t *language;
   ipp_t *request, *answer;
-  static char *kwlist[] = { "name", "filename", "ppdname", NULL };
+  static char *kwlist[] = { "name", "filename", "ppdname", "info",
+			    "location", NULL };
 
-  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|ss", kwlist,
-				    &name, &ppdfile, &ppdname))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|ssss", kwlist,
+				    &name, &ppdfile, &ppdname, &info,
+				    &location))
     return NULL;
 
   if (ppdfile && ppdname) {
@@ -467,13 +471,22 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, uri);
 
-  if (ppdname) {
+  if (ppdname)
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		  "ppd-name", NULL, ppdname);
-    answer = cupsDoRequest (self->http, request, "/admin/");
-  } else {
+
+  if (info)
+    ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
+		  "printer-info", NULL, info);
+
+  if (location)
+    ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
+		  "printer-location", NULL, location);
+  
+  if (ppdfile)
     answer = cupsDoFileRequest (self->http, request, "/admin/", ppdfile);
-  }
+  else
+    answer = cupsDoRequest (self->http, request, "/admin/");
 
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
@@ -793,7 +806,8 @@ PyMethodDef Connection_methods[] =
 
     { "addPrinter",
       (PyCFunction) Connection_addPrinter, METH_VARARGS | METH_KEYWORDS,
-      "addPrinter(name, filename=None, ppdname=None) -> None" },
+      "addPrinter(name, filename=None, ppdname=None, info=None,\n"
+      "location=None) -> None" },
 
     { "deletePrinter",
       (PyCFunction) Connection_deletePrinter, METH_VARARGS,
