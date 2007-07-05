@@ -999,7 +999,13 @@ PyMethodDef Connection_methods[] =
     { "addPrinter",
       (PyCFunction) Connection_addPrinter, METH_VARARGS | METH_KEYWORDS,
       "addPrinter(name, filename=None, ppdname=None, info=None,\n"
-      "location=None, device=None, ppd=None) -> None" },
+      "location=None, device=None, ppd=None) -> None\n"
+      "filename: local filename of PPD file\n"
+      "ppdname: filename from cups.Connection.getPPDs()\n"
+      "info: info string\n"
+      "description: description string\n"
+      "device: device URI string\n"
+      "ppd: cups.PPD object" },
 
     { "deletePrinter",
       (PyCFunction) Connection_deletePrinter, METH_VARARGS,
