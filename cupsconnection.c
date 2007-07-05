@@ -106,7 +106,6 @@ Connection_dealloc (Connection *self)
 static PyObject *
 do_printer_request (Connection *self, PyObject *args, ipp_op_t op)
 {
-  PyObject *ret;
   const char *name;
   char uri[HTTP_MAX_URI];
   cups_lang_t *language;
@@ -138,8 +137,7 @@ do_printer_request (Connection *self, PyObject *args, ipp_op_t op)
 
   ippDelete (answer);
   Py_INCREF (Py_None);
-  ret = Py_None;
-  return ret;
+  return Py_None;
 }
 
 static PyObject *
@@ -401,7 +399,6 @@ Connection_getDevices (Connection *self)
 static PyObject *
 Connection_getFile (Connection *self, PyObject *args)
 {
-  PyObject *ret;
   const char *resource, *filename;
   http_status_t status;
 
@@ -415,14 +412,12 @@ Connection_getFile (Connection *self, PyObject *args)
   }
 
   Py_INCREF (Py_None);
-  ret = Py_None;
-  return ret;
+  return Py_None;
 }
 
 static PyObject *
 Connection_putFile (Connection *self, PyObject *args)
 {
-  PyObject *ret;
   const char *resource, *filename;
   http_status_t status;
 
@@ -436,14 +431,12 @@ Connection_putFile (Connection *self, PyObject *args)
   }
 
   Py_INCREF (Py_None);
-  ret = Py_None;
-  return ret;
+  return Py_None;
 }
 
 static PyObject *
 Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
 {
-  PyObject *ret;
   const char *name;
   const char *ppdfile = NULL;
   const char *ppdname = NULL;
@@ -493,14 +486,12 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
 
   ippDelete (answer);
   Py_INCREF (Py_None);
-  ret = Py_None;
-  return ret;
+  return Py_None;
 }
 
 static PyObject *
 Connection_setPrinterDevice (Connection *self, PyObject *args)
 {
-  PyObject *ret;
   const char *name;
   const char *device_uri;
   char uri[HTTP_MAX_URI];
@@ -535,8 +526,7 @@ Connection_setPrinterDevice (Connection *self, PyObject *args)
 
   ippDelete (answer);
   Py_INCREF (Py_None);
-  ret = Py_None;
-  return ret;
+  return Py_None;
 }
 
 static PyObject *
