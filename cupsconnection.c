@@ -774,6 +774,77 @@ Connection_cancelJob (Connection *self, PyObject *args)
 }
 
 static PyObject *
+Connection_setJobHoldUntil (Connection *self, PyObject *args)
+{
+  ipp_t *request, *answer;
+  int job_id;
+  char *job_hold_until = NULL;
+  char uri[1024];
+  cups_option_t *options = NULL;
+  int num_options = 0;
+  if (!PyArg_ParseTuple (args, "is", &job_id, &job_hold_until))
+    return NULL;
+
+  debugprintf ("-> Connection_setJobHoldUntil(%d,%s)\n",
+	       job_id, job_hold_until);
+  request = ippNewRequest(IPP_SET_JOB_ATTRIBUTES);
+  snprintf (uri, sizeof (uri), "ipp://localhost/jobs/%d", job_id);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri", NULL, uri);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		"requesting-user-name", NULL, cupsUser ());
+  num_options = cupsAddOption ("job-hold-until", job_hold_until,
+			       num_options, &options);
+  cupsEncodeOptions (request, num_options, options);
+  debugprintf ("cupsDoRequest(\"/jobs/\")\n");
+  answer = cupsDoRequest (self->http, request, "/jobs/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    debugprintf ("<- Connection_setJobHoldUntil() (error)\n");
+    return NULL;
+  }
+
+  Py_INCREF (Py_None);
+  debugprintf ("<- Connection_setJobHoldUntil() = None\n");
+  return Py_None;
+}
+
+static PyObject *
+Connection_restartJob (Connection *self, PyObject *args)
+{
+  ipp_t *request, *answer;
+  int job_id;
+  char uri[1024];
+  if (!PyArg_ParseTuple (args, "i", &job_id))
+    return NULL;
+
+  debugprintf ("-> Connection_restartJob(%d)\n", job_id);
+  request = ippNewRequest(IPP_RESTART_JOB);
+  snprintf (uri, sizeof (uri), "ipp://localhost/jobs/%d", job_id);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri", NULL, uri);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		"requesting-user-name", NULL, cupsUser ());
+  debugprintf ("cupsDoRequest(\"/jobs/\")\n");
+  answer = cupsDoRequest (self->http, request, "/jobs/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    debugprintf ("<- Connection_restartJob() (error)\n");
+    return NULL;
+  }
+
+  Py_INCREF (Py_None);
+  debugprintf ("<- Connection_restartJob() = None\n");
+  return Py_None;
+}
+
+static PyObject *
 Connection_getFile (Connection *self, PyObject *args)
 {
   const char *resource, *filename;
@@ -2049,6 +2120,14 @@ PyMethodDef Connection_methods[] =
     { "cancelJob",
       (PyCFunction) Connection_cancelJob, METH_VARARGS,
       "cancelJob(jobid) -> None" },
+
+    { "setJobHoldUntil",
+      (PyCFunction) Connection_setJobHoldUntil, METH_VARARGS,
+      "setJobHoldUntil(jobid, job_hold_until) -> None" },
+    
+    { "restartJob",
+      (PyCFunction) Connection_restartJob, METH_VARARGS,
+      "restartJob(jobid) -> None" },
 
     { "getFile",
       (PyCFunction) Connection_getFile, METH_VARARGS,

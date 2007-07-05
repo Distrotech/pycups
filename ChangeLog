@@ -9,6 +9,8 @@
 	job-media-sheets-completed attributes.
 	(Connection_getJobs): New optional parameters 'which_jobs' and
 	'my_jobs'.
+	(Connection_setJobHoldUntil): New method.
+	(Connection_restartJob): New Method.
 
 2007-01-03  Tim Waugh  <twaugh@redhat.com>
 
