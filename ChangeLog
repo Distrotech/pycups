@@ -1,5 +1,9 @@
 2006-03-17  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsmodule.c (initcups): Added IPP_MAX_NAME.
+
+2006-03-17  Tim Waugh  <twaugh@redhat.com>
+
 	* Makefile: Version 1.9.4.
 
 2006-03-16  Tim Waugh  <twaugh@redhat.com>
