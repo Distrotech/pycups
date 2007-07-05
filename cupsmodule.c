@@ -323,6 +323,14 @@ initcups (void)
   PyModule_AddObject (m, "Attribute",
 		      (PyObject *)&cups_AttributeType);
 
+  // Dest type
+  cups_DestType.tp_new = PyType_GenericNew;
+  if (PyType_Ready (&cups_DestType) < 0)
+    return;
+
+  PyModule_AddObject (m, "Dest",
+		      (PyObject *)&cups_DestType);
+
   // Constants
 
 #define INT_CONSTANT(name)					\

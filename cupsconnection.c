@@ -34,6 +34,15 @@ typedef struct
   http_t *http;
 } Connection;
 
+typedef struct
+{
+  PyObject_HEAD
+  int is_default;
+  int num_options;
+  char **name;
+  char **value;
+} Dest;
+
 static void
 set_http_error (http_status_t status)
 {
@@ -152,21 +161,27 @@ Connection_getDests (Connection *self)
 
   // Create a dict indexed by (name,instance)
   for (i = 0; i < num_dests; i++) {
-    int j;
-    PyObject *pydest = PyDict_New (), *pyoptions = PyDict_New ();
+    PyObject *largs = Py_BuildValue ("()");
+    PyObject *lkwlist = Py_BuildValue ("{}");
+    Dest *destobj = (Dest *) PyType_GenericNew (&cups_DestType,
+						largs, lkwlist);
+    Py_DECREF (largs);
+    Py_DECREF (lkwlist);
     PyObject *nameinstance = Py_BuildValue ("(ss)",
 					    dests[i].name,
 					    dests[i].instance);
-    PyDict_SetItemString (pydest, "is_default",
-			  PyBool_FromLong (dests[i].is_default));
+    int j;
+
+    destobj->is_default = dests[i].is_default;
+    destobj->num_options = dests[i].num_options;
+    destobj->name = malloc (dests[i].num_options * sizeof (char *));
+    destobj->value = malloc (dests[i].num_options * sizeof (char *));
     for (j = 0; j < dests[i].num_options; j++) {
-      cups_option_t option = dests[i].options[j];
-      PyDict_SetItemString (pyoptions, option.name,
-			    PyString_FromString (option.value));
+      destobj->name[j] = strdup (dests[i].options[j].name);
+      destobj->value[j] = strdup (dests[i].options[j].value);
     }
 
-    PyDict_SetItemString (pydest, "options", pyoptions);
-    PyDict_SetItem (pydests, nameinstance, pydest);
+    PyDict_SetItem (pydests, nameinstance, (PyObject *) destobj);
   }
 
   cupsFreeDests (num_dests, dests);
@@ -1732,4 +1747,118 @@ PyTypeObject cups_ConnectionType =
     (initproc)Connection_init, /* tp_init */
     0,                         /* tp_alloc */
     Connection_new,            /* tp_new */
+  };
+
+//////////
+// Dest //
+//////////
+
+static PyObject *
+Dest_new (PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+  Dest *self;
+  self = (Dest *) type->tp_alloc (type, 0);
+  return (PyObject *) self;
+}
+
+static int
+Dest_init (Dest *self, PyObject *args, PyObject *kwds)
+{    
+  self->num_options = 0;
+  return 0;
+}
+
+static void
+Dest_dealloc (Dest *self)
+{
+  if (self->num_options) {
+    int i;
+    for (i = 0; i < self->num_options; i++) {
+      free (self->name[i]);
+      free (self->value[i]);
+    }
+
+    free (self->name);
+    free (self->value);
+    self->num_options = 0;
+  }
+  self->ob_type->tp_free ((PyObject *) self);
+}
+
+//////////
+// Dest // ATTRIBUTES
+//////////
+
+static PyObject *
+Dest_getIsDefault (Dest *self, void *closure)
+{
+  return PyBool_FromLong (self->is_default);
+}
+
+static PyObject *
+Dest_getOptions (Dest *self, void *closure)
+{
+  PyObject *pyoptions = PyDict_New ();
+  int i;
+  for (i = 0; i < self->num_options; i++)
+    PyDict_SetItemString (pyoptions, self->name[i],
+			  PyString_FromString (self->value[i]));
+
+  return pyoptions;
+}
+
+PyGetSetDef Dest_getseters[] =
+  {
+    { "is_default",
+      (getter) Dest_getIsDefault, (setter) NULL,
+      "is_default", NULL },
+  
+    { "options",
+      (getter) Dest_getOptions, (setter) NULL,
+      "options", NULL },
+
+    { NULL }
+  };
+
+PyTypeObject cups_DestType =
+  {
+    PyObject_HEAD_INIT(NULL)
+    0,                         /*ob_size*/
+    "cups.Dest",               /*tp_name*/
+    sizeof(Dest),              /*tp_basicsize*/
+    0,                         /*tp_itemsize*/
+    (destructor)Dest_dealloc,  /*tp_dealloc*/
+    0,                         /*tp_print*/
+    0,                         /*tp_getattr*/
+    0,                         /*tp_setattr*/
+    0,                         /*tp_compare*/
+    0,                         /*tp_repr*/
+    0,                         /*tp_as_number*/
+    0,                         /*tp_as_sequence*/
+    0,                         /*tp_as_mapping*/
+    0,                         /*tp_hash */
+    0,                         /*tp_call*/
+    0,                         /*tp_str*/
+    0,                         /*tp_getattro*/
+    0,                         /*tp_setattro*/
+    0,                         /*tp_as_buffer*/
+    Py_TPFLAGS_DEFAULT,        /*tp_flags*/
+    "CUPS destination",        /* tp_doc */
+    0,                         /* tp_traverse */
+    0,                         /* tp_clear */
+    0,                         /* tp_richcompare */
+    0,                         /* tp_weaklistoffset */
+    0,                         /* tp_iter */
+    0,                         /* tp_iternext */
+    0,                         /* tp_methods */
+    0,                         /* tp_members */
+    Dest_getseters,            /* tp_getset */
+    0,                         /* tp_base */
+    0,                         /* tp_dict */
+    0,                         /* tp_descr_get */
+    0,                         /* tp_descr_set */
+    0,                         /* tp_dictoffset */
+    (initproc)Dest_init,       /* tp_init */
+    0,                         /* tp_alloc */
+    Dest_new,                  /* tp_new */
   };

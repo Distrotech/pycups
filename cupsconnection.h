@@ -24,6 +24,7 @@
 
 extern PyMethodDef Connection_methods[];
 extern PyTypeObject cups_ConnectionType;
+extern PyTypeObject cups_DestType;
 
 extern PyObject *HTTPError;
 extern PyObject *IPPError;
