@@ -1,5 +1,8 @@
 2006-03-22  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_getPPDs): Include ppd-make
+	attribute.
+
 	* cupsmodule.c (do_model_compare): Fix comparisons where one
 	string is a substring of the other.
 

@@ -377,6 +377,8 @@ Connection_getPPDs (Connection *self)
 		attr->value_tag == IPP_TAG_LANGUAGE) ||
 	       (!strcmp (attr->name, "ppd-make-and-model") &&
 		attr->value_tag == IPP_TAG_TEXT) ||
+	       (!strcmp (attr->name, "ppd-make") &&
+		attr->value_tag == IPP_TAG_TEXT) ||
 	       (!strcmp (attr->name, "ppd-device-id") &&
 		attr->value_tag == IPP_TAG_TEXT))
 	val = PyString_FromString (attr->values[0].string.text);
