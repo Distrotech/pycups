@@ -1204,6 +1204,36 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
 }
 
 static PyObject *
+Connection_deleteClass (Connection *self, PyObject *args)
+{
+  const char *classname;
+  char classuri[HTTP_MAX_URI];
+  ipp_t *request, *answer;
+
+  if (!PyArg_ParseTuple (args, "s", &classname))
+    return NULL;
+
+  request = ippNewRequest (CUPS_DELETE_CLASS);
+  snprintf (classuri, sizeof (classuri),
+	    "ipp://localhost/classes/%s", classname);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
+		"printer-uri", NULL, classuri);
+  answer = cupsDoRequest (self->http, request, "/admin/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  ippDelete (answer);
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
+static PyObject *
 Connection_enablePrinter (Connection *self, PyObject *args)
 {
   return do_printer_request (self, args, IPP_RESUME_PRINTER);
@@ -1366,6 +1396,10 @@ PyMethodDef Connection_methods[] =
       (PyCFunction) Connection_deletePrinterFromClass, METH_VARARGS,
       "deletePrinterFromClass(name, class) -> None\n\n"
       "If the class would be left empty, it is removed." },
+
+    { "deleteClass",
+      (PyCFunction) Connection_deleteClass, METH_VARARGS,
+      "deleteClass(class) -> None" },
 
     { "setDefault",
       (PyCFunction) Connection_setDefault, METH_VARARGS,

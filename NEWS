@@ -5,6 +5,7 @@ New since 1.9.3:
 
 * cups.Connection.enablePrinter() uses IPP_PAUSE_PRINTER
 * cups.Connection.disablePrinter() uses IPP_RESUME_PRINTER
+* cups.Connection.deleteClass()
 
 New since 1.9.2:
 
