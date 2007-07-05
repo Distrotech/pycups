@@ -1,3 +1,8 @@
+2006-11-30  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getPrinters): Include
+	printer-state-message attribute.
+
 2006-11-29  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_getJobs): Include job-priority
