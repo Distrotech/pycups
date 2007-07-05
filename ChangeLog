@@ -1,6 +1,11 @@
 2006-03-20  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_setPrinterShared): Handle classes.
+	(Connection_setPrinterJobSheets): Likewise.
+	(Connection_setPrinterErrorPolicy): Likewise.
+	(Connection_setPrinterOpPolicy): Likewise.
+	(do_requesting_user_names): Likewise.
+	(Connection_getPrinterAttributes): Likewise.
 
 2006-03-17  Tim Waugh  <twaugh@redhat.com>
 

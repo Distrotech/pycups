@@ -676,24 +676,13 @@ Connection_setPrinterInfo (Connection *self, PyObject *args)
   const char *name;
   const char *info;
   ipp_t *request, *answer;
+  int i;
 
   if (!PyArg_ParseTuple (args, "ss", &name, &info))
     return NULL;
 
   request = add_modify_printer_request (name);
-  ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
-		"printer-info", NULL, info);
-  answer = cupsDoRequest (self->http, request, "/admin/");
-  if (PyErr_Occurred ()) {
-    if (answer)
-      ippDelete (answer);
-    return NULL;
-  }
-
-  if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
-    // Perhaps it's a class, not a printer.
-    ippDelete (answer);
-    request = add_modify_class_request (name);
+  for (i = 0; i < 2; i++) {
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		  "printer-info", NULL, info);
     answer = cupsDoRequest (self->http, request, "/admin/");
@@ -702,6 +691,12 @@ Connection_setPrinterInfo (Connection *self, PyObject *args)
 	ippDelete (answer);
       return NULL;
     }
+
+    if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
+      // Perhaps it's a class, not a printer.
+      ippDelete (answer);
+      request = add_modify_class_request (name);
+    } else break;
   }
 
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
@@ -724,24 +719,13 @@ Connection_setPrinterLocation (Connection *self, PyObject *args)
   const char *name;
   const char *location;
   ipp_t *request, *answer;
+  int i;
 
   if (!PyArg_ParseTuple (args, "ss", &name, &location))
     return NULL;
 
   request = add_modify_printer_request (name);
-  ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
-		"printer-location", NULL, location);
-  answer = cupsDoRequest (self->http, request, "/admin/");
-  if (PyErr_Occurred ()) {
-    if (answer)
-      ippDelete (answer);
-    return NULL;
-  }
-
-  if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
-    // Perhaps it's a class, not a printer.
-    ippDelete (answer);
-    request = add_modify_class_request (name);
+  for (i = 0; i < 2; i++) {
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		  "printer-location", NULL, location);
     answer = cupsDoRequest (self->http, request, "/admin/");
@@ -750,6 +734,12 @@ Connection_setPrinterLocation (Connection *self, PyObject *args)
 	ippDelete (answer);
       return NULL;
     }
+
+    if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
+      // Perhaps it's a class, not a printer.
+      ippDelete (answer);
+      request = add_modify_class_request (name);
+    } else break;
   }
 
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
@@ -772,23 +762,13 @@ Connection_setPrinterShared (Connection *self, PyObject *args)
   const char *name;
   int sharing;
   ipp_t *request, *answer;
+  int i;
 
   if (!PyArg_ParseTuple (args, "si", &name, &sharing))
     return NULL;
 
   request = add_modify_printer_request (name);
-  ippAddBoolean (request, IPP_TAG_OPERATION, "printer-is-shared", sharing);
-  answer = cupsDoRequest (self->http, request, "/admin/");
-  if (PyErr_Occurred ()) {
-    if (answer)
-      ippDelete (answer);
-    return NULL;
-  }
-
-  if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
-    // Perhaps it's a class, not a printer.
-    ippDelete (answer);
-    request = add_modify_class_request (name);
+  for (i = 0; i < 2; i++) {
     ippAddBoolean (request, IPP_TAG_OPERATION, "printer-is-shared", sharing);
     answer = cupsDoRequest (self->http, request, "/admin/");
     if (PyErr_Occurred ()) {
@@ -796,6 +776,12 @@ Connection_setPrinterShared (Connection *self, PyObject *args)
 	ippDelete (answer);
       return NULL;
     }
+
+    if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
+      // Perhaps it's a class, not a printer.
+      ippDelete (answer);
+      request = add_modify_class_request (name);
+    } else break;
   }
 
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
@@ -820,20 +806,29 @@ Connection_setPrinterJobSheets (Connection *self, PyObject *args)
   const char *end;
   ipp_t *request, *answer;
   ipp_attribute_t *a;
+  int i;
 
   if (!PyArg_ParseTuple (args, "sss", &name, &start, &end))
     return NULL;
 
   request = add_modify_printer_request (name);
-  a = ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
-		     "job-sheets-default", 2, NULL, NULL);
-  a->values[0].string.text = strdup (start);
-  a->values[1].string.text = strdup (end);
-  answer = cupsDoRequest (self->http, request, "/admin/");
-  if (PyErr_Occurred ()) {
-    if (answer)
+  for (i = 0; i < 2; i++) {
+    a = ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
+		       "job-sheets-default", 2, NULL, NULL);
+    a->values[0].string.text = strdup (start);
+    a->values[1].string.text = strdup (end);
+    answer = cupsDoRequest (self->http, request, "/admin/");
+    if (PyErr_Occurred ()) {
+      if (answer)
+	ippDelete (answer);
+      return NULL;
+    }
+
+    if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
       ippDelete (answer);
-    return NULL;
+      // Perhaps it's a class, not a printer.
+      request = add_modify_class_request (name);
+    } else break;
   }
 
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
@@ -856,18 +851,27 @@ Connection_setPrinterErrorPolicy (Connection *self, PyObject *args)
   const char *name;
   const char *policy;
   ipp_t *request, *answer;
+  int i;
 
   if (!PyArg_ParseTuple (args, "ss", &name, &policy))
     return NULL;
 
   request = add_modify_printer_request (name);
-  ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
-		"printer-error-policy", NULL, policy);
-  answer = cupsDoRequest (self->http, request, "/admin/");
-  if (PyErr_Occurred ()) {
-    if (answer)
+  for (i = 0; i < 2; i++) {
+    ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
+		  "printer-error-policy", NULL, policy);
+    answer = cupsDoRequest (self->http, request, "/admin/");
+    if (PyErr_Occurred ()) {
+      if (answer)
+	ippDelete (answer);
+      return NULL;
+    }
+
+    if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
       ippDelete (answer);
-    return NULL;
+      // Perhaps it's a class, not a printer.
+      request = add_modify_class_request (name);
+    } else break;
   }
 
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
@@ -890,18 +894,27 @@ Connection_setPrinterOpPolicy (Connection *self, PyObject *args)
   const char *name;
   const char *policy;
   ipp_t *request, *answer;
+  int i;
 
   if (!PyArg_ParseTuple (args, "ss", &name, &policy))
     return NULL;
 
   request = add_modify_printer_request (name);
-  ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
-		"printer-op-policy", NULL, policy);
-  answer = cupsDoRequest (self->http, request, "/admin/");
-  if (PyErr_Occurred ()) {
-    if (answer)
+  for (i = 0; i < 2; i++) {
+    ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
+		  "printer-op-policy", NULL, policy);
+    answer = cupsDoRequest (self->http, request, "/admin/");
+    if (PyErr_Occurred ()) {
+      if (answer)
+	ippDelete (answer);
+      return NULL;
+    }
+
+    if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
       ippDelete (answer);
-    return NULL;
+      // Perhaps it's a class, not a printer.
+      request = add_modify_class_request (name);
+    } else break;
   }
 
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
@@ -924,7 +937,7 @@ do_requesting_user_names (Connection *self, PyObject *args,
 {
   const char *name;
   PyObject *users;
-  int num_users, i;
+  int num_users, i, j;
   ipp_t *request, *answer;
   ipp_attribute_t *attr;
 
@@ -936,37 +949,45 @@ do_requesting_user_names (Connection *self, PyObject *args,
     return NULL;
   }
   request = add_modify_printer_request (name);
-  num_users = PyList_Size (users);
-  if (num_users) {
-    attr = ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
-			  requeststr, num_users, NULL, NULL);
-    for (i = 0; i < num_users; i++) {
-      PyObject *username = PyList_GetItem (users, i);
-      if (!PyString_Check (username)) {
-	int j;
-	PyErr_SetString (PyExc_TypeError, "String required");
-	for (j = 0; j < i; j++) {
-	  free (attr->values[j].string.text);
-	  attr->values[j].string.text = NULL;
+  for (i = 0; i < 2; i++) {
+    num_users = PyList_Size (users);
+    if (num_users) {
+      attr = ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
+			    requeststr, num_users, NULL, NULL);
+      for (j = 0; j < num_users; j++) {
+	PyObject *username = PyList_GetItem (users, j);
+	if (!PyString_Check (username)) {
+	  int k;
+	  PyErr_SetString (PyExc_TypeError, "String required");
+	  for (k = 0; k < j; k++) {
+	    free (attr->values[k].string.text);
+	    attr->values[k].string.text = NULL;
+	  }
+	  ippDelete (request);
+	  return NULL;
 	}
-	ippDelete (request);
-	return NULL;
+	attr->values[j].string.text = strdup (PyString_AsString (username));
       }
-      attr->values[i].string.text = strdup (PyString_AsString (username));
+    } else {
+      attr = ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
+			    requeststr, 1, NULL, NULL);
+      if (strstr (requeststr, "denied"))
+	attr->values[0].string.text = strdup ("none");
+      else
+	attr->values[0].string.text = strdup ("all");
     }
-  } else {
-    attr = ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
-			  requeststr, 1, NULL, NULL);
-    if (strstr (requeststr, "denied"))
-      attr->values[0].string.text = strdup ("none");
-    else
-      attr->values[0].string.text = strdup ("all");
-  }
-  answer = cupsDoRequest (self->http, request, "/admin/");
-  if (PyErr_Occurred ()) {
-    if (answer)
+    answer = cupsDoRequest (self->http, request, "/admin/");
+    if (PyErr_Occurred ()) {
+      if (answer)
+	ippDelete (answer);
+      return NULL;
+    }
+
+    if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
       ippDelete (answer);
-    return NULL;
+      // Perhaps it's a class, not a printer.
+      request = add_modify_class_request (name);
+    } else break;
   }
 
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
@@ -1009,15 +1030,24 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
   ipp_t *request, *answer;
   ipp_attribute_t *attr;
   char uri[HTTP_MAX_URI];
+  int i;
 
   if (!PyArg_ParseTuple (args, "s", &name))
     return NULL;
 
-  request = ippNewRequest (IPP_GET_PRINTER_ATTRIBUTES);
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
-		"printer-uri", NULL, uri);
-  answer = cupsDoRequest (self->http, request, "/");
+  for (i = 0; i < 2; i++) {
+    request = ippNewRequest (IPP_GET_PRINTER_ATTRIBUTES);
+    ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
+		  "printer-uri", NULL, uri);
+    answer = cupsDoRequest (self->http, request, "/");
+    if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
+      ippDelete (answer);
+      // Perhaps it's a class, not a printer.
+      snprintf (uri, sizeof (uri), "ipp://localhost/classes/%s", name);
+    } else break;
+  }
+
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
