@@ -159,6 +159,19 @@ cups_setServer (PyObject *self, PyObject *args)
 }
 
 static PyObject *
+cups_setPort (PyObject *self, PyObject *args)
+{
+  int port;
+
+  if (!PyArg_ParseTuple (args, "i", &port))
+    return NULL;
+
+  ippSetPort (port);
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
+static PyObject *
 cups_setEncryption (PyObject *self, PyObject *args)
 {
   int e;
@@ -200,6 +213,9 @@ static PyMethodDef CupsMethods[] = {
 
   { "setServer", cups_setServer, METH_VARARGS,
     "Set server to connect to." },
+
+  { "setPort", cups_setPort, METH_VARARGS,
+    "Set IPP port to connect to." },
 
   { "setEncryption", cups_setEncryption, METH_VARARGS,
     "Set encryption policy." },

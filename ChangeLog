@@ -1,3 +1,7 @@
+2006-02-23  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsmodule.c (cups_setPort): Implemented.
+
 2006-02-22  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_addPrinterToClass): Implemented.
