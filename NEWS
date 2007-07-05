@@ -5,6 +5,8 @@ New since 1.9.4:
 
 * cups.Connection.setPrinterShared() now handles classes
 * cups.Connection.printTestPage()
+* cups.Connection.getPPDs() includes ppd-make attribute
+* cups.IPP_MAX_NAME
 
 New since 1.9.3:
 
