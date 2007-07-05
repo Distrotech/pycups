@@ -1151,6 +1151,45 @@ Connection_deletePrinter (Connection *self, PyObject *args)
 }
 
 static PyObject *
+PyObject_from_attr_value (ipp_attribute_t *attr, int i)
+{
+  PyObject *val = NULL;
+  switch (attr->value_tag) {
+  case IPP_TAG_NAME:
+  case IPP_TAG_TEXT:
+  case IPP_TAG_KEYWORD:
+  case IPP_TAG_URI:
+  case IPP_TAG_CHARSET:
+  case IPP_TAG_MIMETYPE:
+  case IPP_TAG_LANGUAGE:
+    val = PyString_FromString (attr->values[i].string.text);
+    break;
+  case IPP_TAG_INTEGER:
+  case IPP_TAG_ENUM:
+    val = PyInt_FromLong (attr->values[i].integer);
+    break;
+  case IPP_TAG_BOOLEAN:
+    val = PyBool_FromLong (attr->values[i].integer);
+    break;
+  case IPP_TAG_RANGE:
+    val = Py_BuildValue ("(ii)",
+			 attr->values[i].range.lower,
+			 attr->values[i].range.upper);
+    break;
+
+    // TODO:
+  case IPP_TAG_DATE:
+    val = PyString_FromString ("(IPP_TAG_DATE)");
+    break;
+  default:
+    val = PyString_FromString ("(unknown IPP tag)");
+    break;
+  }
+
+  return val;
+}
+
+static PyObject *
 Connection_getPrinterAttributes (Connection *self, PyObject *args)
 {
   PyObject *ret;
@@ -1186,65 +1225,67 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
   }
 
   ret = PyDict_New ();
-  attr = ippFindAttribute (answer, "job-sheets-supported", IPP_TAG_ZERO);
-  if (attr) {
-    PyObject *job_sheets_supported = build_list_from_attribute_strings (attr);
-    PyDict_SetItemString (ret, "job-sheets-supported", job_sheets_supported);
-  }
+  for (attr = answer->attrs; attr; attr = attr->next) {
+    while (attr && attr->group_tag != IPP_TAG_PRINTER)
+      attr = attr->next;
 
-  attr = ippFindAttribute (answer, "job-sheets-default", IPP_TAG_ZERO);
-  if (attr) {
-    const char *start, *end;
-    start = attr->values[0].string.text;
-    if (attr->num_values >= 2)
-      end = attr->values[1].string.text;
-    else
-      end = "";
+    if (!attr)
+      break;
 
-    PyDict_SetItemString (ret, "job-sheets-default",
-			  Py_BuildValue ("(ss)", start, end));
-  }
+    for (; attr && attr->group_tag == IPP_TAG_PRINTER;
+	 attr = attr->next) {
+      size_t namelen = strlen (attr->name);
+      int is_list = attr->num_values > 1;
 
-  attr = ippFindAttribute (answer, "printer-error-policy-supported",
-			   IPP_TAG_ZERO);
-  if (attr) {
-    PyObject *errpolicy_supported = build_list_from_attribute_strings (attr);
-    PyDict_SetItemString (ret, "printer-error-policy-supported",
-			  errpolicy_supported);
-  }
+      // job-sheets-default is special, since it is always two values.
+      // Make it a tuple.
+      if (!strcmp (attr->name, "job-sheets-default") &&
+	  attr->value_tag == IPP_TAG_NAME) {
+	const char *start, *end;
+	start = attr->values[0].string.text;
+	if (attr->num_values >= 2)
+	  end = attr->values[1].string.text;
+	else
+	  end = "";
 
-  attr = ippFindAttribute (answer, "printer-error-policy", IPP_TAG_ZERO);
-  if (attr)
-    PyDict_SetItemString (ret, "printer-error-policy",
-			  PyString_FromString (attr->values[0].string.text));
+	PyDict_SetItemString (ret, "job-sheets-default",
+			      Py_BuildValue ("(ss)", start, end));
+	continue;
+      }
 
-  attr = ippFindAttribute (answer, "printer-op-policy-supported",
-			   IPP_TAG_ZERO);
-  if (attr) {
-    PyObject *oppolicy_supported = build_list_from_attribute_strings (attr);
-    PyDict_SetItemString (ret, "printer-op-policy-supported",
-			  oppolicy_supported);
-  }
+      // Check for '-supported' suffix.  Any xxx-supported attribute
+      // that is a text type must be a list.
+      if (!is_list && namelen > 10) {
+	switch (attr->value_tag) {
+	case IPP_TAG_NAME:
+	case IPP_TAG_TEXT:
+	case IPP_TAG_KEYWORD:
+	case IPP_TAG_URI:
+	case IPP_TAG_CHARSET:
+	case IPP_TAG_MIMETYPE:
+	case IPP_TAG_LANGUAGE:
+	  is_list = !strcmp (attr->name + namelen - 10, "-supported");
+	default:
+	  break;
+	}
+      }
 
-  attr = ippFindAttribute (answer, "printer-op-policy", IPP_TAG_ZERO);
-  if (attr)
-    PyDict_SetItemString (ret, "printer-op-policy",
-			  PyString_FromString (attr->values[0].string.text));
+      if (is_list) {
+	PyObject *list = PyList_New (0);
+	int i;
+	for (i = 0; i < attr->num_values; i++) {
+	  PyObject *val = PyObject_from_attr_value (attr, i);
+	  PyList_Append (list, val);
+	}
+	PyDict_SetItemString (ret, attr->name, list);
+      } else {
+	PyObject *val = PyObject_from_attr_value (attr, i);
+	PyDict_SetItemString (ret, attr->name, val);
+      }
+    }
 
-  attr = ippFindAttribute (answer, "requesting-user-name-allowed",
-			   IPP_TAG_ZERO);
-  if (attr) {
-    PyObject *allowed = build_list_from_attribute_strings (attr);
-    PyDict_SetItemString (ret, "requesting-user-name-allowed",
-			  allowed);
-  }
-
-  attr = ippFindAttribute (answer, "requesting-user-name-denied",
-			   IPP_TAG_ZERO);
-  if (attr) {
-    PyObject *denied = build_list_from_attribute_strings (attr);
-    PyDict_SetItemString (ret, "requesting-user-name-denied",
-			  denied);
+    if (!attr)
+      break;
   }
 
   return ret;

@@ -1,3 +1,8 @@
+2006-04-15  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getPrinterAttributes): Fetch all of
+	the printer attributes, not just a named selection.
+
 2006-04-14  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Dest_new): cups.Dest type.
