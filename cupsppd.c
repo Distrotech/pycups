@@ -20,6 +20,7 @@
 #include "cupsppd.h"
 #include "cupsmodule.h"
 
+#include <ctype.h>
 #include <iconv.h>
 #include <stdbool.h>
 
@@ -101,6 +102,33 @@ ppd_encoding_is_utf8 (PPD *ppd)
 }
 
 static PyObject *
+cautious_PyUnicode_DecodeUTF8 (const char *str, size_t len)
+{
+  PyObject *ret = PyUnicode_DecodeUTF8 (str, len, NULL);
+  if (ret == NULL) {
+    // It wasn't UTF-8 after all.  Just make the string safe for ASCII.
+    char *safe;
+    size_t i;
+
+    PyErr_Clear ();
+    safe = malloc (len + 1);
+    for (i = 0; i < len; i++) {
+      unsigned char ch = str[i];
+      if (!isascii (ch))
+	ch = '?';
+
+      safe[i] = ch;
+    }
+    safe[i] = '\0';
+    ret = PyUnicode_DecodeUTF8 (safe, len, NULL);
+    printf ("Bad UTF-8 string \"%s\" changed to \"%s\"\n", str, safe);
+    free (safe);
+  }
+
+  return ret;
+}
+
+static PyObject *
 make_PyUnicode_from_ppd_string (PPD *ppd, const char *ppdstr)
 {
   iconv_t cdf;
@@ -111,7 +139,7 @@ make_PyUnicode_from_ppd_string (PPD *ppd, const char *ppdstr)
   PyObject *ret;
 
   if (ppd_encoding_is_utf8 (ppd))
-    return PyUnicode_DecodeUTF8 (ppdstr, strlen (ppdstr), NULL);
+    return cautious_PyUnicode_DecodeUTF8 (ppdstr, strlen (ppdstr));
 
   cdf = *ppd->conv_from;
 
@@ -126,7 +154,7 @@ make_PyUnicode_from_ppd_string (PPD *ppd, const char *ppdstr)
     return PyErr_SetFromErrno (PyExc_RuntimeError);
   }
 
-  ret = PyUnicode_DecodeUTF8 (outbuf, origleft - outbytesleft, NULL);
+  ret = cautious_PyUnicode_DecodeUTF8 (outbuf, origleft - outbytesleft);
   free (outbuf);
   return ret;
 }
