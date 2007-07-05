@@ -1,5 +1,9 @@
 2006-05-25  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.11.
+
+2006-05-25  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsmodule.c (initcups): Selected HTTP status codes.
 
 2006-05-16  Tim Waugh  <twaugh@redhat.com>
