@@ -2,6 +2,7 @@
 
 	* cupsconnection.c (Connection_setPrinterOptionDefault):
 	Implemented.
+	(Connection_getDests): Implemented.
 
 2006-04-07  Tim Waugh  <twaugh@redhat.com>
 

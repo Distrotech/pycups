@@ -4,7 +4,8 @@ NEWS
 New since 1.9.6:
 
 * threading support
-* cups.Connection.setPrinterOptionDefault()
+* cups.Connection.setPrinterOptionDefault() [experimental]
+* cups.Connection.getDests() [experimental]
 
 New since 1.9.5:
 

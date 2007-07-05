@@ -143,6 +143,37 @@ do_printer_request (Connection *self, PyObject *args, ipp_op_t op)
 }
 
 static PyObject *
+Connection_getDests (Connection *self)
+{
+  cups_dest_t *dests;
+  int num_dests = cupsGetDests2 (self->http, &dests);
+  PyObject *pydests = PyDict_New ();
+  int i;
+
+  // Create a dict indexed by (name,instance)
+  for (i = 0; i < num_dests; i++) {
+    int j;
+    PyObject *pydest = PyDict_New (), *pyoptions = PyDict_New ();
+    PyObject *nameinstance = Py_BuildValue ("(ss)",
+					    dests[i].name,
+					    dests[i].instance);
+    PyDict_SetItemString (pydest, "is_default",
+			  PyBool_FromLong (dests[i].is_default));
+    for (j = 0; j < dests[i].num_options; j++) {
+      cups_option_t option = dests[i].options[j];
+      PyDict_SetItemString (pyoptions, option.name,
+			    PyString_FromString (option.value));
+    }
+
+    PyDict_SetItemString (pydest, "options", pyoptions);
+    PyDict_SetItem (pydests, nameinstance, pydest);
+  }
+
+  cupsFreeDests (num_dests, dests);
+  return pydests;
+}
+
+static PyObject *
 Connection_getPrinters (Connection *self)
 {
   PyObject *result;
@@ -1508,6 +1539,10 @@ PyMethodDef Connection_methods[] =
       (PyCFunction) Connection_getPrinters, METH_NOARGS,
       "Returns a dict, indexed by name, of dicts representing\n"
       "queues, indexed by attribute." },
+
+    { "getDests",
+      (PyCFunction) Connection_getDests, METH_NOARGS,
+      "" },
 
     { "getClasses",
       (PyCFunction) Connection_getClasses, METH_NOARGS,
