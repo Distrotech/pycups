@@ -317,6 +317,75 @@ Connection_getPPDs (Connection *self)
 }
 
 static PyObject *
+Connection_getDevices (Connection *self)
+{
+  PyObject *result;
+  ipp_t *request = ippNew(), *answer;
+  ipp_attribute_t *attr;
+  char *lang = setlocale (LC_MESSAGES, NULL);
+
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_CHARSET,
+		"attributes-charset", NULL, "utf-8");
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
+		"attributes-natural-language", NULL, lang);
+  request->request.op.operation_id = CUPS_GET_DEVICES;
+  request->request.op.request_id = 1;
+  answer = cupsDoRequest (self->http, request, "/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer->request.status.status_code);
+    ippDelete (answer);
+    return NULL;
+  }
+
+  result = PyDict_New ();
+  for (attr = answer->attrs; attr; attr = attr->next) {
+    PyObject *dict;
+    char *device_uri = NULL;
+
+    while (attr && attr->group_tag != IPP_TAG_PRINTER)
+      attr = attr->next;
+
+    if (!attr)
+      break;
+
+    dict = PyDict_New ();
+    for (; attr && attr->group_tag == IPP_TAG_PRINTER;
+	 attr = attr->next) {
+      PyObject *val = NULL;
+
+      if (!strcmp (attr->name, "device-uri") &&
+	  attr->value_tag == IPP_TAG_URI)
+	device_uri = attr->values[0].string.text;
+      else if ((!strcmp (attr->name, "device-class") &&
+		attr->value_tag == IPP_TAG_KEYWORD) ||
+	       (!strcmp (attr->name, "device-make-and-model") &&
+		attr->value_tag == IPP_TAG_TEXT) ||
+	       (!strcmp (attr->name, "device-info") &&
+		attr->value_tag == IPP_TAG_TEXT) ||
+	       (!strcmp (attr->name, "device-id") &&
+		attr->value_tag == IPP_TAG_TEXT))
+	val = PyString_FromString (attr->values[0].string.text);
+
+      if (val) {
+	PyDict_SetItemString (dict, attr->name, val);
+	Py_DECREF (val);
+      }
+    }
+
+    if (device_uri) {
+      PyDict_SetItemString (result, device_uri, dict);
+    } else
+      Py_DECREF (dict);
+
+    if (!attr)
+      break;
+  }
+
+  ippDelete (answer);
+  return result;
+}
+
+static PyObject *
 Connection_getFile (Connection *self, PyObject *args)
 {
   PyObject *ret;
@@ -529,6 +598,11 @@ PyMethodDef Connection_methods[] =
       (PyCFunction) Connection_getPPDs, METH_NOARGS,
       "Returns a dict, indexed by PPD name, of dicts representing\n"
       "PPDs, indexed by attribute." },
+
+    { "getDevices",
+      (PyCFunction) Connection_getDevices, METH_NOARGS,
+      "Returns a dict, indexed by device URI, of dicts representing\n"
+      "devices, indexed by attribute." },
 
     { "getFile",
       (PyCFunction) Connection_getFile, METH_VARARGS,

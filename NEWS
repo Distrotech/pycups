@@ -10,3 +10,4 @@ New since 1.9.0:
   installed PPDs
 * cups.PPD.Group.options is not a list, not a dict
 * cups.Connection.getPPDs()
+* cups.Connection.getDevices()
