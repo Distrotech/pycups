@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New since 1.9.1:
+
+* cups.Connection.getPrinterAttributes()
+
 New since 1.9.0:
 
 * cups.Constraint type

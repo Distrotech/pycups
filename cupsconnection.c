@@ -765,6 +765,97 @@ Connection_deletePrinter (Connection *self, PyObject *args)
   return do_printer_request (self, args, CUPS_DELETE_PRINTER);
 }
 
+static ipp_t *
+get_printer_attributes_request (const char *name)
+{
+  ipp_t *request = add_modify_printer_request (name);
+  request->request.op.operation_id = IPP_GET_PRINTER_ATTRIBUTES;
+  return request;
+}
+
+static PyObject *
+build_list_from_attribute_strings (ipp_attribute_t *attr)
+{
+  PyObject *list = PyList_New (0);
+  int i;
+  for (i = 0; i < attr->num_values; i++) {
+    PyObject *val = PyString_FromString (attr->values[i].string.text);
+    PyList_Append (list, val);
+  }
+  return list;
+}
+
+static PyObject *
+Connection_getPrinterAttributes (Connection *self, PyObject *args)
+{
+  PyObject *ret;
+  const char *name;
+  ipp_t *request, *answer;
+  ipp_attribute_t *attr;
+
+  if (!PyArg_ParseTuple (args, "s", &name))
+    return NULL;
+
+  request = get_printer_attributes_request (name);
+  answer = cupsDoRequest (self->http, request, "/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  ret = PyDict_New ();
+  attr = ippFindAttribute (answer, "job-sheets-supported", IPP_TAG_ZERO);
+  if (attr) {
+    PyObject *job_sheets_supported = build_list_from_attribute_strings (attr);
+    PyDict_SetItemString (ret, "job-sheets-supported", job_sheets_supported);
+  }
+
+  attr = ippFindAttribute (answer, "job-sheets-default", IPP_TAG_ZERO);
+  if (attr) {
+    const char *start, *end;
+    start = attr->values[0].string.text;
+    if (attr->num_values >= 2)
+      end = attr->values[1].string.text;
+    else
+      end = "";
+
+    PyDict_SetItemString (ret, "job-sheets-default",
+			  Py_BuildValue ("(ss)", start, end));
+  }
+
+  attr = ippFindAttribute (answer, "printer-error-policy-supported",
+			   IPP_TAG_ZERO);
+  if (attr) {
+    PyObject *errpolicy_supported = build_list_from_attribute_strings (attr);
+    PyDict_SetItemString (ret, "printer-error-policy-supported",
+			  errpolicy_supported);
+  }
+
+  attr = ippFindAttribute (answer, "printer-error-policy", IPP_TAG_ZERO);
+  if (attr)
+    PyDict_SetItemString (ret, "printer-error-policy",
+			  PyString_FromString (attr->values[0].string.text));
+
+  attr = ippFindAttribute (answer, "printer-op-policy-supported",
+			   IPP_TAG_ZERO);
+  if (attr) {
+    PyObject *oppolicy_supported = build_list_from_attribute_strings (attr);
+    PyDict_SetItemString (ret, "printer-op-policy-supported",
+			  oppolicy_supported);
+  }
+
+  attr = ippFindAttribute (answer, "printer-op-policy", IPP_TAG_ZERO);
+  if (attr)
+    PyDict_SetItemString (ret, "printer-op-policy",
+			  PyString_FromString (attr->values[0].string.text));
+
+  return ret;
+}
+
 static PyObject *
 Connection_addPrinterToClass (Connection *self, PyObject *args)
 {
@@ -1058,6 +1149,10 @@ PyMethodDef Connection_methods[] =
     { "deletePrinter",
       (PyCFunction) Connection_deletePrinter, METH_VARARGS,
       "deletePrinter(name, ppdfile, device_uri) -> None" },
+
+    { "getPrinterAttributes",
+      (PyCFunction) Connection_getPrinterAttributes, METH_VARARGS,
+      "getPrinterAttributes(name) -> dict" },
 
     { "addPrinterToClass",
       (PyCFunction) Connection_addPrinterToClass, METH_VARARGS,
