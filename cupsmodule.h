@@ -24,7 +24,7 @@
 #include <cups/language.h>
 
 #if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MINOR > 1)
-#define HAVE_CUPS_1_2
+#define HAVE_CUPS_1_2 1
 #endif
 
 #ifndef HAVE_CUPS_1_2
