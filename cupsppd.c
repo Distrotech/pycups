@@ -138,13 +138,15 @@ utf8_to_ppd_encoding (PPD *ppd, const char *inbuf)
   // Reset to initial state
   iconv (cdt, NULL, NULL, NULL, NULL);
   len = strlen (inbuf);
-  outbytesleft = outsize = MB_CUR_MAX * len;
+  outsize = 1 + 6 * len;
+  outbytesleft = outsize - 1;
   ret = outbuf = malloc (outsize);
   if (iconv (cdt, (char **) &inbuf, &len,
 	     &outbuf, &outbytesleft) == (size_t) -1) {
     free (outbuf);
     return NULL;
   }
+  *outbuf = '\0';
 
   return ret;
 }
