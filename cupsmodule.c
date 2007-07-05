@@ -124,7 +124,6 @@ do_password_callback (const char *prompt)
 static PyObject *
 cups_modelSort (PyObject *self, PyObject *args)
 {
-  PyObject *ret;
   char *a, *b;
 
   if (!PyArg_ParseTuple (args, "ss", &a, &b))
@@ -174,7 +173,6 @@ cups_setEncryption (PyObject *self, PyObject *args)
 static PyObject *
 cups_setPasswordCB (PyObject *self, PyObject *args)
 {
-  PyObject *ret = NULL;
   PyObject *cb;
 
   if (!PyArg_ParseTuple (args, "O:cups_setPasswordCB", &cb))
@@ -217,7 +215,6 @@ initcups (void)
 {
   PyObject *m = Py_InitModule ("cups", CupsMethods);
   PyObject *d = PyModule_GetDict (m);
-  PyObject *c;
 
   // Connection type
   cups_ConnectionType.tp_new = PyType_GenericNew;
@@ -286,6 +283,11 @@ initcups (void)
   INT_CONSTANT (CUPS_PRINTER_DEFAULT);
   INT_CONSTANT (CUPS_PRINTER_FAX);
   INT_CONSTANT (CUPS_PRINTER_REJECTING);
+#ifdef HAVE_CUPS_1_2
+  INT_CONSTANT (CUPS_PRINTER_DELETE);
+  INT_CONSTANT (CUPS_PRINTER_NOT_SHARED);
+  INT_CONSTANT (CUPS_PRINTER_AUTHENTICATED);
+#endif /* HAVE_CUPS_1_2 */
   INT_CONSTANT (CUPS_PRINTER_OPTIONS);
 
   // HTTP encryption
