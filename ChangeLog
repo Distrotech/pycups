@@ -1,3 +1,12 @@
+2007-01-03  Tim Waugh  <twaugh@redhat.com>
+
+	* Makefile: Version 1.9.17.
+
+2007-01-03  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsppd.c (ppd_encoding_is_utf8): Handle there being no known
+	encoding for the PPD file (bug #220136).
+
 2006-12-15  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsppd.c (PPD_localize): New method.

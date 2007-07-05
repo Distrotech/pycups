@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2002, 2005, 2006, 2007  Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,20 +64,20 @@ ppd_encoding_is_utf8 (PPD *ppd)
     return 0;
 
   lang_encoding = ppd->ppd->lang_encoding;
-  if (!strcasecmp (lang_encoding, "UTF-8"))
+  if (lang_encoding && !strcasecmp (lang_encoding, "UTF-8"))
     return 1;
 
-  if (!strcasecmp (lang_encoding, "ISOLatin1"))
+  if (lang_encoding && !strcasecmp (lang_encoding, "ISOLatin1"))
     from_encoding = "ISO-8859-1";
-  else if (!strcasecmp (lang_encoding, "ISOLatin2"))
+  else if (lang_encoding && !strcasecmp (lang_encoding, "ISOLatin2"))
     from_encoding = "ISO-8859-2";
-  else if (!strcasecmp (lang_encoding, "ISOLatin5"))
+  else if (lang_encoding && !strcasecmp (lang_encoding, "ISOLatin5"))
     from_encoding = "ISO-8859-5";
-  else if (!strcasecmp (lang_encoding, "JIS83-RKSJ"))
+  else if (lang_encoding && !strcasecmp (lang_encoding, "JIS83-RKSJ"))
     from_encoding = "SHIFT-JIS";
-  else if (!strcasecmp (lang_encoding, "MacStandard"))
+  else if (lang_encoding && !strcasecmp (lang_encoding, "MacStandard"))
     from_encoding = "MACINTOSH";
-  else if (!strcasecmp (lang_encoding, "WindowsANSI"))
+  else if (lang_encoding && !strcasecmp (lang_encoding, "WindowsANSI"))
     from_encoding = "WINDOWS-1252";
   else
     // Guess
