@@ -1,6 +1,7 @@
 2006-03-01  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (set_ipp_error): Use ippErrorString().
+	(Connection_getPrinters): Fixed typo.
 
 	* cupsmodule.c (initcups): IPP error codes.
 

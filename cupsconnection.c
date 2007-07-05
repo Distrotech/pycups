@@ -146,7 +146,7 @@ Connection_getPrinters (Connection *self)
     "printer-info",
     "printer-make-and-model",
     "printer-state",
-    "printer-uri",
+    "printer-uri-supported",
     "device-uri",
     "printer-is-shared",
   };
@@ -217,7 +217,8 @@ Connection_getPrinters (Connection *self)
 	int u = attr->values[0].integer;
 	val = PyInt_FromLong (u);
       }
-      else if (!strcmp (attr->name, "device-uri") &&
+      else if ((!strcmp (attr->name, "device-uri") ||
+		!strcmp (attr->name, "printer-uri-supported")) &&
 	       attr->value_tag == IPP_TAG_URI) {
 	val = PyString_FromString (attr->values[0].string.text);
       }
