@@ -155,7 +155,7 @@ do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
   default:
     if (!PyArg_ParseTuple (args, "s", &name))
       return NULL;
-      debugprintf ("-> do_printer_request(op:%d, name:%s)\n", (int) op, name)
+    debugprintf ("-> do_printer_request(op:%d, name:%s)\n", (int) op, name);
     break;
   }
 
