@@ -343,6 +343,12 @@ Connection_getClasses (Connection *self)
 		 NULL, attributes);
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    if (answer && answer->request.status.status_code == IPP_NOT_FOUND) {
+      // No classes.
+      ippDelete (answer);
+      return PyDict_New ();
+    }
+
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
 		   cupsLastError ());
