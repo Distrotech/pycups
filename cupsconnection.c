@@ -1175,7 +1175,16 @@ PyMethodDef Connection_methods[] =
 
     { "getPrinterAttributes",
       (PyCFunction) Connection_getPrinterAttributes, METH_VARARGS,
-      "getPrinterAttributes(name) -> dict" },
+      "getPrinterAttributes(name) -> dict\n"
+      "Returns a dict, indexed by attribute, of printer attributes\n"
+      "for the printer 'name'.\n\n"
+      "Attributes:\n"
+      "'job-sheets-supported': list of strings\n"
+      "'job-sheets-default': tuple of strings (start, end)\n"
+      "'printer-error-policy-supported': if present, list of strings\n"
+      "'printer-error-policy': if present, string\n"
+      "'printer-op-policy-supported': if present, list of strings\n"
+      "'printer-op-policy': if present, string" },
 
     { "addPrinterToClass",
       (PyCFunction) Connection_addPrinterToClass, METH_VARARGS,
