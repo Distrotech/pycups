@@ -624,7 +624,7 @@ PyMethodDef PPD_methods[] =
 
     { "markOption",
       (PyCFunction) PPD_markOption, METH_VARARGS,
-      "Mark an option." },
+      "Mark an option.  Returns number of conflicts." },
 
     { "conflicts",
       (PyCFunction) PPD_conflicts, METH_NOARGS,
