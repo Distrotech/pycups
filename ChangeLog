@@ -1,3 +1,9 @@
+2007-08-30  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsmodule.c (initcups): Define CUPS_SERVER_REMOTE_ANY.
+
+	* cupsmodule.h: Check for CUPS 1.3.
+
 2007-07-06  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsppd.c: Better docstring for PPD.markOption.
