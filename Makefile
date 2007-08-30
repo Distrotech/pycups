@@ -1,6 +1,5 @@
 NAME=pycups
 VERSION=1.9.24
-TAG=`echo $(NAME)-$(VERSION) | tr . _`
 
 PYTHONVERS = python2.4
 
@@ -18,11 +17,8 @@ cups.so: $(SOURCES)
 clean:
 	-rm -rf build cups.so *.pyc *~
 
-tag:
-	cvs tag -c $(TAG)
-
 dist:
-	cvs export -r $(TAG) $(NAME)
+	svn export . $(NAME)
 	mkdir $(NAME)-$(VERSION)
 	cd $(NAME); cp -a $(SOURCES) $(DIST) ../$(NAME)-$(VERSION); cd ..
 	tar jcf $(NAME)-$(VERSION).tar.bz2 $(NAME)-$(VERSION)
@@ -33,5 +29,5 @@ install:
 	if [ -n "$$DESTDIR" ]; then ROOT="--root $$DESTDIR"; fi; \
 	python setup.py install $$ROOT
 
-.PHONY: clean tag dist install
+.PHONY: clean dist install
 

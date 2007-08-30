@@ -1,5 +1,9 @@
 2007-08-30  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Removed 'tag' target, updated 'dist' target for svn.
+
+	* cupsconnection.c (Connection_getServerPPD): New method.
+
 	* cupsmodule.c (initcups): Define CUPS_SERVER_REMOTE_ANY.
 
 	* cupsmodule.h: Check for CUPS 1.3.

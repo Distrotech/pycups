@@ -565,6 +565,32 @@ Connection_getPPDs (Connection *self)
 }
 
 static PyObject *
+Connection_getServerPPD (Connection *self, PyObject *args)
+{
+#ifndef HAVE_CUPS_1_3
+  PyErr_SetString (PyExc_RuntimeError,
+		   "Operation not supported - recompile against CUPS 1.3");
+  return NULL;
+#else /* CUPS 1.3 */
+  const char *ppd_name, *filename;
+  if (!PyArg_ParseTuple (args, "s", &ppd_name))
+    return NULL;
+  debugprintf ("-> Connection_getServerPPD()\n");
+  Py_BEGIN_ALLOW_THREADS;
+  filename = cupsGetServerPPD (self->http, ppd_name);
+  Py_END_ALLOW_THREADS;
+  if (!filename) {
+    set_ipp_error (cupsLastError ());
+    debugprintf ("<- Connection_getServerPPD() (error)\n");
+    return NULL;
+  }
+  debugprintf ("<- Connection_getServerPPD(\"%s\") = \"%s\"\n",
+	       ppd_name, filename)
+  return PyString_FromString (filename);
+#endif /* CUPS 1.3 */
+}
+
+static PyObject *
 Connection_getDevices (Connection *self)
 {
   PyObject *result;
@@ -2536,6 +2562,10 @@ PyMethodDef Connection_methods[] =
       "Returns a dict, indexed by PPD name, of dicts representing\n"
       "PPDs, indexed by attribute." },
 
+    { "getServerPPD",
+      (PyCFunction) Connection_getServerPPD, METH_VARARGS,
+      "Returns a filename for a ppd-name." },
+    
     { "getDevices",
       (PyCFunction) Connection_getDevices, METH_NOARGS,
       "Returns a dict, indexed by device URI, of dicts representing\n"
