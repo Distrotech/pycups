@@ -40,6 +40,9 @@ extern void debugprintf (const char *fmt, ...) FORMAT ((__printf__, 1, 2));
 
 #if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MINOR > 2)
 #define HAVE_CUPS_1_3 1
+#else
+#define cupsAdminGetServerSettings _cupsAdminGetServerSettings
+#define cupsAdminSetServerSettings _cupsAdminSetServerSettings
 #endif
 
 #ifndef HAVE_CUPS_1_2

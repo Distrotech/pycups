@@ -2082,7 +2082,7 @@ Connection_adminGetServerSettings (Connection *self)
   PyObject *ret = PyDict_New ();
   int num_settings, i;
   cups_option_t *settings;
-  _cupsAdminGetServerSettings (self->http, &num_settings, &settings);
+  cupsAdminGetServerSettings (self->http, &num_settings, &settings);
   for (i = 0; i < num_settings; i++)
     PyDict_SetItemString (ret, settings[i].name,
 			  PyString_FromString (settings[i].value));
@@ -2132,7 +2132,7 @@ Connection_adminSetServerSettings (Connection *self, PyObject *args)
   }
 
   debugprintf ("num_settings=%d, settings=%p\n", num_settings, settings);
-  if (!_cupsAdminSetServerSettings (self->http, num_settings, settings)) {
+  if (!cupsAdminSetServerSettings (self->http, num_settings, settings)) {
     cupsFreeOptions (num_settings, settings);
     PyErr_SetString (PyExc_RuntimeError, "Failed to set settings");
     debugprintf ("<- Connection_adminSetServerSettings() EXCEPTION\n");
