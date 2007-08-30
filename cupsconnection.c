@@ -585,7 +585,7 @@ Connection_getServerPPD (Connection *self, PyObject *args)
     return NULL;
   }
   debugprintf ("<- Connection_getServerPPD(\"%s\") = \"%s\"\n",
-	       ppd_name, filename)
+	       ppd_name, filename);
   return PyString_FromString (filename);
 #endif /* CUPS 1.3 */
 }
