@@ -2543,12 +2543,16 @@ PyMethodDef Connection_methods[] =
   {
     { "getPrinters",
       (PyCFunction) Connection_getPrinters, METH_NOARGS,
+      "getPrinters() -> dict\n\n"
       "Returns a dict, indexed by name, of dicts representing\n"
       "queues, indexed by attribute." },
 
     { "getDests",
       (PyCFunction) Connection_getDests, METH_NOARGS,
-      "" },
+      "getDests() -> dict\n\n"
+      "Returns a dict representing available destinations.  Each \n"
+      "dictionary key is a pair of (queue, instance) strings, and the \n"
+      "dictionary value is a L{cups.Dest} object." },
 
     { "getClasses",
       (PyCFunction) Connection_getClasses, METH_NOARGS,
@@ -2568,8 +2572,10 @@ PyMethodDef Connection_methods[] =
     
     { "getDevices",
       (PyCFunction) Connection_getDevices, METH_NOARGS,
+      "getDevices() -> dict\n\n"
       "Returns a dict, indexed by device URI, of dicts representing\n"
-      "devices, indexed by attribute." },
+      "devices, indexed by attribute.\n" },
+    
 
     { "getJobs",
       (PyCFunction) Connection_getJobs, METH_VARARGS | METH_KEYWORDS,
@@ -2782,7 +2788,15 @@ PyTypeObject cups_ConnectionType =
     0,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT,        /*tp_flags*/
-    "CUPS Connection",         /* tp_doc */
+    "CUPS connection\n"
+    "===============\n\n"
+
+    "  A connection to the CUPS server.  Before it is created the \n"
+    "  connection server and username should be set using \n"
+    "  L{cups.setServer} and L{cups.setUser}; otherwise the defaults will \n"
+    "  be used.  When a Connection object is instantiated it results in a "
+    "  call to the libcups function httpConnectEncrypt().\n"
+    "",         /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
     0,                         /* tp_richcompare */
@@ -2923,7 +2937,10 @@ PyTypeObject cups_DestType =
     0,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT,        /*tp_flags*/
-    "CUPS destination",        /* tp_doc */
+    "CUPS destination\n"
+    "================\n\n"
+    "  A destination print queue."
+    "",        /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
     0,                         /* tp_richcompare */

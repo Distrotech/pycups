@@ -14,6 +14,10 @@ cups.so: $(SOURCES)
 	CFLAGS=-DVERSION=\\\"$(VERSION)\\\" python setup.py build
 	mv build/lib*/$@ .
 
+doc:	cups.so
+	rm -rf html
+	epydoc -o html --html $<
+
 clean:
 	-rm -rf build cups.so *.pyc *~
 
@@ -29,5 +33,5 @@ install:
 	if [ -n "$$DESTDIR" ]; then ROOT="--root $$DESTDIR"; fi; \
 	python setup.py install $$ROOT
 
-.PHONY: clean dist install
+.PHONY: doc clean dist install
 

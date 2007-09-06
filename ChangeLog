@@ -1,3 +1,9 @@
+2007-09-06  Tim Waugh  <twaugh@redhat.com>
+
+	* Makefile (doc): New rule.
+
+	* cupsconnection.c: Start of better documentation.
+
 2007-08-30  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Version 1.9.25.
