@@ -2544,223 +2544,431 @@ PyMethodDef Connection_methods[] =
     { "getPrinters",
       (PyCFunction) Connection_getPrinters, METH_NOARGS,
       "getPrinters() -> dict\n\n"
-      "Returns a dict, indexed by name, of dicts representing\n"
+      "@return: a dict, indexed by name, of dicts representing\n"
       "queues, indexed by attribute." },
 
     { "getDests",
       (PyCFunction) Connection_getDests, METH_NOARGS,
       "getDests() -> dict\n\n"
-      "Returns a dict representing available destinations.  Each \n"
+      "@return: a dict representing available destinations.  Each \n"
       "dictionary key is a pair of (queue, instance) strings, and the \n"
       "dictionary value is a L{cups.Dest} object." },
 
     { "getClasses",
       (PyCFunction) Connection_getClasses, METH_NOARGS,
-      "Returns a dict, indexed by name, of objects representing\n"
+      "getClasses() -> dict\n\n"
+      "@return: a dict, indexed by name, of objects representing\n"
       "classes.  Each class object is either a string, in which case it\n"
       "is for the remote class; or a list, in which case it is a list of\n"
       "queue names." },
 
     { "getPPDs",
       (PyCFunction) Connection_getPPDs, METH_NOARGS,
-      "Returns a dict, indexed by PPD name, of dicts representing\n"
+      "getPPDs() -> dict\n\n"
+      "@return: a dict, indexed by PPD name, of dicts representing\n"
       "PPDs, indexed by attribute." },
 
     { "getServerPPD",
       (PyCFunction) Connection_getServerPPD, METH_VARARGS,
-      "Returns a filename for a ppd-name." },
+      "getServerPPD(ppd_name) -> string\n\n"
+      "Fetches the named PPD and stores it in a temporary file.\n\n"
+      "@type ppd_name: string\n"
+      "@param ppd_name: the ppd-name of a PPD\n"
+      "@return: temporary filename holding the PPD" },
     
     { "getDevices",
       (PyCFunction) Connection_getDevices, METH_NOARGS,
       "getDevices() -> dict\n\n"
-      "Returns a dict, indexed by device URI, of dicts representing\n"
+      "@return: a dict, indexed by device URI, of dicts representing\n"
       "devices, indexed by attribute.\n" },
     
 
     { "getJobs",
       (PyCFunction) Connection_getJobs, METH_VARARGS | METH_KEYWORDS,
       "getJobs(which_jobs='not-completed', my_jobs=False) -> dict\n"
-      "Returns a dict, indexed by job ID, of dicts representing job\n"
-      "attributes." },
+      "Fetch a list of jobs.\n"
+      "@type which_jobs: string\n"
+      "@param which_jobs: which jobs to fetch; possible values: \n"
+      "'completed', 'not-completed', 'all'\n"
+      "@type my_jobs: boolean\n"
+      "@param my_jobs: whether to restrict the returned jobs to those \n"
+      "owned by the current CUPS user (as set by L{cups.setUser}).\n"
+      "@return: a dict, indexed by job ID, of dicts representing job\n"
+      "attributes.\n" },
 
     { "cancelJob",
       (PyCFunction) Connection_cancelJob, METH_VARARGS,
-      "cancelJob(jobid) -> None" },
+      "cancelJob(jobid) -> None\n\n"
+      "@type jobid: integer\n"
+      "@param jobid: job ID to cancel\n" },
 
     { "setJobHoldUntil",
       (PyCFunction) Connection_setJobHoldUntil, METH_VARARGS,
-      "setJobHoldUntil(jobid, job_hold_until) -> None" },
+      "setJobHoldUntil(jobid, job_hold_until) -> None\n\n"
+      "Specifies when a job should be printed.\n"
+      "@type jobid: integer\n"
+      "@param jobid: job ID to adjust\n"
+      "@type job_hold_until: string\n"
+      "@param job_hold_until: when to print the job; examples: 'hold', \n"
+      "'immediate', 'restart', resume'\n"},
     
     { "restartJob",
       (PyCFunction) Connection_restartJob, METH_VARARGS,
-      "restartJob(jobid) -> None" },
+      "restartJob(jobid) -> None\n\n"
+      "Restart a job.\n\n"
+      "@type jobid: integer\n"
+      "@param jobid: job ID to restart\n" },
 
     { "getFile",
       (PyCFunction) Connection_getFile, METH_VARARGS,
-      "getFile(resource, filename) -> None" },
+      "getFile(resource, filename) -> None\n\n"
+      "Fetch a CUPS server resource to a local file.\n\n"
+      "This is for obtaining CUPS server configuration files and \n"
+      "log files.\n\n"
+      "@type resource: string\n"
+      "@param resource: resource name\n"
+      "@type filename: string\n"
+      "@param filename: name of local file for storage\n"},
 
     { "putFile",
       (PyCFunction) Connection_putFile, METH_VARARGS,
-      "putFile(resource, filename) -> None" },
+      "putFile(resource, filename) -> None\n\n"
+      "This is for uploading new configuration files for the CUPS \n"
+      "server.  Note: L{adminSetServerSettings} is a way of \n"
+      "adjusting server settings without needing to parse the \n"
+      "configuration file.\n"
+      "@type resource: string\n"
+      "@param resource: resource name\n"
+      "@type filename: string\n"
+      "@param filename: name of local file to upload\n"},
 
     { "addPrinter",
       (PyCFunction) Connection_addPrinter, METH_VARARGS | METH_KEYWORDS,
-      "addPrinter(name, filename=None, ppdname=None, info=None,\n"
-      "location=None, device=None, ppd=None) -> None\n"
-      "filename: local filename of PPD file\n"
-      "ppdname: filename from cups.Connection.getPPDs()\n"
-      "info: info string\n"
-      "description: description string\n"
-      "device: device URI string\n"
-      "ppd: cups.PPD object" },
+      "addPrinter(name) -> None\n\n"
+      "Add or adjust a print queue.  Several parameters can select which\n"
+      "PPD to use (filename, ppdname, and ppd) but only one may be\n"
+      "given.\n\n"
+      "@type filename: string\n"
+      "@keyword filename: local filename of PPD file\n"
+      "@type ppdname: string\n"
+      "@keyword ppdname: filename from L{getPPDs}\n"
+      "@type info: string\n"
+      "@keyword info: human-readable information about the printer\n"
+      "@type location: string\n"
+      "@keyword location: human-readable printer location\n"
+      "@type device: string\n"
+      "@keyword device: device URI string\n"
+      "@type ppd: L{cups.PPD} instance\n"
+      "@keyword ppd: PPD object\n" },
 
     { "setPrinterDevice",
       (PyCFunction) Connection_setPrinterDevice, METH_VARARGS,
-      "setPrinterDevice(name, device_uri) -> None" },
+      "setPrinterDevice(name, device_uri) -> None\n\n"
+      "Set the device URI for a printer.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type device_uri: string\n"
+      "@param device_uri: device URI\n" },
 
     { "setPrinterInfo",
       (PyCFunction) Connection_setPrinterInfo, METH_VARARGS,
-      "setPrinterInfo(name, info) -> None" },
+      "setPrinterInfo(name, info) -> None\n\n"
+      "Set the human-readable information about a printer.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type info: string\n"
+      "@param info: human-readable information about the printer\n" },
 
     { "setPrinterLocation",
       (PyCFunction) Connection_setPrinterLocation, METH_VARARGS,
-      "setPrinterLocation(name, info) -> None" },
+      "setPrinterLocation(name, location) -> None\n\n"
+      "Set the human-readable printer location\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type location: string\n"
+      "@param location: human-readable printer location\n" },
 
     { "setPrinterShared",
       (PyCFunction) Connection_setPrinterShared, METH_VARARGS,
-      "setPrinterShared(name, bool) -> None\n\nCUPS 1.2 only" },
+      "setPrinterShared(name, shared) -> None\n\n"
+      "Set whether a printer is shared with other people.  This works \n"
+      "with CUPS servers of at least version 1.2, by setting the \n"
+      "printer-is-shared printer attribute.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type shared: boolean\n"
+      "@param shared: whether printer should be shared\n" },
 
     { "setPrinterJobSheets",
       (PyCFunction) Connection_setPrinterJobSheets, METH_VARARGS,
-      "setPrinterJobSheets(name, start, end) -> None" },
+      "setPrinterJobSheets(name, start, end) -> None\n\n"
+      "Specifies job sheets for a printer.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type start: string\n"
+      "@param start: name of a sheet to print before each job\n"
+      "@type end: string\n"
+      "@param end: name of a sheet to print after each job\n" },
 
     { "setPrinterErrorPolicy",
       (PyCFunction) Connection_setPrinterErrorPolicy, METH_VARARGS,
-      "setPrinterErrorPolicy(name, policy) -> None" },
+      "setPrinterErrorPolicy(name, policy) -> None\n\n"
+      "Set the printer's error policy.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type policy: string\n"
+      "@param policy: policy name; supported policy names can be found \n"
+      "by using the L{getPrinterAttributes} function and looking for the \n"
+      "'printer-error-policy-supported' attribute\n" },
 
     { "setPrinterOpPolicy",
       (PyCFunction) Connection_setPrinterOpPolicy, METH_VARARGS,
-      "setPrinterOpPolicy(name, policy) -> None" },
+      "setPrinterOpPolicy(name, policy) -> None\n\n"
+      "Set the printer's operation policy.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type policy: string\n"
+      "@param policy: policy name; supported policy names can be found \n"
+      "by using the L{getPrinterAttributes} function and looking for the \n"
+      "'printer-op-policy-supported' attribute\n" },
 
     { "setPrinterUsersAllowed",
       (PyCFunction) Connection_setPrinterUsersAllowed, METH_VARARGS,
-      "setPrinterUsersAllowed(name, string list) -> None\n\n"
-      "CUPS 1.2.\n"
-      "string list is a list of user-names.\n"
-      "The special string 'all' means that there will be no user-name\n"
-      "restriction."},
+      "setPrinterUsersAllowed(name, allowed) -> None\n\n"
+      "Set the list of users allowed to use a printer.  This works \n"
+      "with CUPS server of at least version 1.2, by setting the \n"
+      "requesting-user-name-allowed printer attribute.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type allowed: string list\n"
+      "@param allowed: list of allowed users; ['all'] \n"
+      "means there will be no user-name restriction.\n" },
 
     { "setPrinterUsersDenied",
       (PyCFunction) Connection_setPrinterUsersDenied, METH_VARARGS,
-      "setPrinterUsersDenied(name, string list) -> None\n\n"
-      "CUPS 1.2.\n"
-      "string list is a list of user-names.\n"
-      "The special string 'none' means that there will be no user-name\n"
-      "restriction."},
+      "setPrinterUsersDenied(name, denied) -> None\n\n"
+      "Set the list of users denied the use of a printer.  This works \n"
+      "with CUPS servers of at least version 1.2, by setting the \n"
+      "requesting-user-name-denied printer attribute.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type denied: string list\n"
+      "@param denied: list of denied users; ['none'] \n"
+      "means there will be no user-name restriction.\n" },
 
     { "addPrinterOptionDefault",
       (PyCFunction) Connection_addPrinterOptionDefault, METH_VARARGS,
       "addPrinterOptionDefault(name, option, value) -> None\n\n"
-      "CUPS 1.2.\n" },
+      "Set a network default option.  Jobs submitted to the named queue \n"
+      "will have the job option added if it is not already present in the \n"
+      "job.  This works with CUPS servers of at least version 1.2.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type option: string\n"
+      "@param option: option name, for example 'job-priority'\n"
+      "@type value: string\n"
+      "@param value: option value as a string\n" },
 
     { "deletePrinterOptionDefault",
       (PyCFunction) Connection_deletePrinterOptionDefault, METH_VARARGS,
-      "deletePrinterOptionDefault(name, option, value) -> None\n\n"
-      "CUPS 1.2.\n" },
+      "deletePrinterOptionDefault(name, option) -> None\n\n"
+      "Removes a network default option.  See L{addPrinterOptionDefault}.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type option: string\n"
+      "@param option: option name, for example 'job-priority'\n" },
 
     { "deletePrinter",
       (PyCFunction) Connection_deletePrinter, METH_VARARGS | METH_KEYWORDS,
-      "deletePrinter(name) -> None" },
+      "deletePrinter(name) -> None\n\n"
+      "Delete a printer.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n" },
 
     { "getPrinterAttributes",
       (PyCFunction) Connection_getPrinterAttributes, METH_VARARGS,
       "getPrinterAttributes(name) -> dict\n"
-      "Returns a dict, indexed by attribute, of printer attributes\n"
+      "Fetch the attributes for a printer.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@return: a dict, indexed by attribute, of printer attributes\n"
       "for the printer 'name'.\n\n"
       "Attributes:\n"
-      "'job-sheets-supported': list of strings\n"
-      "'job-sheets-default': tuple of strings (start, end)\n"
-      "'printer-error-policy-supported': if present, list of strings\n"
-      "'printer-error-policy': if present, string\n"
-      "'printer-op-policy-supported': if present, list of strings\n"
-      "'printer-op-policy': if present, string" },
+      "  - 'job-sheets-supported': list of strings\n"
+      "  - 'job-sheets-default': tuple of strings (start, end)\n"
+      "  - 'printer-error-policy-supported': if present, list of strings\n"
+      "  - 'printer-error-policy': if present, string\n"
+      "  - 'printer-op-policy-supported': if present, list of strings\n"
+      "  - 'printer-op-policy': if present, string\n\n"
+      "There are other attributes; the exact list of attributes returned \n"
+      "will depend on the CUPS server.\n"},
 
     { "addPrinterToClass",
       (PyCFunction) Connection_addPrinterToClass, METH_VARARGS,
       "addPrinterToClass(name, class) -> None\n\n"
-      "If the class does not yet exist, it is created."},
+      "Add a printer to a class.  If the class does not yet exist, \n"
+      "it is created.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type class: string\n"
+      "@param class: class name\n" },
 
     { "deletePrinterFromClass",
       (PyCFunction) Connection_deletePrinterFromClass, METH_VARARGS,
       "deletePrinterFromClass(name, class) -> None\n\n"
-      "If the class would be left empty, it is removed." },
+      "Remove a printer from a class.  If the class would be left empty, \n"
+      "it is removed.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type class: string\n"
+      "@param class: class name\n" },
 
     { "deleteClass",
       (PyCFunction) Connection_deleteClass, METH_VARARGS,
-      "deleteClass(class) -> None" },
+      "deleteClass(class) -> None\n\n"
+      "Delete a class.\n\n"
+      "@type class: string\n"
+      "@param class: class name\n" },
 
     { "setDefault",
       (PyCFunction) Connection_setDefault, METH_VARARGS | METH_KEYWORDS,
-      "setDefault(name) -> None" },
+      "setDefault(name) -> None\n\n"
+      "Set the system default printer.  Note that this can be over-ridden \n"
+      "on a per-user basis using the lpoptions command.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n" },
 
     { "getPPD",
       (PyCFunction) Connection_getPPD, METH_VARARGS,
-      "Returns PPD file name" },
+      "getPPD(name) -> string\n\n"
+      "Fetch a printer's PPD.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@return: temporary PPD file name" },
 
     { "enablePrinter",
       (PyCFunction) Connection_enablePrinter, METH_VARARGS | METH_KEYWORDS,
-      "Enables named printer." },
+      "enablePrinter(name) -> None\n\n"
+      "Enable printer.  This allows the printer to process its job queue.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n" },
 
     { "disablePrinter",
       (PyCFunction) Connection_disablePrinter, METH_VARARGS | METH_KEYWORDS,
-      "disablePrinter(name[,reason]) -> None\n\n"
-      "Disables named printer." },
+      "disablePrinter(name) -> None\n\n"
+      "Disable printer.  This prevents the printer from processing its \n"
+      "job queue.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type reason: string\n"
+      "@keyword reason: optional human-readable reason for disabling the \n"
+      "printer\n" },
 
     { "acceptJobs",
       (PyCFunction) Connection_acceptJobs, METH_VARARGS | METH_KEYWORDS,
-      "Causes named printer to accept jobs." },
+      "acceptJobs(name) -> None\n\n"
+      "Cause printer to accept jobs.\n"
+      "@type name: string\n"
+      "@param name: queue name\n" },
 
     { "rejectJobs",
       (PyCFunction) Connection_rejectJobs, METH_VARARGS | METH_KEYWORDS,
-      "rejectJobs(name[,reason])\n\n"
-      "Causes named printer to reject jobs." },
+      "rejectJobs(name)\n\n"
+      "Cause printer to reject jobs.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type reason: string\n"
+      "@keyword reason: optional human-readable reason for rejecting jobs\n" },
 
     { "printTestPage",
       (PyCFunction) Connection_printTestPage, METH_VARARGS | METH_KEYWORDS,
-      "printTestPage(name[,file,title,format,user]) -> job ID\n"
-      "Print a test page." },
+      "printTestPage(name) -> job ID\n\n"
+      "Print a test page.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type file: string\n"
+      "@keyword file: input file (default is CUPS test page)\n"
+      "@type title: string\n"
+      "@keyword title: job title (default 'Test Page')\n"
+      "@type format: string\n"
+      "@keyword format: document format (default 'application/postscript')\n"
+      "@type user: string\n"
+      "@keyword user: user to submit the job as (default 'guest')\n" },
 
     { "adminGetServerSettings",
       (PyCFunction) Connection_adminGetServerSettings, METH_NOARGS,
-      "adminGetServerSettings() -> dict\n" },
+      "adminGetServerSettings() -> dict\n\n"
+      "Get server settings.\n\n"
+      "@return: dict representing server settings; keywords include \n"
+      "L{CUPS_SERVER_DEBUG_LOGGING}, L{CUPS_SERVER_REMOTE_ADMIN}, \n"
+      "L{CUPS_SERVER_REMOTE_PRINTERS}, L{CUPS_SERVER_SHARE_PRINTERS}, \n"
+      "L{CUPS_SERVER_USER_CANCEL_ANY}\n"
+      "@see: L{adminSetServerSettings}\n" },
 
     { "adminSetServerSettings",
       (PyCFunction) Connection_adminSetServerSettings, METH_VARARGS,
-      "adminSetServerSettings() -> None\n" },
+      "adminSetServerSettings(settings) -> None\n\n"
+      "Set server settings.\n\n"
+      "@type settings: dict\n"
+      "@param settings: dict of server settings\n"
+      "@see: L{adminGetServerSettings}\n" },
 
     { "getSubscriptions",
       (PyCFunction) Connection_getSubscriptions, METH_VARARGS | METH_KEYWORDS,
-      "getSubscription(uri, my_subscriptions=False,\n"
-      "                job_id=None) -> list\n" },
+      "getSubscriptions(uri) -> integer list\n\n"
+      "Get subscriptions.\n\n"
+      "@type uri: string\n"
+      "@param uri: URI for object\n"
+      "@type my_subscriptions: boolean\n"
+      "@keyword my_subscriptions: only return subscriptions belonging to \n"
+      "the current user (default False)\n"
+      "@type job_id: integer\n"
+      "@keyword job_id: only return subscriptions relating to this job\n"
+      "@return: list of subscriptions\n" },
 
     { "createSubscription",
       (PyCFunction) Connection_createSubscription,
       METH_VARARGS | METH_KEYWORDS,
-      "createSubscription(uri, events=[], job_id=None, recipient_uri=[],\n"
-      "                   lease_duration=None, time_interval=None,\n"
-      "                   user_data=None) -> int\n" },
+      "createSubscription(uri) -> integer\n\n"
+      "Create a subscription.\n\n"
+      "@type uri: string\n"
+      "@param uri: URI for object\n"
+      "@type events: string list\n"
+      "@keyword events: events to receive notifications for\n"
+      "@type job_id: integer\n"
+      "@keyword job_id: job ID to receive notifications for\n"
+      "@type recipient_uri: string\n"
+      "@keyword recipient_uri: URI for notifications recipient\n"
+      "@type lease_duration: integer\n"
+      "@keyword lease_duration: lease duration in seconds\n"
+      "@type time_interval: integer\n"
+      "@keyword time_interval: time interval\n"
+      "@type user_data: string\n"
+      "@keyword user_data: user data to receieve with notifications\n"
+      "@return: subscription ID\n" },
 
     { "getNotifications",
       (PyCFunction) Connection_getNotifications, METH_VARARGS | METH_KEYWORDS,
-      "getNotifications(subscription_ids=[]) -> list" },
+      "getNotifications(subscription_ids) -> list\n\n"
+      "Get notifications for subscribed events.\n\n"
+      "@type subscription_ids: integer list\n"
+      "@param subscription_ids: list of subscription IDs to receive \n"
+      "notifications for\n"
+      "@return: list of dicts, each representing an event\n" },
 
     { "cancelSubscription",
       (PyCFunction) Connection_cancelSubscription, METH_VARARGS,
-      "cancelSubscription(id) -> None\n" },
+      "cancelSubscription(id) -> None\n\n"
+      "Cancel a subscription.\n\n"
+      "@type id: integer\n"
+      "@param id: subscription ID\n" },
 
     { "renewSubscription",
       (PyCFunction) Connection_renewSubscription, METH_VARARGS,
-      "renewSubscription(id) -> None\n" },
+      "renewSubscription(id) -> None\n\n"
+      "Renew a subscription.\n\n"
+      "@type id: integer\n"
+      "@param id: subscription ID\n" },
 
     { NULL } /* Sentinel */
   };
@@ -2939,7 +3147,16 @@ PyTypeObject cups_DestType =
     Py_TPFLAGS_DEFAULT,        /*tp_flags*/
     "CUPS destination\n"
     "================\n\n"
-    "  A destination print queue."
+    "  A destination print queue, as returned by L{Connection.getDests}.\n\n"
+    "@type name: string\n"
+    "@ivar name: destination queue name\n"
+    "@type instance: string\n"
+    "@ivar instance: destination instance name\n"
+    "@type is_default: boolean\n"
+    "@ivar is_default: whether this is the default destination\n"
+    "@type options: dict\n"
+    "@ivar options: string:string dict of default options for this \n"
+    "destination, indexed by option name\n"
     "",        /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
