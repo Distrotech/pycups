@@ -679,7 +679,16 @@ PyTypeObject cups_PPDType =
     0,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT,        /*tp_flags*/
-    "PPD file",                /* tp_doc */
+    "PPD file\n"
+    "========\n"
+    "  A PPD file.\n\n"
+    "@type constraints: L{Constraint} list\n"
+    "@ivar constraints: list of constraints\n"
+    "@type attributes: L{Attribute} list\n"
+    "@ivar attributes: list of attributes\n"
+    "@type optionGroups: L{Group} list\n"
+    "@ivar optionGroups: list of PPD option groups\n"
+    "",                        /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
     0,                         /* tp_richcompare */
@@ -882,7 +891,23 @@ PyTypeObject cups_OptionType =
     0,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT,        /*tp_flags*/
-    "PPD option",              /* tp_doc */
+    "PPD option\n"
+    "==========\n"
+    "  A PPD option.\n\n"
+    "@type conflicted: boolean\n"
+    "@ivar conflicted: whether this option is in conflict\n"
+    "@type keyword: string\n"
+    "@ivar keyword: the option keyword e.g. Duplex\n"
+    "@type defchoice: string\n"
+    "@ivar defchoice: the default option choice\n"
+    "@type text: string\n"
+    "@ivar text: the user-presentable option name e.g. Double-sided printing\n"
+    "@type ui: integer\n"
+    "@ivar ui: the option type; one of L{PPD_UI_BOOLEAN}, \n"
+    "L{PPD_UI_PICKONE}, L{PPD_UI_PICKMANY}\n"
+    "@type choices: list\n"
+    "@ivar choices: list of the option's choices\n"
+    "",                        /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
     0,                         /* tp_richcompare */
@@ -1059,7 +1084,18 @@ PyTypeObject cups_GroupType =
     0,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT,        /*tp_flags*/
-    "PPD option group",        /* tp_doc */
+    "PPD option group\n"
+    "================\n\n"
+    "  A PPD option group.\n\n"
+    "@type text: string\n"
+    "@ivar text: user-presentable group name\n"
+    "@type name: string\n"
+    "@ivar name: unique group name\n"
+    "@type options: L{Option} list\n"
+    "@ivar options: list of options in the group\n"
+    "@type subgroups: L{Group} list\n"
+    "@ivar subgroups: list of subgroups in the group\n"
+    "",                        /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
     0,                         /* tp_richcompare */
@@ -1197,7 +1233,18 @@ PyTypeObject cups_ConstraintType =
     0,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT,        /*tp_flags*/
-    "PPD constraint",          /* tp_doc */
+    "PPD constraint\n"
+    "==============\n\n"
+    "  A PPD constraint.\n\n"
+    "@type option1: string\n"
+    "@ivar option1: first option keyword\n"
+    "@type choice1: string\n"
+    "@ivar choice1: first option choice\n"
+    "@type option2: string\n"
+    "@ivar option2: second option keyword\n"
+    "@type choice2: string\n"
+    "@ivar choice2: secondoption choice\n"
+    "",                        /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
     0,                         /* tp_richcompare */
@@ -1335,7 +1382,18 @@ PyTypeObject cups_AttributeType =
     0,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT,        /*tp_flags*/
-    "PPD attribute",          /* tp_doc */
+    "PPD attribute\n"
+    "=============\n\n"
+    "  A PPD attribute.\n\n"
+    "@type name: string\n"
+    "@ivar name: attribute name\n"
+    "@type spec: string\n"
+    "@ivar spec: attribute specification\n"
+    "@type text: string\n"
+    "@ivar text: attribute text\n"
+    "@type value: string\n"
+    "@ivar value: attribute value\n"
+    "",                        /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
     0,                         /* tp_richcompare */

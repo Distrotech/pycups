@@ -1,3 +1,7 @@
+2007-09-11  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsppd.c: Start of better doc strings for PPD functions.
+
 2007-09-07  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c: Better doc strings throughout.
