@@ -1,5 +1,9 @@
 2007-09-12  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.26.
+
+2007-09-12  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsppd.c: Better doc strings throughout.
 
 2007-09-11  Tim Waugh  <twaugh@redhat.com>
