@@ -315,6 +315,7 @@ initcups (void)
 {
   PyObject *m = Py_InitModule ("cups", CupsMethods);
   PyObject *d = PyModule_GetDict (m);
+  PyObject *obj;
 
   // Connection type
   cups_ConnectionType.tp_new = PyType_GenericNew;
@@ -533,13 +534,35 @@ initcups (void)
 #endif /* CUPS 1.3 */
 
   // Exceptions
-  HTTPError = PyErr_NewException ("cups.HTTPError", NULL, NULL);
+  obj = PyDict_New ();
+  PyDict_SetItemString (obj, "__doc__", PyString_FromString(
+    "This exception is raised when an HTTP problem has occurred.  It \n"
+    "provides an integer HTTP status code.\n\n"
+    "Use it like this::\n"
+    "  try:\n"
+    "    ...\n"
+    "  except cups.HTTPError (status):\n"
+    "    print 'HTTP status is %d' % status\n"));
+  HTTPError = PyErr_NewException ("cups.HTTPError", NULL, obj);
+  Py_DECREF (obj);
   if (HTTPError == NULL)
     return;
   Py_INCREF (HTTPError);
   PyModule_AddObject (m, "HTTPError", HTTPError);
 
-  IPPError = PyErr_NewException ("cups.IPPError", NULL, NULL);
+  obj = PyDict_New ();
+  PyDict_SetItemString (obj, "__doc__", PyString_FromString(
+    "This exception is raised when an IPP error has occurred.  It \n"
+    "provides an integer IPP status code, and a human-readable string \n"
+    "describing the error.\n\n"
+    "Use it like this::\n"
+    "  try:\n"
+    "    ...\n"
+    "  except cups.IPPError (status, description):\n"
+    "    print 'IPP status is %d' % status\n"
+    "    print 'Meaning:', description\n"));
+  IPPError = PyErr_NewException ("cups.IPPError", NULL, obj);
+  Py_DECREF (obj);
   if (IPPError == NULL)
     return;
   Py_INCREF (IPPError);

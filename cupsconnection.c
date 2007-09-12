@@ -2545,14 +2545,16 @@ PyMethodDef Connection_methods[] =
       (PyCFunction) Connection_getPrinters, METH_NOARGS,
       "getPrinters() -> dict\n\n"
       "@return: a dict, indexed by name, of dicts representing\n"
-      "queues, indexed by attribute." },
+      "queues, indexed by attribute.\n"
+      "@raise IPPError: IPP problem" },
 
     { "getDests",
       (PyCFunction) Connection_getDests, METH_NOARGS,
       "getDests() -> dict\n\n"
       "@return: a dict representing available destinations.  Each \n"
       "dictionary key is a pair of (queue, instance) strings, and the \n"
-      "dictionary value is a L{cups.Dest} object." },
+      "dictionary value is a L{cups.Dest} object.\n"
+      "@raise IPPError: IPP problem" },
 
     { "getClasses",
       (PyCFunction) Connection_getClasses, METH_NOARGS,
@@ -2560,13 +2562,15 @@ PyMethodDef Connection_methods[] =
       "@return: a dict, indexed by name, of objects representing\n"
       "classes.  Each class object is either a string, in which case it\n"
       "is for the remote class; or a list, in which case it is a list of\n"
-      "queue names." },
+      "queue names.\n"
+      "@raise IPPError: IPP problem" },
 
     { "getPPDs",
       (PyCFunction) Connection_getPPDs, METH_NOARGS,
       "getPPDs() -> dict\n\n"
       "@return: a dict, indexed by PPD name, of dicts representing\n"
-      "PPDs, indexed by attribute." },
+      "PPDs, indexed by attribute.\n"
+      "@raise IPPError: IPP problem" },
 
     { "getServerPPD",
       (PyCFunction) Connection_getServerPPD, METH_VARARGS,
@@ -2574,14 +2578,16 @@ PyMethodDef Connection_methods[] =
       "Fetches the named PPD and stores it in a temporary file.\n\n"
       "@type ppd_name: string\n"
       "@param ppd_name: the ppd-name of a PPD\n"
-      "@return: temporary filename holding the PPD" },
+      "@return: temporary filename holding the PPD\n"
+      "@raise RuntimeError: Not supported in libcups until 1.3\n"
+      "@raise IPPError: IPP problem" },
     
     { "getDevices",
       (PyCFunction) Connection_getDevices, METH_NOARGS,
       "getDevices() -> dict\n\n"
       "@return: a dict, indexed by device URI, of dicts representing\n"
-      "devices, indexed by attribute.\n" },
-    
+      "devices, indexed by attribute.\n"
+      "@raise IPPError: IPP problem" },    
 
     { "getJobs",
       (PyCFunction) Connection_getJobs, METH_VARARGS | METH_KEYWORDS,
@@ -2594,13 +2600,15 @@ PyMethodDef Connection_methods[] =
       "@param my_jobs: whether to restrict the returned jobs to those \n"
       "owned by the current CUPS user (as set by L{cups.setUser}).\n"
       "@return: a dict, indexed by job ID, of dicts representing job\n"
-      "attributes.\n" },
+      "attributes.\n"
+      "@raise IPPError: IPP problem" },
 
     { "cancelJob",
       (PyCFunction) Connection_cancelJob, METH_VARARGS,
       "cancelJob(jobid) -> None\n\n"
       "@type jobid: integer\n"
-      "@param jobid: job ID to cancel\n" },
+      "@param jobid: job ID to cancel\n"
+      "@raise IPPError: IPP problem" },
 
     { "setJobHoldUntil",
       (PyCFunction) Connection_setJobHoldUntil, METH_VARARGS,
@@ -2610,14 +2618,16 @@ PyMethodDef Connection_methods[] =
       "@param jobid: job ID to adjust\n"
       "@type job_hold_until: string\n"
       "@param job_hold_until: when to print the job; examples: 'hold', \n"
-      "'immediate', 'restart', resume'\n"},
+      "'immediate', 'restart', resume'\n"
+      "@raise IPPError: IPP problem"},
     
     { "restartJob",
       (PyCFunction) Connection_restartJob, METH_VARARGS,
       "restartJob(jobid) -> None\n\n"
       "Restart a job.\n\n"
       "@type jobid: integer\n"
-      "@param jobid: job ID to restart\n" },
+      "@param jobid: job ID to restart\n"
+      "@raise IPPError: IPP problem" },
 
     { "getFile",
       (PyCFunction) Connection_getFile, METH_VARARGS,
@@ -2628,7 +2638,8 @@ PyMethodDef Connection_methods[] =
       "@type resource: string\n"
       "@param resource: resource name\n"
       "@type filename: string\n"
-      "@param filename: name of local file for storage\n"},
+      "@param filename: name of local file for storage\n"
+      "@raise HTTPError: HTTP problem" },
 
     { "putFile",
       (PyCFunction) Connection_putFile, METH_VARARGS,
@@ -2640,7 +2651,8 @@ PyMethodDef Connection_methods[] =
       "@type resource: string\n"
       "@param resource: resource name\n"
       "@type filename: string\n"
-      "@param filename: name of local file to upload\n"},
+      "@param filename: name of local file to upload\n"
+      "@raise HTTPError: HTTP problem"},
 
     { "addPrinter",
       (PyCFunction) Connection_addPrinter, METH_VARARGS | METH_KEYWORDS,
@@ -2659,7 +2671,8 @@ PyMethodDef Connection_methods[] =
       "@type device: string\n"
       "@keyword device: device URI string\n"
       "@type ppd: L{cups.PPD} instance\n"
-      "@keyword ppd: PPD object\n" },
+      "@keyword ppd: PPD object\n"
+      "@raise IPPError: IPP problem" },
 
     { "setPrinterDevice",
       (PyCFunction) Connection_setPrinterDevice, METH_VARARGS,
@@ -2668,7 +2681,8 @@ PyMethodDef Connection_methods[] =
       "@type name: string\n"
       "@param name: queue name\n"
       "@type device_uri: string\n"
-      "@param device_uri: device URI\n" },
+      "@param device_uri: device URI\n"
+      "@raise IPPError: IPP problem" },
 
     { "setPrinterInfo",
       (PyCFunction) Connection_setPrinterInfo, METH_VARARGS,
@@ -2677,7 +2691,8 @@ PyMethodDef Connection_methods[] =
       "@type name: string\n"
       "@param name: queue name\n"
       "@type info: string\n"
-      "@param info: human-readable information about the printer\n" },
+      "@param info: human-readable information about the printer\n"
+      "@raise IPPError: IPP problem" },
 
     { "setPrinterLocation",
       (PyCFunction) Connection_setPrinterLocation, METH_VARARGS,
@@ -2686,7 +2701,8 @@ PyMethodDef Connection_methods[] =
       "@type name: string\n"
       "@param name: queue name\n"
       "@type location: string\n"
-      "@param location: human-readable printer location\n" },
+      "@param location: human-readable printer location\n"
+      "@raise IPPError: IPP problem" },
 
     { "setPrinterShared",
       (PyCFunction) Connection_setPrinterShared, METH_VARARGS,
@@ -2697,7 +2713,8 @@ PyMethodDef Connection_methods[] =
       "@type name: string\n"
       "@param name: queue name\n"
       "@type shared: boolean\n"
-      "@param shared: whether printer should be shared\n" },
+      "@param shared: whether printer should be shared\n"
+      "@raise IPPError: IPP problem" },
 
     { "setPrinterJobSheets",
       (PyCFunction) Connection_setPrinterJobSheets, METH_VARARGS,
@@ -2708,7 +2725,8 @@ PyMethodDef Connection_methods[] =
       "@type start: string\n"
       "@param start: name of a sheet to print before each job\n"
       "@type end: string\n"
-      "@param end: name of a sheet to print after each job\n" },
+      "@param end: name of a sheet to print after each job\n"
+      "@raise IPPError: IPP problem" },
 
     { "setPrinterErrorPolicy",
       (PyCFunction) Connection_setPrinterErrorPolicy, METH_VARARGS,
@@ -2719,7 +2737,8 @@ PyMethodDef Connection_methods[] =
       "@type policy: string\n"
       "@param policy: policy name; supported policy names can be found \n"
       "by using the L{getPrinterAttributes} function and looking for the \n"
-      "'printer-error-policy-supported' attribute\n" },
+      "'printer-error-policy-supported' attribute\n"
+      "@raise IPPError: IPP problem" },
 
     { "setPrinterOpPolicy",
       (PyCFunction) Connection_setPrinterOpPolicy, METH_VARARGS,
@@ -2730,7 +2749,8 @@ PyMethodDef Connection_methods[] =
       "@type policy: string\n"
       "@param policy: policy name; supported policy names can be found \n"
       "by using the L{getPrinterAttributes} function and looking for the \n"
-      "'printer-op-policy-supported' attribute\n" },
+      "'printer-op-policy-supported' attribute\n"
+      "@raise IPPError: IPP problem" },
 
     { "setPrinterUsersAllowed",
       (PyCFunction) Connection_setPrinterUsersAllowed, METH_VARARGS,
@@ -2742,7 +2762,8 @@ PyMethodDef Connection_methods[] =
       "@param name: queue name\n"
       "@type allowed: string list\n"
       "@param allowed: list of allowed users; ['all'] \n"
-      "means there will be no user-name restriction.\n" },
+      "means there will be no user-name restriction.\n"
+      "@raise IPPError: IPP problem" },
 
     { "setPrinterUsersDenied",
       (PyCFunction) Connection_setPrinterUsersDenied, METH_VARARGS,
@@ -2754,7 +2775,8 @@ PyMethodDef Connection_methods[] =
       "@param name: queue name\n"
       "@type denied: string list\n"
       "@param denied: list of denied users; ['none'] \n"
-      "means there will be no user-name restriction.\n" },
+      "means there will be no user-name restriction.\n"
+      "@raise IPPError: IPP problem" },
 
     { "addPrinterOptionDefault",
       (PyCFunction) Connection_addPrinterOptionDefault, METH_VARARGS,
@@ -2767,7 +2789,8 @@ PyMethodDef Connection_methods[] =
       "@type option: string\n"
       "@param option: option name, for example 'job-priority'\n"
       "@type value: string\n"
-      "@param value: option value as a string\n" },
+      "@param value: option value as a string\n"
+      "@raise IPPError: IPP problem" },
 
     { "deletePrinterOptionDefault",
       (PyCFunction) Connection_deletePrinterOptionDefault, METH_VARARGS,
@@ -2776,14 +2799,16 @@ PyMethodDef Connection_methods[] =
       "@type name: string\n"
       "@param name: queue name\n"
       "@type option: string\n"
-      "@param option: option name, for example 'job-priority'\n" },
+      "@param option: option name, for example 'job-priority'\n"
+      "@raise IPPError: IPP problem" },
 
     { "deletePrinter",
       (PyCFunction) Connection_deletePrinter, METH_VARARGS | METH_KEYWORDS,
       "deletePrinter(name) -> None\n\n"
       "Delete a printer.\n\n"
       "@type name: string\n"
-      "@param name: queue name\n" },
+      "@param name: queue name\n"
+      "@raise IPPError: IPP problem" },
 
     { "getPrinterAttributes",
       (PyCFunction) Connection_getPrinterAttributes, METH_VARARGS,
@@ -2801,7 +2826,8 @@ PyMethodDef Connection_methods[] =
       "  - 'printer-op-policy-supported': if present, list of strings\n"
       "  - 'printer-op-policy': if present, string\n\n"
       "There are other attributes; the exact list of attributes returned \n"
-      "will depend on the CUPS server.\n"},
+      "will depend on the CUPS server.\n"
+      "@raise IPPError: IPP problem"},
 
     { "addPrinterToClass",
       (PyCFunction) Connection_addPrinterToClass, METH_VARARGS,
@@ -2811,7 +2837,8 @@ PyMethodDef Connection_methods[] =
       "@type name: string\n"
       "@param name: queue name\n"
       "@type class: string\n"
-      "@param class: class name\n" },
+      "@param class: class name\n"
+      "@raise IPPError: IPP problem" },
 
     { "deletePrinterFromClass",
       (PyCFunction) Connection_deletePrinterFromClass, METH_VARARGS,
@@ -2821,14 +2848,16 @@ PyMethodDef Connection_methods[] =
       "@type name: string\n"
       "@param name: queue name\n"
       "@type class: string\n"
-      "@param class: class name\n" },
+      "@param class: class name\n"
+      "@raise IPPError: IPP problem" },
 
     { "deleteClass",
       (PyCFunction) Connection_deleteClass, METH_VARARGS,
       "deleteClass(class) -> None\n\n"
       "Delete a class.\n\n"
       "@type class: string\n"
-      "@param class: class name\n" },
+      "@param class: class name\n"
+      "@raise IPPError: IPP problem" },
 
     { "setDefault",
       (PyCFunction) Connection_setDefault, METH_VARARGS | METH_KEYWORDS,
@@ -2836,7 +2865,8 @@ PyMethodDef Connection_methods[] =
       "Set the system default printer.  Note that this can be over-ridden \n"
       "on a per-user basis using the lpoptions command.\n\n"
       "@type name: string\n"
-      "@param name: queue name\n" },
+      "@param name: queue name\n"
+      "@raise IPPError: IPP problem" },
 
     { "getPPD",
       (PyCFunction) Connection_getPPD, METH_VARARGS,
@@ -2844,14 +2874,16 @@ PyMethodDef Connection_methods[] =
       "Fetch a printer's PPD.\n\n"
       "@type name: string\n"
       "@param name: queue name\n"
-      "@return: temporary PPD file name" },
+      "@return: temporary PPD file name\n"
+      "@raise IPPError: IPP problem" },
 
     { "enablePrinter",
       (PyCFunction) Connection_enablePrinter, METH_VARARGS | METH_KEYWORDS,
       "enablePrinter(name) -> None\n\n"
       "Enable printer.  This allows the printer to process its job queue.\n\n"
       "@type name: string\n"
-      "@param name: queue name\n" },
+      "@param name: queue name\n"
+      "@raise IPPError: IPP problem" },
 
     { "disablePrinter",
       (PyCFunction) Connection_disablePrinter, METH_VARARGS | METH_KEYWORDS,
@@ -2862,14 +2894,16 @@ PyMethodDef Connection_methods[] =
       "@param name: queue name\n"
       "@type reason: string\n"
       "@keyword reason: optional human-readable reason for disabling the \n"
-      "printer\n" },
+      "printer\n"
+      "@raise IPPError: IPP problem" },
 
     { "acceptJobs",
       (PyCFunction) Connection_acceptJobs, METH_VARARGS | METH_KEYWORDS,
       "acceptJobs(name) -> None\n\n"
       "Cause printer to accept jobs.\n"
       "@type name: string\n"
-      "@param name: queue name\n" },
+      "@param name: queue name\n"
+      "@raise IPPError: IPP problem" },
 
     { "rejectJobs",
       (PyCFunction) Connection_rejectJobs, METH_VARARGS | METH_KEYWORDS,
@@ -2878,7 +2912,8 @@ PyMethodDef Connection_methods[] =
       "@type name: string\n"
       "@param name: queue name\n"
       "@type reason: string\n"
-      "@keyword reason: optional human-readable reason for rejecting jobs\n" },
+      "@keyword reason: optional human-readable reason for rejecting jobs\n"
+      "@raise IPPError: IPP problem" },
 
     { "printTestPage",
       (PyCFunction) Connection_printTestPage, METH_VARARGS | METH_KEYWORDS,
@@ -2893,7 +2928,8 @@ PyMethodDef Connection_methods[] =
       "@type format: string\n"
       "@keyword format: document format (default 'application/postscript')\n"
       "@type user: string\n"
-      "@keyword user: user to submit the job as (default 'guest')\n" },
+      "@keyword user: user to submit the job as (default 'guest')\n"
+      "@raise IPPError: IPP problem" },
 
     { "adminGetServerSettings",
       (PyCFunction) Connection_adminGetServerSettings, METH_NOARGS,
@@ -2903,7 +2939,8 @@ PyMethodDef Connection_methods[] =
       "L{CUPS_SERVER_DEBUG_LOGGING}, L{CUPS_SERVER_REMOTE_ADMIN}, \n"
       "L{CUPS_SERVER_REMOTE_PRINTERS}, L{CUPS_SERVER_SHARE_PRINTERS}, \n"
       "L{CUPS_SERVER_USER_CANCEL_ANY}\n"
-      "@see: L{adminSetServerSettings}\n" },
+      "@see: L{adminSetServerSettings}\n"
+      "@raise IPPError: IPP problem" },
 
     { "adminSetServerSettings",
       (PyCFunction) Connection_adminSetServerSettings, METH_VARARGS,
@@ -2911,7 +2948,8 @@ PyMethodDef Connection_methods[] =
       "Set server settings.\n\n"
       "@type settings: dict\n"
       "@param settings: dict of server settings\n"
-      "@see: L{adminGetServerSettings}\n" },
+      "@see: L{adminGetServerSettings}\n"
+      "@raise IPPError: IPP problem" },
 
     { "getSubscriptions",
       (PyCFunction) Connection_getSubscriptions, METH_VARARGS | METH_KEYWORDS,
@@ -2924,7 +2962,8 @@ PyMethodDef Connection_methods[] =
       "the current user (default False)\n"
       "@type job_id: integer\n"
       "@keyword job_id: only return subscriptions relating to this job\n"
-      "@return: list of subscriptions\n" },
+      "@return: list of subscriptions\n"
+      "@raise IPPError: IPP problem" },
 
     { "createSubscription",
       (PyCFunction) Connection_createSubscription,
@@ -2945,7 +2984,8 @@ PyMethodDef Connection_methods[] =
       "@keyword time_interval: time interval\n"
       "@type user_data: string\n"
       "@keyword user_data: user data to receieve with notifications\n"
-      "@return: subscription ID\n" },
+      "@return: subscription ID\n"
+      "@raise IPPError: IPP problem" },
 
     { "getNotifications",
       (PyCFunction) Connection_getNotifications, METH_VARARGS | METH_KEYWORDS,
@@ -2954,21 +2994,24 @@ PyMethodDef Connection_methods[] =
       "@type subscription_ids: integer list\n"
       "@param subscription_ids: list of subscription IDs to receive \n"
       "notifications for\n"
-      "@return: list of dicts, each representing an event\n" },
+      "@return: list of dicts, each representing an event\n"
+      "@raise IPPError: IPP problem" },
 
     { "cancelSubscription",
       (PyCFunction) Connection_cancelSubscription, METH_VARARGS,
       "cancelSubscription(id) -> None\n\n"
       "Cancel a subscription.\n\n"
       "@type id: integer\n"
-      "@param id: subscription ID\n" },
+      "@param id: subscription ID\n"
+      "@raise IPPError: IPP problem" },
 
     { "renewSubscription",
       (PyCFunction) Connection_renewSubscription, METH_VARARGS,
       "renewSubscription(id) -> None\n\n"
       "Renew a subscription.\n\n"
       "@type id: integer\n"
-      "@param id: subscription ID\n" },
+      "@param id: subscription ID\n"
+      "@raise IPPError: IPP problem" },
 
     { NULL } /* Sentinel */
   };
@@ -3003,7 +3046,7 @@ PyTypeObject cups_ConnectionType =
     "  connection server and username should be set using \n"
     "  L{cups.setServer} and L{cups.setUser}; otherwise the defaults will \n"
     "  be used.  When a Connection object is instantiated it results in a "
-    "  call to the libcups function httpConnectEncrypt().\n"
+    "  call to the libcups function httpConnectEncrypt()."
     "",         /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */

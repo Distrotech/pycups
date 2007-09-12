@@ -616,42 +616,69 @@ PyMethodDef PPD_methods[] =
   {
     { "localize",
       (PyCFunction) PPD_localize, METH_NOARGS,
-      "Localize PPD." },
+      "localize() -> None\n\n"
+      "Localize PPD to the current locale." },
 
     { "markDefaults",
       (PyCFunction) PPD_markDefaults, METH_NOARGS,
-      "Mark default options.  Returns number of conflicts." },
+      "markDefaults() -> None\n\n"
+      "Set (mark) all options to their default choices." },
 
     { "markOption",
       (PyCFunction) PPD_markOption, METH_VARARGS,
-      "Mark an option.  Returns number of conflicts." },
+      "markOption(option, choice) -> integer\n\n"
+      "Set an option to a particular choice.\n\n"
+      "@type option: string\n"
+      "@param option: option keyword\n"
+      "@type choice: string\n"
+      "@param choice: option choice\n"
+      "@return: number of conflicts" },
 
     { "conflicts",
       (PyCFunction) PPD_conflicts, METH_NOARGS,
-      "Returns number of conflicts." },
+      "conflicts() -> integer\n\n"
+      "@return: number of conflicts." },
 
     { "findOption",
       (PyCFunction) PPD_findOption, METH_VARARGS,
-      "findOption(name) -> cups.Option or None." },
+      "findOption(name)\n\n"
+      "@type name: string\n"
+      "@param name: option keyword\n"
+      "@rtype: L{Option} or None\n"
+      "@return: named option, or None if not found." },
 
     { "findAttr",
       (PyCFunction) PPD_findAttr, METH_VARARGS | METH_KEYWORDS,
-      "findAttr(name, spec=None) -> cups.Attribute or None." },
+      "findAttr(name)\n\n"
+      "@type name: string\n"
+      "@param name: attribute name\n"
+      "@type spec: string\n"
+      "@keyword spec: specifier string (optional)\n"
+      "@rtype: L{Attribute} or None\n"
+      "@return: matching attribute, or None if not found." },
 
     { "findNextAttr",
       (PyCFunction) PPD_findNextAttr, METH_VARARGS | METH_KEYWORDS,
-      "findNextAttr(name, spec=None) -> cups.Attribute or None." },
+      "findNextAttr(name)\n\n"
+      "@type name: string\n"
+      "@param name: attribute name\n"
+      "@type spec: string\n"
+      "@keyword spec: specifier string (optional)\n"
+      "@rtype: L{Attribute} or None\n"
+      "@return: next matching attribute, or None if not found." },
 
     { "nondefaultsMarked",
       (PyCFunction) PPD_nondefaultsMarked, METH_NOARGS,
-      "nondefaultsMarked() -> Boolean.\n\n"
+      "nondefaultsMarked() -> boolean\n\n"
       "Returns true if any non-default option choices are marked." },
 
     { "writeFd",
       (PyCFunction) PPD_writeFd, METH_VARARGS,
-      "writeFd (fd) -> None\n"
+      "writeFd(fd) -> None\n\n"
       "Write PPD file, with marked choices as defaults, to file\n"
-      "descriptor." },
+      "descriptor.\n\n"
+      "@type fd: integer\n"
+      "@param fd: open file descriptor" },
 
     { NULL } /* Sentinel */
   };
@@ -1388,9 +1415,9 @@ PyTypeObject cups_AttributeType =
     "@type name: string\n"
     "@ivar name: attribute name\n"
     "@type spec: string\n"
-    "@ivar spec: attribute specification\n"
+    "@ivar spec: specifier string (if any)\n"
     "@type text: string\n"
-    "@ivar text: attribute text\n"
+    "@ivar text: human-readable text (if any)\n"
     "@type value: string\n"
     "@ivar value: attribute value\n"
     "",                        /* tp_doc */
