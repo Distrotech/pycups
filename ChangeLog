@@ -1,5 +1,9 @@
 2007-09-12  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsmodule.c: Missed some doc strings.
+
+2007-09-12  Tim Waugh  <twaugh@redhat.com>
+
 	* Makefile: Version 1.9.26.
 
 2007-09-12  Tim Waugh  <twaugh@redhat.com>

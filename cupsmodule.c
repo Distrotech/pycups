@@ -275,37 +275,71 @@ fail:
 
 static PyMethodDef CupsMethods[] = {
   { "modelSort", cups_modelSort, METH_VARARGS,
-    "Sort two model strings." },
+    "modelSort(s1,s2) -> integer\n\n"
+    "Sort two model strings.\n\n"
+    "@type s1: string\n"
+    "@param s1: first string\n"
+    "@type s2: string\n"
+    "@param s2: second string\n"
+    "@return: strcmp-style comparision result"},
 
   { "setUser", cups_setUser, METH_VARARGS,
-    "Set user to connect as." },
+    "setUser(user) -> None\n\n"
+    "Set user to connect as.\n\n"
+    "@type user: string\n"
+    "@param user: username"},
 
   { "setServer", cups_setServer, METH_VARARGS,
-    "Set server to connect to." },
+    "setServer(server) -> None\n\n"
+    "Set server to connect to.\n\n"
+    "@type server: string\n"
+    "@param server: server hostname" },
 
   { "setPort", cups_setPort, METH_VARARGS,
-    "Set IPP port to connect to." },
+    "setPort(port) -> None\n\n"
+    "Set IPP port to connect to.\n\n"
+    "@type port: integer\n"
+    "@param port: IPP port" },
 
   { "setEncryption", cups_setEncryption, METH_VARARGS,
-    "Set encryption policy." },
+    "setEncryption(policy) -> None\n\n"
+    "Set encryption policy.\n\n"
+    "@type policy: integer\n"
+    "@param policy: L{HTTP_ENCRYPT_ALWAYS}, L{HTTP_ENCRYPT_IF_REQUESTED}, \n"
+    "L{HTTP_ENCRYPT_NEVER}, or L{HTTP_ENCRYPT_REQUIRED}" },
 
   { "getUser", (PyCFunction) cups_getUser, METH_NOARGS,
-    "Get user to connect as." },
+    "getUser() -> string\n\n"
+    "@return: user to connect as." },
 
   { "getServer", (PyCFunction) cups_getServer, METH_NOARGS,
-    "Get server to connect to." },
+    "getServer() -> string\n\n"
+    "@return: server to connect to." },
 
   { "getPort", (PyCFunction) cups_getPort, METH_NOARGS,
-    "Get IPP port to connect to." },
+    "getPort() -> integer\n\n"
+    "@return: IPP port to connect to." },
 
   { "getEncryption", (PyCFunction) cups_getEncryption, METH_NOARGS,
-    "Get encryption policy." },
+    "getEncryption() -> integer\n\n"
+    "Get encryption policy.\n"
+    "@see: L{setEncryption}" },
 
   { "setPasswordCB", cups_setPasswordCB, METH_VARARGS,
-    "Set user to connect as." },
+    "setPasswordCB(fn) -> None\n\n"
+    "Set password callback function.  This Python function will be called \n"
+    "when a password is required.  It must take one string parameter \n"
+    "(the password prompt) and it must return a string (the password).  To \n"
+    "abort the operation it may return the empty string ('').\n\n"
+    "@type fn: callable object\n"
+    "@param fn: callback function" },
 
   { "require", cups_require, METH_VARARGS,
-    "Require pycups version." },  
+    "require(version) -> None\n\n"
+    "Require pycups version.\n\n"
+    "@type version: string\n"
+    "@param version: minimum pycups version required\n"
+    "@raise RuntimeError: requirement not met" },  
 
   { NULL, NULL, 0, NULL }
 };
