@@ -1614,6 +1614,10 @@ PyObject_from_attr_value (ipp_attribute_t *attr, int i)
 			 attr->values[i].range.lower,
 			 attr->values[i].range.upper);
     break;
+  case IPP_TAG_NOVALUE:
+    Py_INCREF (Py_None);
+    val = Py_None;
+    break;
 
     // TODO:
   case IPP_TAG_DATE:
