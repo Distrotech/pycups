@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New in 1.9.27:
+
+* IPP attributes with type IPP_TAG_NOVALUE now take Python value None.
+
 New in 1.9.25:
 
 * cups.CUPS_SERVER_REMOTE_ANY (for CUPS 1.3)
