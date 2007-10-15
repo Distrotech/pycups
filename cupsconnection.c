@@ -206,28 +206,38 @@ Connection_getDests (Connection *self)
   num_dests = cupsGetDests2 (self->http, &dests);
 
   // Create a dict indexed by (name,instance)
-  for (i = 0; i < num_dests; i++) {
+  for (i = 0; i <= num_dests; i++) {
     PyObject *largs = Py_BuildValue ("()");
     PyObject *lkwlist = Py_BuildValue ("{}");
     Dest *destobj = (Dest *) PyType_GenericNew (&cups_DestType,
 						largs, lkwlist);
     Py_DECREF (largs);
     Py_DECREF (lkwlist);
-    PyObject *nameinstance = Py_BuildValue ("(ss)",
-					    dests[i].name,
-					    dests[i].instance);
-    int j;
 
-    destobj->is_default = dests[i].is_default;
-    destobj->destname = strdup (dests[i].name);
-    destobj->instance = (dests[i].instance ? strdup (dests[i].instance)
-			 : NULL );
-    destobj->num_options = dests[i].num_options;
-    destobj->name = malloc (dests[i].num_options * sizeof (char *));
-    destobj->value = malloc (dests[i].num_options * sizeof (char *));
-    for (j = 0; j < dests[i].num_options; j++) {
-      destobj->name[j] = strdup (dests[i].options[j].name);
-      destobj->value[j] = strdup (dests[i].options[j].value);
+    cups_dest_t *dest;
+    PyObject *nameinstance;
+    if (i == num_dests)
+      {
+	// Add a (None,None) entry for the default printer.
+	dest = cupsGetDest (NULL, NULL, num_dests, dests);
+	nameinstance = Py_BuildValue ("(ss)", NULL, NULL);
+      }
+    else
+      {
+	dest = dests + i;
+	nameinstance = Py_BuildValue ("(ss)", dest->name, dest->instance);
+      }
+
+    destobj->is_default = dest->is_default;
+    destobj->destname = strdup (dest->name);
+    destobj->instance = (dest->instance ? strdup (dest->instance) : NULL );
+    destobj->num_options = dest->num_options;
+    destobj->name = malloc (dest->num_options * sizeof (char *));
+    destobj->value = malloc (dest->num_options * sizeof (char *));
+    int j;
+    for (j = 0; j < dest->num_options; j++) {
+      destobj->name[j] = strdup (dest->options[j].name);
+      destobj->value[j] = strdup (dest->options[j].value);
     }
 
     PyDict_SetItem (pydests, nameinstance, (PyObject *) destobj);

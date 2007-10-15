@@ -1,3 +1,8 @@
+2007-10-15  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getDests): Add a (None,None) entry
+	for the default printer.
+
 2007-09-19  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Version 1.9.27.
