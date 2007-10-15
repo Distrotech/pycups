@@ -2567,7 +2567,10 @@ PyMethodDef Connection_methods[] =
       "getDests() -> dict\n\n"
       "@return: a dict representing available destinations.  Each \n"
       "dictionary key is a pair of (queue, instance) strings, and the \n"
-      "dictionary value is a L{cups.Dest} object.\n"
+      "dictionary value is a L{cups.Dest} object.  In addition to the \n"
+      "available destinations, a special dictionary key (None,None) is \n"
+      "provided for looking up the default destination; this destination \n"
+      "will also be available under its own key.\n"
       "@raise IPPError: IPP problem" },
 
     { "getClasses",

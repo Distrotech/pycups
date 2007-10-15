@@ -1,6 +1,12 @@
 NEWS
 ----
 
+New in 1.9.28:
+
+* cups.Connection.getDests() now includes a (None,None) key in its result
+  for identifying the default printer.  This is intended to be equivalent
+  to cupsGetDest(NULL, NULL, ...).
+
 New in 1.9.27:
 
 * IPP attributes with type IPP_TAG_NOVALUE now take Python value None.

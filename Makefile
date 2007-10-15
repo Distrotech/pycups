@@ -1,5 +1,5 @@
 NAME=pycups
-VERSION=1.9.27
+VERSION=1.9.28
 
 PYTHONVERS = python2.4
 
