@@ -73,6 +73,30 @@ set_ipp_error (ipp_status_t status)
   }
 }
 
+static PyObject *
+PyObj_from_UTF8 (const char *utf8)
+{
+  PyObject *val = PyUnicode_DecodeUTF8 (utf8, strlen (utf8), NULL);
+  if (!val) {
+    // CUPS 1.2 always gives us UTF-8.  Before CUPS 1.2, the
+    // ppd-* strings come straight from the PPD with no
+    // transcoding, but the attributes-charset is still 'utf-8'
+    // so we've no way of knowing the real encoding.
+    // In that case, detect the error and force it to ASCII.
+    char *ascii, *orig = attr->values[0].string.text;
+    int i;
+    PyErr_Clear ();
+    ascii = malloc (1 + strlen (orig));
+    for (i = 0; orig[i]; i++)
+      ascii[i] = orig[i] & 0x7f;
+    ascii[i] = '\0';
+    val = PyString_FromString (ascii);
+    free (ascii);
+  }
+
+  return val;
+}
+
 ////////////////
 // Connection //
 ////////////////
@@ -256,7 +280,7 @@ build_list_from_attribute_strings (ipp_attribute_t *attr)
   int i;
   debugprintf ("-> build_list_from_attribute_strings()\n");
   for (i = 0; i < attr->num_values; i++) {
-    PyObject *val = PyString_FromString (attr->values[i].string.text);
+    PyObject *val = PyObj_from_UTF8 (attr->values[i].string.text);
     PyList_Append (list, val);
     debugprintf ("%s\n", attr->values[i].string.text);
   }
@@ -341,7 +365,7 @@ Connection_getPrinters (Connection *self)
 		!strcmp (attr->name, "printer-location") ||
 		!strcmp (attr->name, "printer-state-message")) &&
 	       attr->value_tag == IPP_TAG_TEXT) {
-	val = PyString_FromString (attr->values[0].string.text);
+	val = PyObj_from_UTF8 (attr->values[0].string.text);
       }
       else if (!strcmp (attr->name,
 			"printer-state-reasons") &&
@@ -365,7 +389,7 @@ Connection_getPrinters (Connection *self)
       else if ((!strcmp (attr->name, "device-uri") ||
 		!strcmp (attr->name, "printer-uri-supported")) &&
 	       attr->value_tag == IPP_TAG_URI) {
-	val = PyString_FromString (attr->values[0].string.text);
+	val = PyObj_from_UTF8 (attr->values[0].string.text);
       }
       else if (!strcmp (attr->name, "printer-is-shared") &&
 	       attr->value_tag == IPP_TAG_BOOLEAN) {
@@ -373,14 +397,18 @@ Connection_getPrinters (Connection *self)
       }
 
       if (val) {
+	PyObject *key = PyObj_from_UTF8 (attr->name);
 	debugprintf ("Added %s to dict\n", attr->name);
-	PyDict_SetItemString (dict, attr->name, val);
+	PyDict_SetItem (dict, key, val);
 	Py_DECREF (val);
+	Py_DECREF (key);
       }
     }
 
     if (printer) {
-      PyDict_SetItemString (result, printer, dict);
+      PyObject *key = PyObj_from_UTF8 (printer);
+      PyDict_SetItemString (result, key, dict);
+      Py_DECREF (key);
     } else
       Py_DECREF (dict);
 
@@ -458,15 +486,17 @@ Connection_getClasses (Connection *self)
 
     if (printer_uri) {
       Py_XDECREF (members);
-      members = PyString_FromString (printer_uri);
+      members = PyObj_from_UTF8 (printer_uri);
     }
 
     if (!members)
       members = PyList_New (0);
 
     if (classname) {
+      PyObject *key = PyObj_from_UTF8 (classname);
       debugprintf ("Added class %s\n", classname);
-      PyDict_SetItemString (result, classname, members);
+      PyDict_SetItem (result, key, members);
+      Py_DECREF (key);
     } else
       Py_XDECREF (members);
 
@@ -529,37 +559,23 @@ Connection_getPPDs (Connection *self)
 		attr->value_tag == IPP_TAG_TEXT) ||
 	       (!strcmp (attr->name, "ppd-device-id") &&
 		attr->value_tag == IPP_TAG_TEXT)) {
-	val = PyUnicode_DecodeUTF8 (attr->values[0].string.text,
-				    strlen (attr->values[0].string.text),
-				    NULL);
-	if (!val) {
-	  // CUPS 1.2 always gives us UTF-8.  Before CUPS 1.2, the
-	  // ppd-* strings come straight from the PPD with no
-	  // transcoding, but the attributes-charset is still 'utf-8'
-	  // so we've no way of knowing the real encoding.
-	  // In that case, detect the error and force it to ASCII.
-	  char *ascii, *orig = attr->values[0].string.text;
-	  int i;
-	  PyErr_Clear ();
-	  ascii = malloc (1 + strlen (orig));
-	  for (i = 0; orig[i]; i++)
-	    ascii[i] = orig[i] & 0x7f;
-	  ascii[i] = '\0';
-	  val = PyString_FromString (ascii);
-	  free (ascii);
-	}
+	val = PyObj_from_UTF8 (attr->values[0].string.text);
       }
 
       if (val) {
+	PyObject *key = PyObj_from_UTF8 (attr->name);
 	debugprintf ("Adding %s to ppd dict\n", attr->name);
-	PyDict_SetItemString (dict, attr->name, val);
+	PyDict_SetItem (dict, key, val);
 	Py_DECREF (val);
+	Py_DECREF (key);
       }
     }
 
     if (ppdname) {
+      PyObject *key = PyObj_from_UTF8 (ppdname);
       debugprintf ("Adding %s to result dict\n", ppdname);
-      PyDict_SetItemString (result, ppdname, dict);
+      PyDict_SetItem (result, key, dict);
+      Py_DECREF (key);
     } else {
       debugprintf ("Discarding ppd dict\n");
       Py_DECREF (dict);
@@ -650,18 +666,22 @@ Connection_getDevices (Connection *self)
 		attr->value_tag == IPP_TAG_TEXT) ||
 	       (!strcmp (attr->name, "device-id") &&
 		attr->value_tag == IPP_TAG_TEXT))
-	val = PyString_FromString (attr->values[0].string.text);
+	val = PyObj_from_UTF8 (attr->values[0].string.text);
 
       if (val) {
+	PyObject *key = PyObj_from_UTF8 (attr->name);
 	debugprintf ("Adding %s to device dict\n", attr->name);
-	PyDict_SetItemString (dict, attr->name, val);
+	PyDict_SetItem (dict, key, val);
 	Py_DECREF (val);
+	Py_DECREF (key);
       }
     }
 
     if (device_uri) {
+      PyObject *key = PyObj_from_UTF8 (device_uri);
       debugprintf ("Adding %s to result dict\n", device_uri);
-      PyDict_SetItemString (result, device_uri, dict);
+      PyDict_SetItem (result, key, dict);
+      Py_DECREF (key);
     } else {
       debugprintf ("Discarding device dict\n");
       Py_DECREF (dict);
@@ -751,15 +771,17 @@ Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
 		attr->value_tag == IPP_TAG_NAME) ||
 	       (!strcmp (attr->name, "job-printer-uri") &&
 		attr->value_tag == IPP_TAG_URI))
-	val = PyString_FromString (attr->values[0].string.text);
+	val = PyObj_from_UTF8 (attr->values[0].string.text);
       else if (!strcmp (attr->name, "job-preserved") &&
 	       attr->value_tag == IPP_TAG_BOOLEAN)
 	val = PyBool_FromLong (attr->values[0].integer);
 
       if (val) {
+	PyObject *key = PyObj_from_UTF8 (attr->name);
 	debugprintf ("Adding %s to job dict\n", attr->name);
-	PyDict_SetItemString (dict, attr->name, val);
+	PyDict_SetItem (dict, key, val);
 	Py_DECREF (val);
+	Py_DECREF (key);
       }
     }
 
@@ -1610,7 +1632,7 @@ PyObject_from_attr_value (ipp_attribute_t *attr, int i)
   case IPP_TAG_CHARSET:
   case IPP_TAG_MIMETYPE:
   case IPP_TAG_LANGUAGE:
-    val = PyString_FromString (attr->values[i].string.text);
+    val = PyObj_from_UTF8 (attr->values[i].string.text);
     break;
   case IPP_TAG_INTEGER:
   case IPP_TAG_ENUM:
@@ -1693,6 +1715,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
       // Make it a tuple.
       if (!strcmp (attr->name, "job-sheets-default") &&
 	  attr->value_tag == IPP_TAG_NAME) {
+	PyObject *startobj, *endobj;
 	const char *start, *end;
 	start = attr->values[0].string.text;
 	if (attr->num_values >= 2)
@@ -1700,8 +1723,12 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
 	else
 	  end = "";
 
+	startobj = PyObj_from_UTF8 (start);
+	endobj = PyObj_from_UTF8 (end);
 	PyDict_SetItemString (ret, "job-sheets-default",
-			      Py_BuildValue ("(ss)", start, end));
+			      Py_BuildValue ("(ss)", startobj, endobj));
+	Py_DECREF (startobj);
+	Py_DECREF (endobj);
 	continue;
       }
 
@@ -1746,15 +1773,19 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
 
       if (is_list) {
 	PyObject *list = PyList_New (0);
+	PyObject *key;
 	int i;
 	for (i = 0; i < attr->num_values; i++) {
 	  PyObject *val = PyObject_from_attr_value (attr, i);
 	  PyList_Append (list, val);
 	}
-	PyDict_SetItemString (ret, attr->name, list);
+	key = PyObj_from_UTF8 (attr->name);
+	PyDict_SetItem (ret, key, list);
+	Py_DECREF (key);
       } else {
 	PyObject *val = PyObject_from_attr_value (attr, i);
-	PyDict_SetItemString (ret, attr->name, val);
+	PyObject *key = PyObj_from_UTF8 (attr->name);
+	PyDict_SetItem (ret, key, val);
       }
     }
 
@@ -2211,7 +2242,7 @@ Connection_getSubscriptions (Connection *self, PyObject *args, PyObject *kwds)
 
   subscription = NULL;
   for (; attr; attr = attr->next) {
-    PyObject *obj;
+    PyObject *obj, *key;
     if (attr->group_tag == IPP_TAG_ZERO) {
       // End of subscription.
       if (subscription)
@@ -2238,7 +2269,10 @@ Connection_getSubscriptions (Connection *self, PyObject *args, PyObject *kwds)
 
     if (!subscription)
       subscription = PyDict_New ();
-    PyDict_SetItemString (subscription, attr->name, obj);
+
+    key = PyObj_from_UTF8 (attr->name);
+    PyDict_SetItem (subscription, key, obj);
+    Py_DECREF (key);
   }
 
   if (subscription)
