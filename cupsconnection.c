@@ -76,14 +76,15 @@ set_ipp_error (ipp_status_t status)
 static PyObject *
 PyObj_from_UTF8 (const char *utf8)
 {
-  PyObject *val = PyUnicode_DecodeUTF8 (utf8, strlen (utf8), NULL);
+  PyObject *val = PyString_Decode (utf8, strlen (utf8), "utf-8", NULL);
   if (!val) {
     // CUPS 1.2 always gives us UTF-8.  Before CUPS 1.2, the
     // ppd-* strings come straight from the PPD with no
     // transcoding, but the attributes-charset is still 'utf-8'
     // so we've no way of knowing the real encoding.
     // In that case, detect the error and force it to ASCII.
-    char *ascii, *orig = attr->values[0].string.text;
+    const char *orig = utf8;
+    char *ascii;
     int i;
     PyErr_Clear ();
     ascii = malloc (1 + strlen (orig));
@@ -95,6 +96,30 @@ PyObj_from_UTF8 (const char *utf8)
   }
 
   return val;
+}
+
+static const char *
+UTF8_from_PyObj (char **const utf8, PyObject *obj)
+{
+  if (PyUnicode_Check (obj)) {
+    PyObject *stringobj = PyUnicode_AsUTF8String (obj);
+    if (stringobj == NULL)
+      return NULL;
+
+    *utf8 = strdup (PyString_AsString (stringobj));
+    Py_DECREF (stringobj);
+    return *utf8;
+  }
+  else if (PyString_Check (obj)) {
+    const char *ret;
+    PyObject *unicodeobj = PyUnicode_FromEncodedObject (obj, NULL, NULL);
+    ret = UTF8_from_PyObj (utf8, unicodeobj);
+    Py_DECREF (unicodeobj);
+    return ret;
+  }
+
+  PyErr_SetString (PyExc_TypeError, "string or unicode object required");
+  return NULL;
 }
 
 ////////////////
@@ -158,8 +183,10 @@ static PyObject *
 do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
 		    ipp_op_t op)
 {
-  const char *name;
-  const char *reason = NULL;
+  PyObject *nameobj;
+  PyObject *reasonobj = NULL;
+  char *name;
+  char *reason = NULL;
   char uri[HTTP_MAX_URI];
   ipp_t *request, *answer;
 
@@ -168,8 +195,8 @@ do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
   case CUPS_REJECT_JOBS:
     {
       static char *kwlist[] = { "name", "reason", NULL };
-      if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|s", kwlist,
-					&name, &reason))
+      if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|O", kwlist,
+					&nameobj, &reasonobj))
 	return NULL;
       debugprintf ("-> do_printer_request(op:%d, name:%s, reason:%s)\n",
 		   (int) op, name, reason ? reason : "(null)");
@@ -177,20 +204,38 @@ do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
     }
 
   default:
-    if (!PyArg_ParseTuple (args, "s", &name))
+    if (!PyArg_ParseTuple (args, "O", &nameobj))
       return NULL;
     debugprintf ("-> do_printer_request(op:%d, name:%s)\n", (int) op, name);
     break;
   }
 
+  if (UTF8_from_PyObj (&name, nameobj) == NULL) {
+    Py_DECREF (nameobj);
+    return NULL;
+  }
+  Py_DECREF (nameobj);
+
   request = ippNewRequest (op);
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
+  free (name);
+
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, uri);
 
-  if (reason)
+  if (reasonobj) {
+    char *reason;
+    if (UTF8_from_PyObj (&reason, reasonobj) == NULL) {
+      Py_DECREF (reasonobj);
+      ippDelete (request);
+      return NULL;
+    }
+    Py_DECREF (reasonobj);
+
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_TEXT,
 		  "printer-state-message", NULL, reason);
+    free (reason);
+  }
 
   debugprintf ("cupsDoRequest(\"/admin/\")\n");
   answer = cupsDoRequest (self->http, request, "/admin/");
@@ -407,7 +452,7 @@ Connection_getPrinters (Connection *self)
 
     if (printer) {
       PyObject *key = PyObj_from_UTF8 (printer);
-      PyDict_SetItemString (result, key, dict);
+      PyDict_SetItem (result, key, dict);
       Py_DECREF (key);
     } else
       Py_DECREF (dict);
@@ -840,11 +885,15 @@ Connection_setJobHoldUntil (Connection *self, PyObject *args)
 {
   ipp_t *request, *answer;
   int job_id;
-  char *job_hold_until = NULL;
+  PyObject *job_hold_until_obj;
+  char *job_hold_until;
   char uri[1024];
   cups_option_t *options = NULL;
   int num_options = 0;
-  if (!PyArg_ParseTuple (args, "is", &job_id, &job_hold_until))
+  if (!PyArg_ParseTuple (args, "io", &job_id, &job_hold_until_obj))
+    return NULL;
+
+  if (UTF8_from_PyObj (&job_hold_until, job_hold_until_obj) == NULL)
     return NULL;
 
   debugprintf ("-> Connection_setJobHoldUntil(%d,%s)\n",
@@ -857,6 +906,9 @@ Connection_setJobHoldUntil (Connection *self, PyObject *args)
   num_options = cupsAddOption ("job-hold-until", job_hold_until,
 			       num_options, &options);
   cupsEncodeOptions (request, num_options, options);
+  free (job_hold_until);
+  Py_DECREF (job_hold_until_obj);
+
   debugprintf ("cupsDoRequest(\"/jobs/\")\n");
   answer = cupsDoRequest (self->http, request, "/jobs/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
@@ -977,22 +1029,55 @@ add_modify_class_request (const char *name)
 static PyObject *
 Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
 {
-  const char *name;
-  char *ppdfile = NULL;
-  const char *ppdname = NULL;
-  const char *info = NULL;
-  const char *location = NULL;
-  const char *device = NULL;
+  PyObject *nameobj = NULL;
+  char *name = NULL;
+  PyObject *ppdfileobj = NULL;
+  char *ppdfile;
+  PyObject *ppdnameobj = NULL;
+  char *ppdname;
+  PyObject *infoobj = NULL;
+  char *info;
+  PyObject *locationobj = NULL;
+  char *location;
+  PyObject *deviceobj = NULL;
+  char *device;
   PyObject *ppd = NULL;
   ipp_t *request, *answer;
   int ppds_specified = 0;
   static char *kwlist[] = { "name", "filename", "ppdname", "info",
 			    "location", "device", "ppd", NULL };
 
-  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|sssssO", kwlist,
-				    &name, &ppdfile, &ppdname, &info,
-				    &location, &device, &ppd))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|OOOOOO", kwlist,
+				    &nameobj, &ppdfileobj, &ppdnameobj,
+				    &infoobj, &locationobj, &deviceobj, &ppd))
     return NULL;
+
+  if (UTF8_from_PyObj (&name, nameobj) == NULL ||
+      (ppdfileobj && UTF8_from_PyObj (&ppdfile, ppdfileobj)) ||
+      (ppdnameobj && UTF8_from_PyObj (&ppdname, ppdnameobj)) ||
+      (infoobj && UTF8_from_PyObj (&info, infoobj)) ||
+      (locationobj && UTF8_from_PyObj (&location, locationobj)) ||
+      (deviceobj && UTF8_from_PyObj (&device, deviceobj))) {
+    if (name)
+      free (name);
+    if (ppdfile)
+      free (ppdfile);
+    if (ppdname)
+      free (ppdname);
+    if (info)
+      free (info);
+    if (location)
+      free (location);
+    if (device)
+      free (device);
+    Py_XDECREF (nameobj);
+    Py_XDECREF (ppdfileobj);
+    Py_XDECREF (ppdnameobj);
+    Py_XDECREF (infoobj);
+    Py_XDECREF (locationobj);
+    Py_XDECREF (deviceobj);
+    return NULL;
+  }
 
   debugprintf ("-> Connection_addPrinter(%s,%s,%s,%s,%s,%s,%s)\n",
 	       name, ppdfile ? ppdfile: "", ppdname ? ppdname: "",
@@ -1051,22 +1136,35 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   }
 
   request = add_modify_printer_request (name);
-  if (ppdname)
+  if (ppdname) {
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		  "ppd-name", NULL, ppdname);
-  if (info)
+    free (ppdname);
+    Py_DECREF (ppdnameobj);
+  }
+  if (info) {
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		  "printer-info", NULL, info);
-  if (location)
+    free (info);
+    Py_DECREF (infoobj);
+  }
+  if (location) {
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		  "printer-location", NULL, location);
-  if (device)
+    free (location);
+    Py_DECREF (locationobj);
+  }
+  if (device) {
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_URI,
 		  "device-uri", NULL, device);
+    free (device);
+    Py_DECREF (deviceobj);
+  }
   
-  if (ppdfile)
+  if (ppdfile) {
     answer = cupsDoFileRequest (self->http, request, "/admin/", ppdfile);
-  else
+    free (ppdfile);
+  } else
     answer = cupsDoRequest (self->http, request, "/admin/");
 
   if (ppd) {
@@ -1101,16 +1199,32 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
 static PyObject *
 Connection_setPrinterDevice (Connection *self, PyObject *args)
 {
-  const char *name;
-  const char *device_uri;
+  PyObject *nameobj;
+  PyObject *device_uriobj;
+  char *name;
+  char *device_uri;
   ipp_t *request, *answer;
 
-  if (!PyArg_ParseTuple (args, "ss", &name, &device_uri))
+  if (!PyArg_ParseTuple (args, "OO", &nameobj, &device_uriobj))
     return NULL;
 
+  if (UTF8_from_PyObj (&name, nameobj) == NULL) {
+    Py_DECREF (nameobj);
+    return NULL;
+  }
+  Py_DECREF (nameobj);
+  if (UTF8_from_PyObj (&device_uri, device_uriobj) == NULL) {
+    free (name);
+    Py_DECREF (device_uriobj);
+    return NULL;
+  }
+  Py_DECREF (device_uriobj);
+
   request = add_modify_printer_request (name);
+  free (name);
   ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_URI,
 		"device-uri", NULL, device_uri);
+  free (device_uri);
   answer = cupsDoRequest (self->http, request, "/admin/");
   if (PyErr_Occurred ()) {
     if (answer)
@@ -1135,13 +1249,27 @@ Connection_setPrinterDevice (Connection *self, PyObject *args)
 static PyObject *
 Connection_setPrinterInfo (Connection *self, PyObject *args)
 {
-  const char *name;
-  const char *info;
+  PyObject *nameobj;
+  PyObject *infoobj;
+  char *name;
+  char *info;
   ipp_t *request, *answer;
   int i;
 
-  if (!PyArg_ParseTuple (args, "ss", &name, &info))
+  if (!PyArg_ParseTuple (args, "OO", &nameobj, &infoobj))
     return NULL;
+
+  if (UTF8_from_PyObj (&name, nameobj) == NULL) {
+    Py_DECREF (nameobj);
+    return NULL;
+  }
+  Py_DECREF (nameobj);
+  if (UTF8_from_PyObj (&info, infoobj) == NULL) {
+    free (name);
+    Py_DECREF (infoobj);
+    return NULL;
+  }
+  Py_DECREF (infoobj);
 
   request = add_modify_printer_request (name);
   for (i = 0; i < 2; i++) {
@@ -1161,6 +1289,8 @@ Connection_setPrinterInfo (Connection *self, PyObject *args)
     } else break;
   }
 
+  free (name);
+  free (info);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -1178,13 +1308,27 @@ Connection_setPrinterInfo (Connection *self, PyObject *args)
 static PyObject *
 Connection_setPrinterLocation (Connection *self, PyObject *args)
 {
-  const char *name;
-  const char *location;
+  PyObject *nameobj;
+  PyObject *locationobj;
+  char *name;
+  char *location;
   ipp_t *request, *answer;
   int i;
 
-  if (!PyArg_ParseTuple (args, "ss", &name, &location))
+  if (!PyArg_ParseTuple (args, "OO", &nameobj, &locationobj))
     return NULL;
+
+  if (UTF8_from_PyObj (&name, nameobj) == NULL) {
+    Py_DECREF (nameobj);
+    return NULL;
+  }
+  Py_DECREF (nameobj);
+  if (UTF8_from_PyObj (&location, locationobj) == NULL) {
+    free (name);
+    Py_DECREF (locationobj);
+    return NULL;
+  }
+  Py_DECREF (locationobj);
 
   request = add_modify_printer_request (name);
   for (i = 0; i < 2; i++) {
@@ -1204,6 +1348,8 @@ Connection_setPrinterLocation (Connection *self, PyObject *args)
     } else break;
   }
 
+  free (name);
+  free (location);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -1221,13 +1367,20 @@ Connection_setPrinterLocation (Connection *self, PyObject *args)
 static PyObject *
 Connection_setPrinterShared (Connection *self, PyObject *args)
 {
-  const char *name;
+  PyObject *nameobj;
+  char *name;
   int sharing;
   ipp_t *request, *answer;
   int i;
 
-  if (!PyArg_ParseTuple (args, "si", &name, &sharing))
+  if (!PyArg_ParseTuple (args, "Oi", &nameobj, &sharing))
     return NULL;
+
+  if (UTF8_from_PyObj (&name, nameobj) == NULL) {
+    Py_DECREF (nameobj);
+    return NULL;
+  }
+  Py_DECREF (nameobj);
 
   request = add_modify_printer_request (name);
   for (i = 0; i < 2; i++) {
@@ -1246,6 +1399,7 @@ Connection_setPrinterShared (Connection *self, PyObject *args)
     } else break;
   }
 
+  free (name);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -1263,15 +1417,37 @@ Connection_setPrinterShared (Connection *self, PyObject *args)
 static PyObject *
 Connection_setPrinterJobSheets (Connection *self, PyObject *args)
 {
-  const char *name;
-  const char *start;
-  const char *end;
+  PyObject *nameobj;
+  PyObject *startobj;
+  PyObject *endobj;
+  char *name;
+  char *start;
+  char *end;
   ipp_t *request, *answer;
   ipp_attribute_t *a;
   int i;
 
-  if (!PyArg_ParseTuple (args, "sss", &name, &start, &end))
+  if (!PyArg_ParseTuple (args, "OOO", &nameobj, &startobj, &endobj))
     return NULL;
+
+  if (UTF8_from_PyObj (&name, nameobj) == NULL) {
+    Py_DECREF (nameobj);
+    return NULL;
+  }
+  Py_DECREF (nameobj);
+  if (UTF8_from_PyObj (&start, startobj) == NULL) {
+    free (name);
+    Py_DECREF (startobj);
+    return NULL;
+  }
+  Py_DECREF (startobj);
+  if (UTF8_from_PyObj (&end, endobj) == NULL) {
+    free (name);
+    free (start);
+    Py_DECREF (endobj);
+    return NULL;
+  }
+  Py_DECREF (endobj);
 
   request = add_modify_printer_request (name);
   for (i = 0; i < 2; i++) {
@@ -1293,6 +1469,9 @@ Connection_setPrinterJobSheets (Connection *self, PyObject *args)
     } else break;
   }
 
+  free (name);
+  free (start);
+  free (end);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
