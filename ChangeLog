@@ -1,3 +1,22 @@
+2007-11-15  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getDests): Don't leak each
+	destobj.
+	(build_list_from_attribute_strings): Don't leak each string
+	object.
+	(Connection_getPrinters): Don't leak each dict.
+	(Connection_getClasses): Don't leak each members list.
+	(Connection_getPPDs): Don't leak each dict.
+	(Connection_getDevices): Likewise.
+	(Connection_addPrinter): Don't leak converted strings.
+	(Connection_getPrinterAttributes): Removed unused code.
+	(Connection_adminGetServerSettings): Don't leak each setting
+	value.
+	(Connection_getSubscriptions): Don't leak each value and
+	subscription.
+	(Connection_getNotifications): Don't leak each value, event and
+	item.
+
 2007-11-14  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (PyObj_from_UTF8): New function.  Used in lots

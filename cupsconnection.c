@@ -305,6 +305,7 @@ Connection_getDests (Connection *self)
     }
 
     PyDict_SetItem (pydests, nameinstance, (PyObject *) destobj);
+    Py_DECREF ((PyObject *) destobj);
   }
 
   debugprintf ("cupsFreeDests()\n");
@@ -322,6 +323,7 @@ build_list_from_attribute_strings (ipp_attribute_t *attr)
   for (i = 0; i < attr->num_values; i++) {
     PyObject *val = PyObj_from_UTF8 (attr->values[i].string.text);
     PyList_Append (list, val);
+    Py_DECREF (val);
     debugprintf ("%s\n", attr->values[i].string.text);
   }
   debugprintf ("<- build_list_from_attribute_strings()\n");
@@ -447,9 +449,9 @@ Connection_getPrinters (Connection *self)
       PyObject *key = PyObj_from_UTF8 (printer);
       PyDict_SetItem (result, key, dict);
       Py_DECREF (key);
-    } else
-      Py_DECREF (dict);
+    }
 
+    Py_DECREF (dict);
     if (!attr)
       break;
   }
@@ -535,9 +537,9 @@ Connection_getClasses (Connection *self)
       debugprintf ("Added class %s\n", classname);
       PyDict_SetItem (result, key, members);
       Py_DECREF (key);
-    } else
-      Py_XDECREF (members);
+    }
 
+    Py_DECREF (members);
     if (!attr)
       break;
   }
@@ -612,11 +614,9 @@ Connection_getPPDs (Connection *self)
       debugprintf ("Adding %s to result dict\n", ppdname);
       PyDict_SetItem (result, key, dict);
       Py_DECREF (key);
-    } else {
-      debugprintf ("Discarding ppd dict\n");
-      Py_DECREF (dict);
     }
 
+    Py_DECREF (dict);
     if (!attr)
       break;
   }
@@ -716,11 +716,9 @@ Connection_getDevices (Connection *self)
       debugprintf ("Adding %s to result dict\n", device_uri);
       PyDict_SetItem (result, key, dict);
       Py_DECREF (key);
-    } else {
-      debugprintf ("Discarding device dict\n");
-      Py_DECREF (dict);
     }
 
+    Py_DECREF (dict);
     if (!attr)
       break;
   }
@@ -812,7 +810,7 @@ Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
 
       if (val) {
 	debugprintf ("Adding %s to job dict\n", attr->name);
-	PyDict_SetItem (dict, attr->name, val);
+	PyDict_SetItemString (dict, attr->name, val);
 	Py_DECREF (val);
       }
     }
@@ -1044,18 +1042,12 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
       (infoobj && UTF8_from_PyObj (&info, infoobj)) ||
       (locationobj && UTF8_from_PyObj (&location, locationobj)) ||
       (deviceobj && UTF8_from_PyObj (&device, deviceobj))) {
-    if (name)
-      free (name);
-    if (ppdfile)
-      free (ppdfile);
-    if (ppdname)
-      free (ppdname);
-    if (info)
-      free (info);
-    if (location)
-      free (location);
-    if (device)
-      free (device);
+    free (name);
+    free (ppdfile);
+    free (ppdname);
+    free (info);
+    free (location);
+    free (device);
     return NULL;
   }
 
@@ -1072,6 +1064,12 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
     if (!PyObject_TypeCheck (ppd, &cups_PPDType)) {
       PyErr_SetString (PyExc_TypeError, "Expecting cups.PPD");
       debugprintf ("<- Connection_addPrinter() EXCEPTION\n");
+      free (name);
+      free (ppdfile);
+      free (ppdname);
+      free (info);
+      free (location);
+      free (device);
       return NULL;
     }
 
@@ -1080,7 +1078,13 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   if (ppds_specified > 1) {
     PyErr_SetString (PyExc_RuntimeError,
 		     "Only one PPD may be given");
-      debugprintf ("<- Connection_addPrinter() EXCEPTION\n");
+    debugprintf ("<- Connection_addPrinter() EXCEPTION\n");
+    free (name);
+    free (ppdfile);
+    free (ppdname);
+    free (info);
+    free (location);
+    free (device);
     return NULL;
   }
 
@@ -1096,9 +1100,14 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
     strcpy (p, template);
     fd = mkstemp (ppdfile);
     if (fd < 0) {
-      free (ppdfile);
       PyErr_SetFromErrno (PyExc_RuntimeError);
       debugprintf ("<- Connection_addPrinter() EXCEPTION\n");
+      free (name);
+      free (ppdfile);
+      free (ppdname);
+      free (info);
+      free (location);
+      free (device);
       return NULL;
     }
 
@@ -1109,13 +1118,19 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
 
     if (result == NULL) {
       unlink (ppdfile);
-      free (ppdfile);
       debugprintf ("<- Connection_addPrinter() EXCEPTION\n");
+      free (name);
+      free (ppdfile);
+      free (ppdname);
+      free (info);
+      free (location);
+      free (device);
       return NULL;
     }
   }
 
   request = add_modify_printer_request (name);
+  free (name);
   if (ppdname) {
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		  "ppd-name", NULL, ppdname);
@@ -1584,7 +1599,7 @@ do_requesting_user_names (Connection *self, PyObject *args,
       attr = ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
 			    requeststr, num_users, NULL, NULL);
       for (j = 0; j < num_users; j++) {
-	PyObject *username = PyList_GetItem (users, j);
+	PyObject *username = PyList_GetItem (users, j); // borrowed ref
 	if (!PyString_Check (username)) {
 	  int k;
 	  PyErr_SetString (PyExc_TypeError, "String required");
@@ -1965,9 +1980,6 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
 	}
       }
 
-      if (!is_list && namelen > 8) {
-      }
-
       if (is_list) {
 	PyObject *list = PyList_New (0);
 	int i;
@@ -2309,19 +2321,14 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
       (formatobj && UTF8_from_PyObj (&format, formatobj) == NULL) ||
       (userobj && UTF8_from_PyObj (&user, userobj) == NULL)) {
     free (printer);
-    if (fileobj)
-      free (file);
-    if (titleobj)
-      free (title);
-    if (formatobj)
-      free (format);
-    if (userobj)
-      free (user);
+    free (file);
+    free (title);
+    free (format);
+    free (user);
     return NULL;
   }
     
-  if (!file)
-  {
+  if (!file) {
     if ((datadir = getenv ("CUPS_DATADIR")) == NULL)
       datadir = "/usr/share/cups";
 
@@ -2392,9 +2399,11 @@ Connection_adminGetServerSettings (Connection *self)
   int num_settings, i;
   cups_option_t *settings;
   cupsAdminGetServerSettings (self->http, &num_settings, &settings);
-  for (i = 0; i < num_settings; i++)
-    PyDict_SetItemString (ret, settings[i].name,
-			  PyString_FromString (settings[i].value));
+  for (i = 0; i < num_settings; i++) {
+    PyObject *string = PyString_FromString (settings[i].value);
+    PyDict_SetItemString (ret, settings[i].name, string);
+    Py_DECREF (string);
+  }
 
   cupsFreeOptions (num_settings, settings);
   return ret;
@@ -2514,8 +2523,10 @@ Connection_getSubscriptions (Connection *self, PyObject *args, PyObject *kwds)
     PyObject *obj;
     if (attr->group_tag == IPP_TAG_ZERO) {
       // End of subscription.
-      if (subscription)
+      if (subscription) {
 	PyList_Append (result, subscription);
+	Py_DECREF (subscription);
+      }
 
       subscription = NULL;
       continue;
@@ -2540,10 +2551,13 @@ Connection_getSubscriptions (Connection *self, PyObject *args, PyObject *kwds)
       subscription = PyDict_New ();
 
     PyDict_SetItemString (subscription, attr->name, obj);
+    Py_DECREF (obj);
   }
 
-  if (subscription)
+  if (subscription) {
     PyList_Append (result, subscription);
+    Py_DECREF (subscription);
+  }
 
   ippDelete (answer);
   debugprintf ("<- Connection_getSubscriptions()\n");
@@ -2751,14 +2765,18 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
 
   // Result-wide attributes.
   attr = ippFindAttribute (answer, "notify-get-interval", IPP_TAG_INTEGER);
-  if (attr)
-    PyDict_SetItemString (result, attr->name,
-			   PyInt_FromLong (attr->values[0].integer));
+  if (attr) {
+    PyObject *val = PyInt_FromLong (attr->values[0].integer);
+    PyDict_SetItemString (result, attr->name, val);
+    Py_DECREF (val);
+  }
 
   attr = ippFindAttribute (answer, "printer-up-time", IPP_TAG_INTEGER);
-  if (attr)
-    PyDict_SetItemString (result, attr->name,
-			  PyInt_FromLong (attr->values[0].integer));
+  if (attr) {
+    PyObject *val = PyInt_FromLong (attr->values[0].integer);
+    PyDict_SetItemString (result, attr->name, val);
+    Py_DECREF (val);
+  }
 
   events = PyList_New (0);
   for (attr = answer->attrs; attr; attr = attr->next)
@@ -2770,8 +2788,10 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
     PyObject *obj;
     if (attr->group_tag == IPP_TAG_ZERO) {
       // End of event notification.
-      if (event)
+      if (event) {
 	PyList_Append (events, event);
+	Py_DECREF (event);
+      }
 
       event = NULL;
       continue;
@@ -2781,8 +2801,10 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
       obj = PyList_New (0);
       for (i = 0; i < attr->num_values; i++) {
 	PyObject *item = PyObject_from_attr_value (attr, i);
-	if (item)
+	if (item) {
 	  PyList_Append (obj, item);
+	  Py_DECREF (item);
+	}
       }
     }
     else
@@ -2796,10 +2818,13 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
       event = PyDict_New ();
 
     PyDict_SetItemString (event, attr->name, obj);
+    Py_DECREF (obj);
   }
 
-  if (event)
+  if (event) {
     PyList_Append (events, event);
+    Py_DECREF (event);
+  }
 
   ippDelete (answer);
   PyDict_SetItemString (result, "events", events);
