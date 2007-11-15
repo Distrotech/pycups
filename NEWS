@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New in 1.9.29:
+
+* IPP attribute strings are now represented as Unicode objects.
+
 New in 1.9.28:
 
 * cups.Connection.getDests() now includes a (None,None) key in its result
