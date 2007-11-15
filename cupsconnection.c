@@ -76,7 +76,7 @@ set_ipp_error (ipp_status_t status)
 static PyObject *
 PyObj_from_UTF8 (const char *utf8)
 {
-  PyObject *val = PyString_Decode (utf8, strlen (utf8), "utf-8", NULL);
+  PyObject *val = PyUnicode_Decode (utf8, strlen (utf8), "utf-8", NULL);
   if (!val) {
     // CUPS 1.2 always gives us UTF-8.  Before CUPS 1.2, the
     // ppd-* strings come straight from the PPD with no
@@ -437,11 +437,9 @@ Connection_getPrinters (Connection *self)
       }
 
       if (val) {
-	PyObject *key = PyObj_from_UTF8 (attr->name);
 	debugprintf ("Added %s to dict\n", attr->name);
-	PyDict_SetItem (dict, key, val);
+	PyDict_SetItemString (dict, attr->name, val);
 	Py_DECREF (val);
-	Py_DECREF (key);
       }
     }
 
@@ -603,11 +601,9 @@ Connection_getPPDs (Connection *self)
       }
 
       if (val) {
-	PyObject *key = PyObj_from_UTF8 (attr->name);
 	debugprintf ("Adding %s to ppd dict\n", attr->name);
-	PyDict_SetItem (dict, key, val);
+	PyDict_SetItemString (dict, attr->name, val);
 	Py_DECREF (val);
-	Py_DECREF (key);
       }
     }
 
@@ -709,11 +705,9 @@ Connection_getDevices (Connection *self)
 	val = PyObj_from_UTF8 (attr->values[0].string.text);
 
       if (val) {
-	PyObject *key = PyObj_from_UTF8 (attr->name);
 	debugprintf ("Adding %s to device dict\n", attr->name);
-	PyDict_SetItem (dict, key, val);
+	PyDict_SetItemString (dict, attr->name, val);
 	Py_DECREF (val);
-	Py_DECREF (key);
       }
     }
 
@@ -817,11 +811,9 @@ Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
 	val = PyBool_FromLong (attr->values[0].integer);
 
       if (val) {
-	PyObject *key = PyObj_from_UTF8 (attr->name);
 	debugprintf ("Adding %s to job dict\n", attr->name);
-	PyDict_SetItem (dict, key, val);
+	PyDict_SetItem (dict, attr->name, val);
 	Py_DECREF (val);
-	Py_DECREF (key);
       }
     }
 
@@ -1978,19 +1970,15 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
 
       if (is_list) {
 	PyObject *list = PyList_New (0);
-	PyObject *key;
 	int i;
 	for (i = 0; i < attr->num_values; i++) {
 	  PyObject *val = PyObject_from_attr_value (attr, i);
 	  PyList_Append (list, val);
 	}
-	key = PyObj_from_UTF8 (attr->name);
-	PyDict_SetItem (ret, key, list);
-	Py_DECREF (key);
+	PyDict_SetItemString (ret, attr->name, list);
       } else {
 	PyObject *val = PyObject_from_attr_value (attr, i);
-	PyObject *key = PyObj_from_UTF8 (attr->name);
-	PyDict_SetItem (ret, key, val);
+	PyDict_SetItemString (ret, attr->name, val);
       }
     }
 
@@ -2523,7 +2511,7 @@ Connection_getSubscriptions (Connection *self, PyObject *args, PyObject *kwds)
 
   subscription = NULL;
   for (; attr; attr = attr->next) {
-    PyObject *obj, *key;
+    PyObject *obj;
     if (attr->group_tag == IPP_TAG_ZERO) {
       // End of subscription.
       if (subscription)
@@ -2551,9 +2539,7 @@ Connection_getSubscriptions (Connection *self, PyObject *args, PyObject *kwds)
     if (!subscription)
       subscription = PyDict_New ();
 
-    key = PyObj_from_UTF8 (attr->name);
-    PyDict_SetItem (subscription, key, obj);
-    Py_DECREF (key);
+    PyDict_SetItemString (subscription, attr->name, obj);
   }
 
   if (subscription)
@@ -2781,7 +2767,7 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
 
   event = NULL;
   for (; attr; attr = attr->next) {
-    PyObject *key, *obj;
+    PyObject *obj;
     if (attr->group_tag == IPP_TAG_ZERO) {
       // End of event notification.
       if (event)
@@ -2809,9 +2795,7 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
     if (!event)
       event = PyDict_New ();
 
-    key = PyObj_from_UTF8 (attr->name);
-    PyDict_SetItem (event, key, obj);
-    Py_DECREF (key);
+    PyDict_SetItemString (event, attr->name, obj);
   }
 
   if (event)
