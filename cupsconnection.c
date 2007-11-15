@@ -210,11 +210,8 @@ do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
     break;
   }
 
-  if (UTF8_from_PyObj (&name, nameobj) == NULL) {
-    Py_DECREF (nameobj);
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
     return NULL;
-  }
-  Py_DECREF (nameobj);
 
   request = ippNewRequest (op);
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
@@ -226,11 +223,9 @@ do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
   if (reasonobj) {
     char *reason;
     if (UTF8_from_PyObj (&reason, reasonobj) == NULL) {
-      Py_DECREF (reasonobj);
       ippDelete (request);
       return NULL;
     }
-    Py_DECREF (reasonobj);
 
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_TEXT,
 		  "printer-state-message", NULL, reason);
@@ -907,7 +902,6 @@ Connection_setJobHoldUntil (Connection *self, PyObject *args)
 			       num_options, &options);
   cupsEncodeOptions (request, num_options, options);
   free (job_hold_until);
-  Py_DECREF (job_hold_until_obj);
 
   debugprintf ("cupsDoRequest(\"/jobs/\")\n");
   answer = cupsDoRequest (self->http, request, "/jobs/");
@@ -1032,15 +1026,15 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   PyObject *nameobj = NULL;
   char *name = NULL;
   PyObject *ppdfileobj = NULL;
-  char *ppdfile;
+  char *ppdfile = NULL;
   PyObject *ppdnameobj = NULL;
-  char *ppdname;
+  char *ppdname = NULL;
   PyObject *infoobj = NULL;
-  char *info;
+  char *info = NULL;
   PyObject *locationobj = NULL;
-  char *location;
+  char *location = NULL;
   PyObject *deviceobj = NULL;
-  char *device;
+  char *device = NULL;
   PyObject *ppd = NULL;
   ipp_t *request, *answer;
   int ppds_specified = 0;
@@ -1070,12 +1064,6 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
       free (location);
     if (device)
       free (device);
-    Py_XDECREF (nameobj);
-    Py_XDECREF (ppdfileobj);
-    Py_XDECREF (ppdnameobj);
-    Py_XDECREF (infoobj);
-    Py_XDECREF (locationobj);
-    Py_XDECREF (deviceobj);
     return NULL;
   }
 
@@ -1208,17 +1196,13 @@ Connection_setPrinterDevice (Connection *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "OO", &nameobj, &device_uriobj))
     return NULL;
 
-  if (UTF8_from_PyObj (&name, nameobj) == NULL) {
-    Py_DECREF (nameobj);
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
     return NULL;
-  }
-  Py_DECREF (nameobj);
+
   if (UTF8_from_PyObj (&device_uri, device_uriobj) == NULL) {
     free (name);
-    Py_DECREF (device_uriobj);
     return NULL;
   }
-  Py_DECREF (device_uriobj);
 
   request = add_modify_printer_request (name);
   free (name);
@@ -1259,17 +1243,13 @@ Connection_setPrinterInfo (Connection *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "OO", &nameobj, &infoobj))
     return NULL;
 
-  if (UTF8_from_PyObj (&name, nameobj) == NULL) {
-    Py_DECREF (nameobj);
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
     return NULL;
-  }
-  Py_DECREF (nameobj);
+
   if (UTF8_from_PyObj (&info, infoobj) == NULL) {
     free (name);
-    Py_DECREF (infoobj);
     return NULL;
   }
-  Py_DECREF (infoobj);
 
   request = add_modify_printer_request (name);
   for (i = 0; i < 2; i++) {
@@ -1318,17 +1298,13 @@ Connection_setPrinterLocation (Connection *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "OO", &nameobj, &locationobj))
     return NULL;
 
-  if (UTF8_from_PyObj (&name, nameobj) == NULL) {
-    Py_DECREF (nameobj);
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
     return NULL;
-  }
-  Py_DECREF (nameobj);
+
   if (UTF8_from_PyObj (&location, locationobj) == NULL) {
     free (name);
-    Py_DECREF (locationobj);
     return NULL;
   }
-  Py_DECREF (locationobj);
 
   request = add_modify_printer_request (name);
   for (i = 0; i < 2; i++) {
@@ -1376,11 +1352,8 @@ Connection_setPrinterShared (Connection *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "Oi", &nameobj, &sharing))
     return NULL;
 
-  if (UTF8_from_PyObj (&name, nameobj) == NULL) {
-    Py_DECREF (nameobj);
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
     return NULL;
-  }
-  Py_DECREF (nameobj);
 
   request = add_modify_printer_request (name);
   for (i = 0; i < 2; i++) {
@@ -1430,24 +1403,19 @@ Connection_setPrinterJobSheets (Connection *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "OOO", &nameobj, &startobj, &endobj))
     return NULL;
 
-  if (UTF8_from_PyObj (&name, nameobj) == NULL) {
-    Py_DECREF (nameobj);
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
     return NULL;
-  }
-  Py_DECREF (nameobj);
+
   if (UTF8_from_PyObj (&start, startobj) == NULL) {
     free (name);
-    Py_DECREF (startobj);
     return NULL;
   }
-  Py_DECREF (startobj);
+
   if (UTF8_from_PyObj (&end, endobj) == NULL) {
     free (name);
     free (start);
-    Py_DECREF (endobj);
     return NULL;
   }
-  Py_DECREF (endobj);
 
   request = add_modify_printer_request (name);
   for (i = 0; i < 2; i++) {
@@ -1489,13 +1457,23 @@ Connection_setPrinterJobSheets (Connection *self, PyObject *args)
 static PyObject *
 Connection_setPrinterErrorPolicy (Connection *self, PyObject *args)
 {
-  const char *name;
-  const char *policy;
+  PyObject *nameobj;
+  char *name;
+  PyObject *policyobj;
+  char *policy;
   ipp_t *request, *answer;
   int i;
 
-  if (!PyArg_ParseTuple (args, "ss", &name, &policy))
+  if (!PyArg_ParseTuple (args, "OO", &nameobj, &policyobj))
     return NULL;
+
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
+    return NULL;
+
+  if (UTF8_from_PyObj (&policy, policyobj) == NULL) {
+    free (name);
+    return NULL;
+  }
 
   request = add_modify_printer_request (name);
   for (i = 0; i < 2; i++) {
@@ -1515,6 +1493,8 @@ Connection_setPrinterErrorPolicy (Connection *self, PyObject *args)
     } else break;
   }
 
+  free (name);
+  free (policy);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -1532,13 +1512,23 @@ Connection_setPrinterErrorPolicy (Connection *self, PyObject *args)
 static PyObject *
 Connection_setPrinterOpPolicy (Connection *self, PyObject *args)
 {
-  const char *name;
-  const char *policy;
+  PyObject *nameobj;
+  char *name;
+  PyObject *policyobj;
+  char *policy;
   ipp_t *request, *answer;
   int i;
 
-  if (!PyArg_ParseTuple (args, "ss", &name, &policy))
+  if (!PyArg_ParseTuple (args, "OO", &nameobj, &policyobj))
     return NULL;
+
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
+    return NULL;
+
+  if (UTF8_from_PyObj (&policy, policyobj) == NULL) {
+    free (name);
+    return NULL;
+  }
 
   request = add_modify_printer_request (name);
   for (i = 0; i < 2; i++) {
@@ -1558,6 +1548,8 @@ Connection_setPrinterOpPolicy (Connection *self, PyObject *args)
     } else break;
   }
 
+  free (name);
+  free (policy);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -1576,13 +1568,17 @@ static PyObject *
 do_requesting_user_names (Connection *self, PyObject *args,
 			  const char *requeststr)
 {
-  const char *name;
+  PyObject *nameobj;
+  char *name;
   PyObject *users;
   int num_users, i, j;
   ipp_t *request, *answer;
   ipp_attribute_t *attr;
 
-  if (!PyArg_ParseTuple (args, "sO", &name, &users))
+  if (!PyArg_ParseTuple (args, "OO", &nameobj, &users))
+    return NULL;
+
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
     return NULL;
 
   if (!PyList_Check (users)) {
@@ -1631,6 +1627,7 @@ do_requesting_user_names (Connection *self, PyObject *args,
     } else break;
   }
 
+  free (name);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -1682,8 +1679,10 @@ PyObject_to_string (PyObject *pyvalue)
 static PyObject *
 Connection_addPrinterOptionDefault (Connection *self, PyObject *args)
 {
-  const char *name;
-  const char *option;
+  PyObject *nameobj;
+  char *name;
+  PyObject *optionobj;
+  char *option;
   PyObject *pyvalue;
   const char const suffix[] = "-default";
   char *opt;
@@ -1691,8 +1690,16 @@ Connection_addPrinterOptionDefault (Connection *self, PyObject *args)
   int i;
   size_t optionlen;
 
-  if (!PyArg_ParseTuple (args, "ssO", &name, &option, &pyvalue))
+  if (!PyArg_ParseTuple (args, "OOO", &nameobj, &optionobj, &pyvalue))
     return NULL;
+
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
+    return NULL;
+
+  if (UTF8_from_PyObj (&option, optionobj) == NULL) {
+    free (name);
+    return NULL;
+  }
 
   optionlen = strlen (option);
   opt = malloc (optionlen + sizeof (suffix) + 1);
@@ -1729,6 +1736,8 @@ Connection_addPrinterOptionDefault (Connection *self, PyObject *args)
     } else break;
   }
 
+  free (name);
+  free (option);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -1746,16 +1755,26 @@ Connection_addPrinterOptionDefault (Connection *self, PyObject *args)
 static PyObject *
 Connection_deletePrinterOptionDefault (Connection *self, PyObject *args)
 {
-  const char *name;
-  const char *option;
+  PyObject *nameobj;
+  char *name;
+  PyObject *optionobj;
+  char *option;
   const char *const suffix = "-default";
   char *opt;
   ipp_t *request, *answer;
   int i;
   size_t optionlen;
 
-  if (!PyArg_ParseTuple (args, "ss", &name, &option))
+  if (!PyArg_ParseTuple (args, "OO", &nameobj, &optionobj))
     return NULL;
+
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
+    return NULL;
+
+  if (UTF8_from_PyObj (&option, optionobj) == NULL) {
+    free (name);
+    return NULL;
+  }
 
   optionlen = strlen (option);
   opt = malloc (optionlen + sizeof (suffix) + 1);
@@ -1779,6 +1798,8 @@ Connection_deletePrinterOptionDefault (Connection *self, PyObject *args)
     } else break;
   }
 
+  free (name);
+  free (option);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -1846,13 +1867,17 @@ static PyObject *
 Connection_getPrinterAttributes (Connection *self, PyObject *args)
 {
   PyObject *ret;
-  const char *name;
+  PyObject *nameobj;
+  char *name;
   ipp_t *request, *answer;
   ipp_attribute_t *attr;
   char uri[HTTP_MAX_URI];
   int i;
 
-  if (!PyArg_ParseTuple (args, "s", &name))
+  if (!PyArg_ParseTuple (args, "O", &nameobj))
+    return NULL;
+
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
     return NULL;
 
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
@@ -1868,6 +1893,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
     } else break;
   }
 
+  free (name);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -1978,19 +2004,30 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
 static PyObject *
 Connection_addPrinterToClass (Connection *self, PyObject *args)
 {
-  const char *printername;
-  const char *classname;
+  PyObject *printernameobj;
+  char *printername;
+  PyObject *classnameobj;
+  char *classname;
   char classuri[HTTP_MAX_URI];
   char printeruri[HTTP_MAX_URI];
   ipp_t *request, *answer;
 
-  if (!PyArg_ParseTuple (args, "ss", &printername, &classname))
+  if (!PyArg_ParseTuple (args, "OO", &printernameobj, &classnameobj))
     return NULL;
+
+  if (UTF8_from_PyObj (&printername, printernameobj) == NULL)
+    return NULL;
+
+  if (UTF8_from_PyObj (&classname, classnameobj) == NULL) {
+    free (printername);
+    return NULL;
+  }
 
   // Does the class exist, and is the printer already in it?
   request = ippNewRequest (IPP_GET_PRINTER_ATTRIBUTES);
   snprintf (classuri, sizeof (classuri),
 	    "ipp://localhost/classes/%s", classname);
+  free (classname);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
   answer = cupsDoRequest (self->http, request, "/");
@@ -2003,6 +2040,7 @@ Connection_addPrinterToClass (Connection *self, PyObject *args)
 	if (!strcasecmp (printers->values[i].string.text, printername)) {
 	  ippDelete (answer);
 	  PyErr_SetString (PyExc_RuntimeError, "Printer already in class");
+	  free (printername);
 	  return NULL;
 	}
       }
@@ -2014,6 +2052,7 @@ Connection_addPrinterToClass (Connection *self, PyObject *args)
 		"printer-uri", NULL, classuri);
   snprintf (printeruri, sizeof (printeruri),
 	    "ipp://localhost/printers/%s", printername);
+  free (printername);
   if (answer) {
     ipp_attribute_t *printers;
     printers = ippFindAttribute (answer, "member-uris", IPP_TAG_URI);
@@ -2060,25 +2099,37 @@ Connection_addPrinterToClass (Connection *self, PyObject *args)
 static PyObject *
 Connection_deletePrinterFromClass (Connection *self, PyObject *args)
 {
-  const char *printername;
-  const char *classname;
+  PyObject *printernameobj;
+  char *printername;
+  PyObject *classnameobj;
+  char *classname;
   char classuri[HTTP_MAX_URI];
   ipp_t *request, *answer;
   ipp_attribute_t *printers;
   int i;
 
-  if (!PyArg_ParseTuple (args, "ss", &printername, &classname))
+  if (!PyArg_ParseTuple (args, "OO", &printernameobj, &classnameobj))
     return NULL;
+
+  if (UTF8_from_PyObj (&printername, printernameobj) == NULL)
+    return NULL;
+
+  if (UTF8_from_PyObj (&classname, classnameobj) == NULL) {
+    free (printername);
+    return NULL;
+  }
 
   // Does the class exist, and is the printer in it?
   request = ippNewRequest (IPP_GET_PRINTER_ATTRIBUTES);
   snprintf (classuri, sizeof (classuri),
 	    "ipp://localhost/classes/%s", classname);
+  free (classname);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer) {
     set_ipp_error (cupsLastError ());
+    free (printername);
     return NULL;
   }
 
@@ -2087,6 +2138,7 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
     if (!strcasecmp (printers->values[i].string.text, printername))
       break;
 
+  free (printername);
   if (!printers || i == printers->num_values) {
     ippDelete (answer);
     PyErr_SetString (PyExc_RuntimeError, "Printer not in class");
@@ -2141,16 +2193,21 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
 static PyObject *
 Connection_deleteClass (Connection *self, PyObject *args)
 {
-  const char *classname;
+  PyObject *classnameobj;
+  char *classname;
   char classuri[HTTP_MAX_URI];
   ipp_t *request, *answer;
 
-  if (!PyArg_ParseTuple (args, "s", &classname))
+  if (!PyArg_ParseTuple (args, "O", &classnameobj))
+    return NULL;
+
+  if (UTF8_from_PyObj (&classname, classnameobj) == NULL)
     return NULL;
 
   request = ippNewRequest (CUPS_DELETE_CLASS);
   snprintf (classuri, sizeof (classuri),
 	    "ipp://localhost/classes/%s", classname);
+  free (classname);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
   answer = cupsDoRequest (self->http, request, "/admin/");
@@ -2202,13 +2259,18 @@ static PyObject *
 Connection_getPPD (Connection *self, PyObject *args)
 {
   PyObject *ret;
-  const char *printer;
+  PyObject *printerobj;
+  char *printer;
   const char *ppdfile;
 
-  if (!PyArg_ParseTuple (args, "s", &printer))
+  if (!PyArg_ParseTuple (args, "O", &printerobj))
+    return NULL;
+
+  if (UTF8_from_PyObj (&printer, printerobj) == NULL)
     return NULL;
 
   ppdfile = cupsGetPPD2 (self->http, printer);
+  free (printer);
   if (!ppdfile) {
     ipp_status_t err = cupsLastError ();
     if (err)
@@ -2226,11 +2288,16 @@ Connection_getPPD (Connection *self, PyObject *args)
 static PyObject *
 Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
 {
-  const char *printer;
-  const char *file = NULL;
-  const char *title = NULL;
-  const char *format = NULL;
-  const char *user = NULL;
+  PyObject *printerobj;
+  char *printer;
+  PyObject *fileobj = NULL;
+  char *file;
+  PyObject *titleobj = NULL;
+  char *title;
+  PyObject *formatobj = NULL;
+  char *format;
+  PyObject *userobj = NULL;
+  char *user;
   const char *datadir;
   char filename[PATH_MAX];
   char uri[HTTP_MAX_URI];
@@ -2241,10 +2308,30 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
   int i;
   static char *kwlist[] = { "name", "file", "title", "format", "user", NULL };
 
-  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|ssss", kwlist,
-				    &printer, &file, &title, &format, &user))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|OOOO", kwlist,
+				    &printerobj, &fileobj, &titleobj,
+				    &formatobj, &userobj))
     return NULL;
 
+  if (UTF8_from_PyObj (&printer, printerobj) == NULL)
+    return NULL;
+
+  if ((fileobj && UTF8_from_PyObj (&file, fileobj) == NULL) ||
+      (titleobj && UTF8_from_PyObj (&title, titleobj) == NULL) ||
+      (formatobj && UTF8_from_PyObj (&format, formatobj) == NULL) ||
+      (userobj && UTF8_from_PyObj (&user, userobj) == NULL)) {
+    free (printer);
+    if (fileobj)
+      free (file);
+    if (titleobj)
+      free (title);
+    if (formatobj)
+      free (format);
+    if (userobj)
+      free (user);
+    return NULL;
+  }
+    
   if (!file)
   {
     if ((datadir = getenv ("CUPS_DATADIR")) == NULL)
@@ -2282,6 +2369,16 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
       snprintf (uri, sizeof (uri), "ipp://localhost/classes/%s", printer);
     } else break;
   }
+
+  free (printer);
+  if (fileobj)
+    free (file);
+  if (titleobj)
+    free (title);
+  if (formatobj)
+    free (format);
+  if (userobj)
+    free (user);
 
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
@@ -2372,7 +2469,8 @@ Connection_adminSetServerSettings (Connection *self, PyObject *args)
 static PyObject *
 Connection_getSubscriptions (Connection *self, PyObject *args, PyObject *kwds)
 {
-  const char *uri;
+  PyObject *uriobj;
+  char *uri;
   PyObject *my_subscriptions = Py_False;
   int job_id = -1;
   ipp_t *request, *answer;
@@ -2381,8 +2479,11 @@ Connection_getSubscriptions (Connection *self, PyObject *args, PyObject *kwds)
   int i;
   static char *kwlist[] = { "uri", "my_subscriptions", "job_id", NULL };
 
-  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|Oi", kwlist,
-				    &uri, &my_subscriptions, &job_id))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|Oi", kwlist,
+				    &uriobj, &my_subscriptions, &job_id))
+    return NULL;
+
+  if (UTF8_from_PyObj (&uri, uriobj) == NULL)
     return NULL;
 
   if (my_subscriptions && !PyBool_Check (my_subscriptions)) {
@@ -2394,6 +2495,7 @@ Connection_getSubscriptions (Connection *self, PyObject *args, PyObject *kwds)
   request = ippNewRequest (IPP_GET_SUBSCRIPTIONS);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, uri);
+  free (uri);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		"requesting-user-name", NULL, cupsUser ());
 
@@ -2466,10 +2568,12 @@ static PyObject *
 Connection_createSubscription (Connection *self, PyObject *args,
 			       PyObject *kwds)
 {
-  const char *resource_uri;
+  PyObject *resource_uriobj;
+  char *resource_uri;
   PyObject *events = NULL;
   int job_id = -1, lease_duration = -1, time_interval = -1;
-  const char *recipient_uri = NULL, *user_data = NULL;
+  PyObject *recipient_uriobj = NULL, *user_dataobj = NULL;
+  char *recipient_uri = NULL, *user_data = NULL;
   ipp_t *request, *answer;
   int i, n = 0;
   ipp_attribute_t *attr;
@@ -2477,11 +2581,27 @@ Connection_createSubscription (Connection *self, PyObject *args,
 			    "lease_duration", "time_interval", "user_data",
 			    NULL };
 
-  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|Oisiis", kwlist,
-				    &resource_uri, &events, &job_id,
-				    &recipient_uri, &lease_duration,
-				    &time_interval, &user_data))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|OiOiiO", kwlist,
+				    &resource_uriobj, &events, &job_id,
+				    &recipient_uriobj, &lease_duration,
+				    &time_interval, &user_dataobj))
     return NULL;
+
+  if (UTF8_from_PyObj (&resource_uri, resource_uriobj) == NULL)
+    return NULL;
+
+  if (recipient_uriobj &&
+      UTF8_from_PyObj (&recipient_uri, recipient_uriobj) == NULL) {
+    free (resource_uri);
+    return NULL;
+  }
+
+  if (user_dataobj && UTF8_from_PyObj (&user_data, user_dataobj) == NULL) {
+    free (resource_uri);
+    if (recipient_uriobj)
+      free (recipient_uri);
+    return NULL;
+  }
 
   if (events) {
     if (!PyList_Check (events)) {
@@ -2510,13 +2630,17 @@ Connection_createSubscription (Connection *self, PyObject *args,
   ippAddString (request, IPP_TAG_SUBSCRIPTION, IPP_TAG_NAME,
 		"requesting-user-name", NULL, cupsUser ());
 
-  if (recipient_uri)
+  if (recipient_uriobj) {
     ippAddString (request, IPP_TAG_SUBSCRIPTION, IPP_TAG_URI,
 		  "notify-recipient-uri", NULL, recipient_uri);
+    free (recipient_uri);
+  }
 
-  if (user_data)
+  if (user_dataobj) {
     ippAddString (request, IPP_TAG_SUBSCRIPTION, IPP_TAG_STRING,
 		  "notify-user-data", NULL, user_data);
+    free (user_data);
+  }
 
   if (events) {
     attr = ippAddStrings (request, IPP_TAG_SUBSCRIPTION,
@@ -2657,7 +2781,7 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
 
   event = NULL;
   for (; attr; attr = attr->next) {
-    PyObject *obj;
+    PyObject *key, *obj;
     if (attr->group_tag == IPP_TAG_ZERO) {
       // End of event notification.
       if (event)
@@ -2684,7 +2808,10 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
 
     if (!event)
       event = PyDict_New ();
-    PyDict_SetItemString (event, attr->name, obj);
+
+    key = PyObj_from_UTF8 (attr->name);
+    PyDict_SetItem (event, key, obj);
+    Py_DECREF (key);
   }
 
   if (event)
