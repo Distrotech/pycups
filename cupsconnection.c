@@ -284,6 +284,12 @@ Connection_getDests (Connection *self)
       {
 	// Add a (None,None) entry for the default printer.
 	dest = cupsGetDest (NULL, NULL, num_dests, dests);
+	if (dest == NULL) {
+	  /* No default printer. */
+	  Py_DECREF ((PyObject *) destobj);
+	  break;
+	}
+
 	nameinstance = Py_BuildValue ("(ss)", NULL, NULL);
       }
     else
@@ -1037,11 +1043,11 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
     return NULL;
 
   if (UTF8_from_PyObj (&name, nameobj) == NULL ||
-      (ppdfileobj && UTF8_from_PyObj (&ppdfile, ppdfileobj)) ||
-      (ppdnameobj && UTF8_from_PyObj (&ppdname, ppdnameobj)) ||
-      (infoobj && UTF8_from_PyObj (&info, infoobj)) ||
-      (locationobj && UTF8_from_PyObj (&location, locationobj)) ||
-      (deviceobj && UTF8_from_PyObj (&device, deviceobj))) {
+      (ppdfileobj && UTF8_from_PyObj (&ppdfile, ppdfileobj) == NULL) ||
+      (ppdnameobj && UTF8_from_PyObj (&ppdname, ppdnameobj) == NULL) ||
+      (infoobj && UTF8_from_PyObj (&info, infoobj) == NULL) ||
+      (locationobj && UTF8_from_PyObj (&location, locationobj) == NULL) ||
+      (deviceobj && UTF8_from_PyObj (&device, deviceobj) == NULL)) {
     free (name);
     free (ppdfile);
     free (ppdname);
@@ -1158,14 +1164,14 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   
   if (ppdfile) {
     answer = cupsDoFileRequest (self->http, request, "/admin/", ppdfile);
-    free (ppdfile);
   } else
     answer = cupsDoRequest (self->http, request, "/admin/");
 
   if (ppd) {
     unlink (ppdfile);
     free (ppdfile);
-  }
+  } else if (ppdfile)
+    free (ppdfile);
 
   if (PyErr_Occurred ()) {
     if (answer)

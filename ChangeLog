@@ -1,3 +1,13 @@
+2007-11-19  Tim Waugh  <twaugh@redhat.com>
+
+	* Makefile: Version 1.9.30.
+
+2007-11-19  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_addPrinter): Fixed typo.
+	(Connection_addPrinter): Fixed double-free.
+	(Connection_getDests): Handle there being no default printer.
+
 2007-11-15  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Version 1.9.29.
