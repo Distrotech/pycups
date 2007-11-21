@@ -2334,7 +2334,7 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
     return NULL;
   }
     
-  if (!file) {
+  if (!fileobj) {
     if ((datadir = getenv ("CUPS_DATADIR")) == NULL)
       datadir = "/usr/share/cups";
 
@@ -2342,13 +2342,13 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
     file = filename;
   }
 
-  if (!title)
+  if (!titleobj)
     title = "Test Page";
 
-  if (!format)
+  if (!formatobj)
     format = "application/postscript";
 
-  if (!user)
+  if (!userobj)
     user = "guest";
 
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", printer);

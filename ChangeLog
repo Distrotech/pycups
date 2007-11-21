@@ -1,3 +1,8 @@
+2007-11-21  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_printTestPage): Don't use
+	uninitialised variables (bug #390431).
+
 2007-11-19  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Version 1.9.30.
