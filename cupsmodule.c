@@ -253,13 +253,18 @@ cups_require (PyObject *self, PyObject *args)
   nreq = strtoul (preq, &end, 0);
   while (preq != end)
   {
-    preq = end + 1;
+    preq = end;
+    if (*preq == '.')
+      preq++;
 
     nver = strtoul (pver, &end, 0);
     if (pver == end)
       goto fail;
-    else
-      pver = end + 1;
+    else {
+      pver = end;
+      if (*pver == '.')
+	pver++;
+    }
 
     if (nver < nreq)
       goto fail;
