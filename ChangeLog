@@ -1,5 +1,7 @@
 2007-11-21  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_getDefault): New method.
+
 	* cupsmodule.c (cups_require): Don't read uninitialised memory.
 
 	* cupsconnection.c (Connection_printTestPage): Don't use

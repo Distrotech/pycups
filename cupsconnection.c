@@ -2256,6 +2256,25 @@ Connection_rejectJobs (Connection *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
+Connection_getDefault (Connection *self, PyObject *args)
+{
+  const char *def;
+  PyObject *ret;
+  debugprintf ("-> Connection_getDefault()\n");
+  def = cupsGetDefault2 (self->http);
+  if (def == NULL) {
+    debugprintf ("<- Connection_getDefault() = None\n");
+    ret = Py_None;
+    Py_INCREF (Py_None);
+  } else {
+    debugprintf ("<- Connection_getDefault() = \"%s\"\n", def);
+    ret = PyString_FromString (def);
+  }
+
+  return ret;
+}
+
+static PyObject *
 Connection_setDefault (Connection *self, PyObject *args, PyObject *kwds)
 {
   return do_printer_request (self, args, kwds, CUPS_SET_DEFAULT);
@@ -3230,6 +3249,12 @@ PyMethodDef Connection_methods[] =
       "@type class: string\n"
       "@param class: class name\n"
       "@raise IPPError: IPP problem" },
+
+    { "getDefault",
+      (PyCFunction) Connection_getDefault, METH_NOARGS,
+      "getDefault() -> string or None\n\n"
+      "Get the system default printer.\n\n"
+      "@return: default printer name or None" },
 
     { "setDefault",
       (PyCFunction) Connection_setDefault, METH_VARARGS | METH_KEYWORDS,

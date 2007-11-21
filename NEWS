@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New in 1.9.31:
+
+* cups.Connection.getDefault()
+
 New in 1.9.29:
 
 * IPP attribute strings are now represented as Unicode objects.
