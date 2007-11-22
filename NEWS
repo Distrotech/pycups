@@ -3,6 +3,7 @@ NEWS
 
 New in 1.9.31:
 
+* cups.Connection.getDocument()
 * cups.Connection.getDefault()
 
 New in 1.9.29:
