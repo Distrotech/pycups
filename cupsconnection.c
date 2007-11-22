@@ -2042,7 +2042,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
 	startobj = PyObj_from_UTF8 (start);
 	endobj = PyObj_from_UTF8 (end);
 	PyDict_SetItemString (ret, "job-sheets-default",
-			      Py_BuildValue ("(ss)", startobj, endobj));
+			      Py_BuildValue ("(OO)", startobj, endobj));
 	Py_DECREF (startobj);
 	Py_DECREF (endobj);
 	continue;
