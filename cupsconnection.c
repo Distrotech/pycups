@@ -659,6 +659,104 @@ Connection_getServerPPD (Connection *self, PyObject *args)
 }
 
 static PyObject *
+Connection_getDocument (Connection *self, PyObject *args)
+{
+#ifndef HAVE_CUPS_1_4
+  PyErr_SetString (PyExc_RuntimeError,
+		   "Operation not supported - recompile against CUPS 1.4");
+  return NULL;
+#else /* CUPS 1.3 */
+  PyObject *dict;
+  PyObject *obj;
+  PyObject *uriobj;
+  char *uri;
+  int jobid, docnum;
+  ipp_t *request, *answer;
+  ipp_attribute_t *attr;
+  const char *format = NULL;
+  const char *name = NULL;
+  char docfilename[PATH_MAX];
+  const size_t tmplen = strlen (_PATH_TMP);
+  int fd;
+
+  if (!PyArg_ParseTuple (args, "Oii", &uriobj, &jobid, &docnum))
+    return NULL;
+
+  if (UTF8_from_PyObj (&uri, uriobj) == NULL)
+    return NULL;
+
+  debugprintf ("-> Connection_getDocument(\"%s\",%d)\n", uri, jobid);
+  request = ippNewRequest (CUPS_GET_DOCUMENT);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
+		"printer-uri", NULL, uri);
+  free (uri);
+  ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+		 "job-id", jobid);
+  ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+		 "document-number", docnum);
+
+  strcpy (docfilename, _PATH_TMP);
+  strcpy (docfilename + tmplen, "jobdoc-XXXXXX");
+  fd = mkstemp (docfilename);
+  if (fd < 0) {
+    PyErr_SetFromErrno (PyExc_RuntimeError);
+    debugprintf ("<- Connection_getDocument() EXCEPTION\n");
+    ippDelete (request);
+    return NULL;
+  }
+
+  Py_BEGIN_ALLOW_THREADS;
+  answer = cupsDoIORequest (self->http, request, "/", -1, fd);
+  Py_END_ALLOW_THREADS;
+
+  close (fd);
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    unlink (docfilename);
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    debugprintf ("<- Connection_getDocument() (error)\n");
+    return NULL;
+  }
+
+  if ((attr = ippFindAttribute (answer, "document-format",
+				IPP_TAG_MIMETYPE)) != NULL)
+    format = attr->values[0].string.text;
+
+  if ((attr = ippFindAttribute (answer, "document-name",
+				IPP_TAG_NAME)) != NULL)
+    name = attr->values[0].string.text;
+
+  dict = PyDict_New ();
+
+  obj = PyString_FromString (docfilename);
+  PyDict_SetItemString (dict, "file", obj);
+  Py_DECREF (obj);
+
+  if (format) {
+    obj = PyString_FromString (format);
+    PyDict_SetItemString (dict, "document-format", obj);
+    Py_DECREF (obj);
+  }
+
+  if (name) {
+    obj = PyObj_from_UTF8 (name);
+    PyDict_SetItemString (dict, "document-name", obj);
+    Py_DECREF (obj);
+  }
+
+  debugprintf ("<- Connection_getDocument() = {'file':\"%s\","
+	       "'document-format':\"%s\",'document-name':\"%s\"}\n",
+	       docfilename, format ? format : "(nul)",
+	       name ? name : "(nul)");
+  ippDelete (answer);
+  return dict;
+#endif /* CUPS 1.3 */
+}
+
+static PyObject *
 Connection_getDevices (Connection *self)
 {
   PyObject *result;
@@ -2971,6 +3069,23 @@ PyMethodDef Connection_methods[] =
       "@param ppd_name: the ppd-name of a PPD\n"
       "@return: temporary filename holding the PPD\n"
       "@raise RuntimeError: Not supported in libcups until 1.3\n"
+      "@raise IPPError: IPP problem" },
+    
+    { "getDocument",
+      (PyCFunction) Connection_getDocument, METH_VARARGS,
+      "getDocument(printer_uri, job_id, document_number) -> dict\n\n"
+      "Fetches the job document and stores it in a temporary file.\n\n"
+      "@type printer_uri: string\n"
+      "@param printer_uri: the printer-uri for the printer\n"
+      "@type job_id: integer\n"
+      "@param job_id: the job ID\n"
+      "@type document_number: integer\n"
+      "@param document_number: the document number to retrieve\n"
+      "@return: a dict with the following keys: "
+      " 'file' (string), temporary filename holding the job document; "
+      " 'document-format' (string), its MIME type.  There may also be a "
+      " 'document-name' key, in which case this is for the document name.\n"
+      "@raise RuntimeError: Not supported in libcups until 1.4\n"
       "@raise IPPError: IPP problem" },
     
     { "getDevices",

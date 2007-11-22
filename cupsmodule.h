@@ -45,6 +45,10 @@ extern void debugprintf (const char *fmt, ...) FORMAT ((__printf__, 1, 2));
 #define cupsAdminSetServerSettings _cupsAdminSetServerSettings
 #endif
 
+#if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MINOR > 3)
+#define HAVE_CUPS_1_4 1
+#endif
+
 #ifndef HAVE_CUPS_1_2
 #error pycups requires CUPS 1.2.x
 #endif
