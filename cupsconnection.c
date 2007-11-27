@@ -942,14 +942,13 @@ Connection_cancelJob (Connection *self, PyObject *args)
 {
   ipp_t *request, *answer;
   int job_id;
-  char uri[1024];
   if (!PyArg_ParseTuple (args, "i", &job_id))
     return NULL;
 
   debugprintf ("-> Connection_cancelJob(%d)\n", job_id);
   request = ippNewRequest(IPP_CANCEL_JOB);
-  snprintf (uri, sizeof (uri), "ipp://localhost/jobs/%d", job_id);
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri", NULL, uri);
+  ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+		 "job-id", job_id);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		"requesting-user-name", NULL, cupsUser ());
   debugprintf ("cupsDoRequest(\"/jobs/\")\n");
