@@ -1974,42 +1974,77 @@ PyObject_from_attr_value (ipp_attribute_t *attr, int i)
 }
 
 static PyObject *
-Connection_getPrinterAttributes (Connection *self, PyObject *args)
+Connection_getPrinterAttributes (Connection *self, PyObject *args,
+				 PyObject *kwds)
 {
   PyObject *ret;
-  PyObject *nameobj;
+  PyObject *nameobj = NULL;
   char *name;
+  PyObject *uriobj = NULL;
+  char *uri;
   ipp_t *request, *answer;
   ipp_attribute_t *attr;
-  char uri[HTTP_MAX_URI];
+  char consuri[HTTP_MAX_URI];
   int i;
+  static char *kwlist[] = { "name", "uri", NULL };
 
-  if (!PyArg_ParseTuple (args, "O", &nameobj))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "|OO", kwlist,
+				    &nameobj, &uriobj))
     return NULL;
 
-  if (UTF8_from_PyObj (&name, nameobj) == NULL)
+  if (nameobj && uriobj) {
+    PyErr_SetString (PyExc_RuntimeError,
+		     "name or uri must be specified but not both");
     return NULL;
+  }
 
-  snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
+  if (nameobj) {
+    if (UTF8_from_PyObj (&name, nameobj) == NULL)
+      return NULL;
+  } else if (uriobj) {
+    if (UTF8_from_PyObj (&uri, uriobj) == NULL)
+      return NULL;
+  } else {
+    PyErr_SetString (PyExc_RuntimeError,
+		     "name or uri must be specified");
+    return NULL;
+  }
+
+  debugprintf ("-> Connection_getPrinterAttributes(%s)\n",
+	       nameobj ? name : uri);
+  if (nameobj) {
+    snprintf (consuri, sizeof (consuri), "ipp://localhost/printers/%s", name);
+    free (name);
+    uri = consuri;
+  }
+
   for (i = 0; i < 2; i++) {
     request = ippNewRequest (IPP_GET_PRINTER_ATTRIBUTES);
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		  "printer-uri", NULL, uri);
+    debugprintf ("trying request with uri %s\n", uri);
     answer = cupsDoRequest (self->http, request, "/");
     if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
       ippDelete (answer);
+      if (uriobj)
+	break;
+
       // Perhaps it's a class, not a printer.
       snprintf (uri, sizeof (uri), "ipp://localhost/classes/%s", name);
     } else break;
   }
 
-  free (name);
+  if (uriobj)
+    free (uri);
+
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
 		   cupsLastError ());
     if (answer)
       ippDelete (answer);
+
+    debugprintf ("<- Connection_getPrinterAttributes() (error)\n");
     return NULL;
   }
 
@@ -2026,6 +2061,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
       size_t namelen = strlen (attr->name);
       int is_list = attr->num_values > 1;
 
+      debugprintf ("Attribute: %s\n", attr->name);
       // job-sheets-default is special, since it is always two values.
       // Make it a tuple.
       if (!strcmp (attr->name, "job-sheets-default") &&
@@ -2101,6 +2137,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args)
       break;
   }
 
+  debugprintf ("<- Connection_getPrinterAttributes() = dict\n");
   return ret;
 }
 
@@ -3316,13 +3353,17 @@ PyMethodDef Connection_methods[] =
       "@raise IPPError: IPP problem" },
 
     { "getPrinterAttributes",
-      (PyCFunction) Connection_getPrinterAttributes, METH_VARARGS,
-      "getPrinterAttributes(name) -> dict\n"
-      "Fetch the attributes for a printer.\n\n"
+      (PyCFunction) Connection_getPrinterAttributes,
+      METH_VARARGS | METH_KEYWORDS,
+      "getPrinterAttributes() -> dict\n"
+      "Fetch the attributes for a printer, specified either by name or by \n"
+      "uri but not both.\n\n"
       "@type name: string\n"
       "@param name: queue name\n"
+      "@type uri: string\n"
+      "@param uri: queue URI\n"
       "@return: a dict, indexed by attribute, of printer attributes\n"
-      "for the printer 'name'.\n\n"
+      "for the specified printer.\n\n"
       "Attributes:\n"
       "  - 'job-sheets-supported': list of strings\n"
       "  - 'job-sheets-default': tuple of strings (start, end)\n"
@@ -3331,7 +3372,7 @@ PyMethodDef Connection_methods[] =
       "  - 'printer-op-policy-supported': if present, list of strings\n"
       "  - 'printer-op-policy': if present, string\n\n"
       "There are other attributes; the exact list of attributes returned \n"
-      "will depend on the CUPS server.\n"
+      "will depend on the IPP server.\n"
       "@raise IPPError: IPP problem"},
 
     { "addPrinterToClass",
