@@ -186,7 +186,6 @@ do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
   PyObject *nameobj;
   PyObject *reasonobj = NULL;
   char *name;
-  char *reason = NULL;
   char uri[HTTP_MAX_URI];
   ipp_t *request, *answer;
 
@@ -198,20 +197,19 @@ do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
       if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|O", kwlist,
 					&nameobj, &reasonobj))
 	return NULL;
-      debugprintf ("-> do_printer_request(op:%d, name:%s, reason:%s)\n",
-		   (int) op, name, reason ? reason : "(null)");
       break;
     }
 
   default:
     if (!PyArg_ParseTuple (args, "O", &nameobj))
       return NULL;
-    debugprintf ("-> do_printer_request(op:%d, name:%s)\n", (int) op, name);
     break;
   }
 
   if (UTF8_from_PyObj (&name, nameobj) == NULL)
     return NULL;
+
+  debugprintf ("-> do_printer_request(op:%d, name:%s)\n", (int) op, name);
 
   request = ippNewRequest (op);
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
@@ -227,6 +225,7 @@ do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
       return NULL;
     }
 
+    debugprintf ("reason: %s\n", reason);
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_TEXT,
 		  "printer-state-message", NULL, reason);
     free (reason);
