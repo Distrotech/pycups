@@ -833,12 +833,16 @@ Option_getChoices (Option *self, void *closure)
        i < self->option->num_choices;
        i++, choice++) {
     PyObject *choice_dict = PyDict_New ();
-    PyDict_SetItemString (choice_dict, "choice",
-			  make_PyUnicode_from_ppd_string (self->ppd,
-							  choice->choice));
-    PyDict_SetItemString (choice_dict, "text",
-			  make_PyUnicode_from_ppd_string (self->ppd,
-							  choice->text));
+    PyObject *u;
+
+    u = make_PyUnicode_from_ppd_string (self->ppd, choice->choice);
+    PyDict_SetItemString (choice_dict, "choice", u);
+    Py_DECREF (u);
+
+    u = make_PyUnicode_from_ppd_string (self->ppd, choice->text);
+    PyDict_SetItemString (choice_dict, "text", u);
+    Py_DECREF (u);
+
     PyList_Append (choices, choice_dict);
     if (!strcmp (choice->choice, self->option->defchoice))
       defchoice_seen = true;

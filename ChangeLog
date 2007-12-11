@@ -1,3 +1,7 @@
+2007-12-11  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsppd.c (Option_getChoices): Don't leak Unicode objects.
+
 2007-11-30  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (do_printer_request): Fixed debugging output.
