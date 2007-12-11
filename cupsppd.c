@@ -843,6 +843,10 @@ Option_getChoices (Option *self, void *closure)
     PyDict_SetItemString (choice_dict, "text", u);
     Py_DECREF (u);
 
+    u = PyBool_FromLong (choice->marked);
+    PyDict_SetItemString (choice_dict, "marked", u);
+    Py_DECREF (u);
+
     PyList_Append (choices, choice_dict);
     if (!strcmp (choice->choice, self->option->defchoice))
       defchoice_seen = true;
