@@ -1,3 +1,8 @@
+2007-12-14  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_addPrinter): Don't deallocate
+	the Python objects that are our arguments.
+
 2007-12-11  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsppd.c (Option_getChoices): Don't leak Unicode objects.

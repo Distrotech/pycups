@@ -1237,25 +1237,21 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		  "ppd-name", NULL, ppdname);
     free (ppdname);
-    Py_DECREF (ppdnameobj);
   }
   if (info) {
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		  "printer-info", NULL, info);
     free (info);
-    Py_DECREF (infoobj);
   }
   if (location) {
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		  "printer-location", NULL, location);
     free (location);
-    Py_DECREF (locationobj);
   }
   if (device) {
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_URI,
 		  "device-uri", NULL, device);
     free (device);
-    Py_DECREF (deviceobj);
   }
   
   if (ppdfile) {
