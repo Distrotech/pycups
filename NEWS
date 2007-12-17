@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.32:
+
+* cups.Connection.getPrinterAttributes() now takes a uri keyword argument
+  for fetching attributes from non-CUPS IPP servers.
+
 New in 1.9.31:
 
 * cups.Connection.getDocument()
