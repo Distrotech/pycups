@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006, 2007  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2002, 2005, 2006, 2007, 2008  Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -977,7 +977,7 @@ Connection_setJobHoldUntil (Connection *self, PyObject *args)
   char uri[1024];
   cups_option_t *options = NULL;
   int num_options = 0;
-  if (!PyArg_ParseTuple (args, "io", &job_id, &job_hold_until_obj))
+  if (!PyArg_ParseTuple (args, "iO", &job_id, &job_hold_until_obj))
     return NULL;
 
   if (UTF8_from_PyObj (&job_hold_until, job_hold_until_obj) == NULL)
