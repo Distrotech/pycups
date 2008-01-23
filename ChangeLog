@@ -1,5 +1,9 @@
 2008-01-23  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.33.
+
+2008-01-23  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_cancelJob): Revert back to using
 	job-uri since it is a required attribute.
 
