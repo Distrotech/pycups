@@ -2498,7 +2498,7 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
     format = "application/postscript";
 
   if (!userobj)
-    user = "guest";
+    user = cupsUser();
 
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", printer);
   resource = uri + strlen ("ipp://localhost");
@@ -3476,7 +3476,7 @@ PyMethodDef Connection_methods[] =
       "@type format: string\n"
       "@keyword format: document format (default 'application/postscript')\n"
       "@type user: string\n"
-      "@keyword user: user to submit the job as (default 'guest')\n"
+      "@keyword user: user to submit the job as\n"
       "@raise IPPError: IPP problem" },
 
     { "adminGetServerSettings",
