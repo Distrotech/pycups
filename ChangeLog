@@ -1,5 +1,9 @@
 2008-02-04  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.34.
+
+2008-02-04  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_getNotifications): Pass through the
 	sequence numbers.
 
