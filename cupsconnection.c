@@ -2851,7 +2851,7 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
 {
   PyObject *subscription_ids, *sequence_numbers = NULL;
   ipp_t *request, *answer;
-  int i, num_ids, num_seqs;
+  int i, num_ids, num_seqs = 0;
   ipp_attribute_t *attr;
   PyObject *result, *events, *event;
   static char *kwlist[] = { "subscription_ids", "sequence_numbers", NULL };
@@ -2904,6 +2904,15 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
   for (i = 0; i < num_ids; i++) {
     PyObject *id = PyList_GetItem (subscription_ids, i);
     attr->values[i].integer = PyInt_AsLong (id);
+  }
+
+  if (sequence_numbers) {
+    attr = ippAddIntegers (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+			   "notify-sequence-numbers", num_seqs, NULL);
+    for (i = 0; i < num_seqs; i++) {
+      PyObject *num = PyList_GetItem (sequence_numbers, i);
+      attr->values[i].integer = PyInt_AsLong (num);
+    }
   }
   
   answer = cupsDoRequest (self->http, request, "/");
