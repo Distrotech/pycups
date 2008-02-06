@@ -1,3 +1,8 @@
+2008-02-06  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getPrinterAttributes): The
+	printer-state-reasons attribute is always a list.
+
 2008-02-04  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Version 1.9.34.

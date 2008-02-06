@@ -2091,6 +2091,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 	    "requesting-user-name-allowed",
 	    "requesting-user-name-denied",
 	    "finishings-supported",
+	    "printer-state-reasons",
 	    NULL
 	  };
 
