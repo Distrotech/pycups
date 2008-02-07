@@ -969,6 +969,95 @@ Connection_cancelJob (Connection *self, PyObject *args)
 }
 
 static PyObject *
+Connection_cancelAllJobs (Connection *self, PyObject *args, PyObject *kwds)
+{
+  PyObject *nameobj = NULL;
+  char *name;
+  PyObject *uriobj = NULL;
+  char *uri;
+  char consuri[HTTP_MAX_URI];
+  ipp_t *request, *answer;
+  int my_jobs = 0;
+  int purge_jobs = 1;
+  int i;
+  static char *kwlist[] = { "name", "uri", "my_jobs", "purge_jobs", NULL };
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "|OOii", kwlist,
+				    &nameobj, &uriobj, &my_jobs, &purge_jobs))
+    return NULL;
+
+  if (nameobj && uriobj) {
+    PyErr_SetString (PyExc_RuntimeError,
+		     "name or uri must be specified but not both");
+    return NULL;
+  }
+
+  if (nameobj) {
+    if (UTF8_from_PyObj (&name, nameobj) == NULL)
+      return NULL;
+  } else if (uriobj) {
+    if (UTF8_from_PyObj (&uri, uriobj) == NULL)
+      return NULL;
+  } else {
+    PyErr_SetString (PyExc_RuntimeError,
+		     "name or uri must be specified");
+    return NULL;
+  }
+
+  debugprintf ("-> Connection_cancelAllJobs(%s, my_jobs=%d, purge_jobs=%d)\n",
+	       nameobj ? name : uri, my_jobs, purge_jobs);
+  if (nameobj) {
+    snprintf (consuri, sizeof (consuri), "ipp://localhost/printers/%s", name);
+    uri = consuri;
+  }
+
+  for (i = 0; i < 2; i++) {
+    request = ippNewRequest(IPP_PURGE_JOBS);
+    ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "printer-uri",
+		  NULL, uri);
+
+    if (my_jobs)
+    {
+      ippAddBoolean (request, IPP_TAG_OPERATION, "my-jobs", my_jobs);
+      ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		    "requesting-user-name", NULL, cupsUser());
+    }
+
+    ippAddBoolean (request, IPP_TAG_OPERATION, "purge-jobs", purge_jobs);
+    debugprintf ("cupsDoRequest(\"/admin/\") with printer-uri=%s\n", uri);
+    answer = cupsDoRequest (self->http, request, "/admin/");
+    if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
+      ippDelete (answer);
+      if (uriobj)
+	break;
+
+      // Perhaps it's a class, not a printer.
+      snprintf (consuri, sizeof (consuri), "ipp://localhost/classes/%s", name);
+    } else break;
+  }
+
+  if (nameobj)
+    free (name);
+
+  if (uriobj)
+    free (uri);
+
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+
+    debugprintf ("<- Connection_cancelAllJobs() (error)\n");
+    return NULL;
+  }
+
+  Py_INCREF (Py_None);
+  debugprintf ("<- Connection_cancelAllJobs() = None\n");
+  return Py_None;
+}
+
+static PyObject *
 Connection_setJobHoldUntil (Connection *self, PyObject *args)
 {
   ipp_t *request, *answer;
@@ -2010,7 +2099,6 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 	       nameobj ? name : uri);
   if (nameobj) {
     snprintf (consuri, sizeof (consuri), "ipp://localhost/printers/%s", name);
-    free (name);
     uri = consuri;
   }
 
@@ -2026,9 +2114,12 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 	break;
 
       // Perhaps it's a class, not a printer.
-      snprintf (uri, sizeof (uri), "ipp://localhost/classes/%s", name);
+      snprintf (consuri, sizeof (consuri), "ipp://localhost/classes/%s", name);
     } else break;
   }
+
+  if (nameobj)
+    free (name);
 
   if (uriobj)
     free (uri);
@@ -2499,7 +2590,7 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
     format = "application/postscript";
 
   if (!userobj)
-    user = cupsUser();
+	  user = (char *) cupsUser();
 
   snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", printer);
   resource = uri + strlen ("ipp://localhost");
@@ -3156,6 +3247,18 @@ PyMethodDef Connection_methods[] =
       "cancelJob(jobid) -> None\n\n"
       "@type jobid: integer\n"
       "@param jobid: job ID to cancel\n"
+      "@raise IPPError: IPP problem" },
+
+    { "cancelAllJobs",
+      (PyCFunction) Connection_cancelAllJobs, METH_VARARGS | METH_KEYWORDS,
+      "cancelAllJobs(uri, my_jobs=False, purge_jobs=True) -> None\n\n"
+      "@type uri: string\n"
+      "@param uri: printer URI\n"
+      "@type my_jobs: boolean\n"
+      "@param my_jobs: whether to restrict operation to jobs owned by \n"
+      "the current CUPS user (as set by L{cups.setUser}).\n"
+      "@type purge_jobs: boolean\n"
+      "@param purge_jobs: whether to remove data and control files\n"
       "@raise IPPError: IPP problem" },
 
     { "setJobHoldUntil",

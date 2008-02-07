@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New in 1.9.35:
+
+* cups.Connection.cancelAllJobs()
+
 New in 1.9.32:
 
 * cups.Connection.getPrinterAttributes() now takes a uri keyword argument

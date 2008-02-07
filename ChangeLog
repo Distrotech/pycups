@@ -1,3 +1,12 @@
+2008-02-07  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_cancelAllJobs): New method.
+	(Connection_getPrinterAttributes): Don't free name string before
+	use.
+	(Connection_getPrinterAttributes): Construct the URI in the
+	correct buffer.
+	(Connection_printTestPage): Avoid compiler warning.
+
 2008-02-06  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_getPrinterAttributes): The
