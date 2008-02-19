@@ -3,6 +3,7 @@ NEWS
 
 New in 1.9.35:
 
+* cups.Connection.getJobAttributes()
 * cups.Connection.cancelAllJobs()
 
 New in 1.9.32:

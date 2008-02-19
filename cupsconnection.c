@@ -937,6 +937,105 @@ Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
+PyObject_from_attr_value (ipp_attribute_t *attr, int i)
+{
+  PyObject *val = NULL;
+  switch (attr->value_tag) {
+  case IPP_TAG_NAME:
+  case IPP_TAG_TEXT:
+  case IPP_TAG_KEYWORD:
+  case IPP_TAG_URI:
+  case IPP_TAG_CHARSET:
+  case IPP_TAG_MIMETYPE:
+  case IPP_TAG_LANGUAGE:
+    val = PyObj_from_UTF8 (attr->values[i].string.text);
+    break;
+  case IPP_TAG_INTEGER:
+  case IPP_TAG_ENUM:
+    val = PyInt_FromLong (attr->values[i].integer);
+    break;
+  case IPP_TAG_BOOLEAN:
+    val = PyBool_FromLong (attr->values[i].integer);
+    break;
+  case IPP_TAG_RANGE:
+    val = Py_BuildValue ("(ii)",
+			 attr->values[i].range.lower,
+			 attr->values[i].range.upper);
+    break;
+  case IPP_TAG_NOVALUE:
+    Py_INCREF (Py_None);
+    val = Py_None;
+    break;
+
+    // TODO:
+  case IPP_TAG_DATE:
+    val = PyString_FromString ("(IPP_TAG_DATE)");
+    break;
+  default:
+    val = PyString_FromString ("(unknown IPP tag)");
+    break;
+  }
+
+  return val;
+}
+
+static PyObject *
+Connection_getJobAttributes (Connection *self, PyObject *args)
+{
+  PyObject *result;
+  ipp_t *request = ippNewRequest(IPP_GET_JOB_ATTRIBUTES), *answer;
+  ipp_attribute_t *attr;
+  int job_id;
+  char uri[1024];
+  if (!PyArg_ParseTuple (args, "i", &job_id))
+    return NULL;
+
+  debugprintf ("-> Connection_getJobAttributes(%d)\n", job_id);
+  snprintf (uri, sizeof (uri), "ipp://localhost/jobs/%d", job_id);
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri",
+		NULL, uri);
+
+  debugprintf ("cupsDoRequest(\"/\")\n");
+  answer = cupsDoRequest (self->http, request, "/");
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    debugprintf ("<- Connection_getJobAttributes() (error)\n");
+    return NULL;
+  }
+
+  result = PyDict_New ();
+  for (attr = answer->attrs; attr; attr = attr->next) {
+    PyObject *obj;
+
+    if (attr->num_values > 1) {
+      int i;
+      obj = PyList_New (0);
+      for (i = 0; i < attr->num_values; i++) {
+	PyObject *item = PyObject_from_attr_value (attr, i);
+	if (item)
+	  PyList_Append (obj, item);
+      }
+    } else
+      obj = PyObject_from_attr_value (attr, 0);
+
+    if (!obj)
+      // Can't represent this.
+      continue;
+
+    PyDict_SetItemString (result, attr->name, obj);
+    Py_DECREF (obj);
+  }
+
+  ippDelete (answer);
+  debugprintf ("<- Connection_getJobAttributes() = dict\n");
+  return result;
+}
+
+static PyObject *
 Connection_cancelJob (Connection *self, PyObject *args)
 {
   ipp_t *request, *answer;
@@ -2013,49 +2112,6 @@ static PyObject *
 Connection_deletePrinter (Connection *self, PyObject *args, PyObject *kwds)
 {
   return do_printer_request (self, args, kwds, CUPS_DELETE_PRINTER);
-}
-
-static PyObject *
-PyObject_from_attr_value (ipp_attribute_t *attr, int i)
-{
-  PyObject *val = NULL;
-  switch (attr->value_tag) {
-  case IPP_TAG_NAME:
-  case IPP_TAG_TEXT:
-  case IPP_TAG_KEYWORD:
-  case IPP_TAG_URI:
-  case IPP_TAG_CHARSET:
-  case IPP_TAG_MIMETYPE:
-  case IPP_TAG_LANGUAGE:
-    val = PyObj_from_UTF8 (attr->values[i].string.text);
-    break;
-  case IPP_TAG_INTEGER:
-  case IPP_TAG_ENUM:
-    val = PyInt_FromLong (attr->values[i].integer);
-    break;
-  case IPP_TAG_BOOLEAN:
-    val = PyBool_FromLong (attr->values[i].integer);
-    break;
-  case IPP_TAG_RANGE:
-    val = Py_BuildValue ("(ii)",
-			 attr->values[i].range.lower,
-			 attr->values[i].range.upper);
-    break;
-  case IPP_TAG_NOVALUE:
-    Py_INCREF (Py_None);
-    val = Py_None;
-    break;
-
-    // TODO:
-  case IPP_TAG_DATE:
-    val = PyString_FromString ("(IPP_TAG_DATE)");
-    break;
-  default:
-    val = PyString_FromString ("(unknown IPP tag)");
-    break;
-  }
-
-  return val;
 }
 
 static PyObject *
@@ -3240,6 +3296,15 @@ PyMethodDef Connection_methods[] =
       "owned by the current CUPS user (as set by L{cups.setUser}).\n"
       "@return: a dict, indexed by job ID, of dicts representing job\n"
       "attributes.\n"
+      "@raise IPPError: IPP problem" },
+
+    { "getJobAttributes",
+      (PyCFunction) Connection_getJobAttributes, METH_VARARGS,
+      "getJobAttributes(jobid) -> None\n\n"
+      "Fetch job attributes.\n"
+      "@type jobid: integer\n"
+      "@param jobid_jobs: job ID\n"
+      "@return: a dict representing job attributes.\n"
       "@raise IPPError: IPP problem" },
 
     { "cancelJob",
