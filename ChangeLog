@@ -1,5 +1,9 @@
 2008-02-19  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.35.
+
+2008-02-19  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_getJobAttributes): New method.
 
 2008-02-07  Tim Waugh  <twaugh@redhat.com>
