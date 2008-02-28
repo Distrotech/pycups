@@ -1011,7 +1011,8 @@ Connection_getJobAttributes (Connection *self, PyObject *args)
   for (attr = answer->attrs; attr; attr = attr->next) {
     PyObject *obj;
 
-    if (attr->num_values > 1) {
+    if (attr->num_values > 1 ||
+	!strcmp (attr->name, "job-printer-state-reasons")) {
       int i;
       obj = PyList_New (0);
       for (i = 0; i < attr->num_values; i++) {
@@ -3109,7 +3110,10 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
       continue;
     }
 
-    if (attr->num_values > 1 || !strcmp (attr->name, "notify-events")) {
+    if (attr->num_values > 1 ||
+	!strcmp (attr->name, "notify-events") ||
+	!strcmp (attr->name, "printer-state-reasons") ||
+	!strcmp (attr->name, "job-printer-state-reasons")) {
       obj = PyList_New (0);
       for (i = 0; i < attr->num_values; i++) {
 	PyObject *item = PyObject_from_attr_value (attr, i);
