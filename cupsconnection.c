@@ -3149,13 +3149,15 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-Connection_renewSubscription (Connection *self, PyObject *args)
+Connection_renewSubscription (Connection *self, PyObject *args, PyObject *kwds)
 {
   int id;
+  int lease_duration = -1;
   ipp_t *request, *answer;
-  ipp_attribute_t *attr;
+  static char *kwlist[] = { "id", "lease_duration", NULL };
 
-  if (!PyArg_ParseTuple (args, "i", &id))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "i|i", kwlist,
+				    &id, &lease_duration))
     return NULL;
 
   debugprintf ("-> Connection_renewSubscription()\n");
@@ -3164,8 +3166,12 @@ Connection_renewSubscription (Connection *self, PyObject *args)
 		"printer-uri", NULL, "/");
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		"requesting-user-name", NULL, cupsUser ());
-  attr = ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
-			 "notify-subscription-id", id);
+  ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+		 "notify-subscription-id", id);
+
+  if (lease_duration != -1)
+    ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+		   "notify-lease-duration", lease_duration);
 
   answer = cupsDoRequest (self->http, request, "/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
@@ -3736,11 +3742,13 @@ PyMethodDef Connection_methods[] =
       "@raise IPPError: IPP problem" },
 
     { "renewSubscription",
-      (PyCFunction) Connection_renewSubscription, METH_VARARGS,
+      (PyCFunction) Connection_renewSubscription, METH_VARARGS | METH_KEYWORDS,
       "renewSubscription(id) -> None\n\n"
       "Renew a subscription.\n\n"
       "@type id: integer\n"
       "@param id: subscription ID\n"
+      "@type lease_duration: integer\n"
+      "@param lease_duration: lease duration in seconds\n"
       "@raise IPPError: IPP problem" },
 
     { NULL } /* Sentinel */
