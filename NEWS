@@ -5,6 +5,9 @@ New in 1.9.36:
 
 * cups.Connection.renewSubscription() now takes an optional parameter
   lease_duration.
+* cups.Connection.getJobAttributes() and
+  cups.Connection.getNotificaitons(): State reasons are now lists as they
+  ought to be.
 
 New in 1.9.35:
 
