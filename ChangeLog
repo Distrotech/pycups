@@ -1,3 +1,19 @@
+2008-03-05  Norm Jacobs <Norm.Jacobs@Sun.COM>
+
+        * cupsppd.c (getline): emulate getline() for systems without it.
+          (PPD_writeFd): replace strndup with calloc/strncpy for portability.
+        * cupsconnection.c (Connection_getDocument): generate tempfile template
+        with snprintf instead of alloc, copy, copy.
+        (Connection_addPrinter): generate tempfile template with snprintf
+        instead of strpcpy, strcpy.
+        (PyObject_to_String): avoid using alloca() by declaring a buffer at
+        the top of the function.
+	(Connection_getServerPPD): test for CUPS version using cups.h supplied
+        values.
+	(Connection_getDocument): test for CUPS version using cups.h supplied
+        values.
+	* cupsmodule.c: test for CUPS version using cups.h supplied values.
+
 2008-03-05  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Version 1.9.36.

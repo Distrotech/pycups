@@ -21,9 +21,15 @@
 #include "cupsppd.h"
 #include "cupsmodule.h"
 
+#ifndef __SVR4
 #include <paths.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef _PATH_TMP
+#define _PATH_TMP P_tmpdir
+#endif
 
 PyObject *HTTPError;
 PyObject *IPPError;
@@ -634,11 +640,7 @@ Connection_getPPDs (Connection *self)
 static PyObject *
 Connection_getServerPPD (Connection *self, PyObject *args)
 {
-#ifndef HAVE_CUPS_1_3
-  PyErr_SetString (PyExc_RuntimeError,
-		   "Operation not supported - recompile against CUPS 1.3");
-  return NULL;
-#else /* CUPS 1.3 */
+#if CUPS_VERSION_MAJOR >= 1 && CUPS_VERSION_MINOR >= 3
   const char *ppd_name, *filename;
   if (!PyArg_ParseTuple (args, "s", &ppd_name))
     return NULL;
@@ -654,17 +656,17 @@ Connection_getServerPPD (Connection *self, PyObject *args)
   debugprintf ("<- Connection_getServerPPD(\"%s\") = \"%s\"\n",
 	       ppd_name, filename);
   return PyString_FromString (filename);
+#else /* earlier than CUPS 1.3 */
+  PyErr_SetString (PyExc_RuntimeError,
+		   "Operation not supported - recompile against CUPS 1.3 or later");
+  return NULL;
 #endif /* CUPS 1.3 */
 }
 
 static PyObject *
 Connection_getDocument (Connection *self, PyObject *args)
 {
-#ifndef HAVE_CUPS_1_4
-  PyErr_SetString (PyExc_RuntimeError,
-		   "Operation not supported - recompile against CUPS 1.4");
-  return NULL;
-#else /* CUPS 1.3 */
+#if CUPS_VERSION_MAJOR >= 1 && CUPS_VERSION_MINOR >= 4
   PyObject *dict;
   PyObject *obj;
   PyObject *uriobj;
@@ -675,7 +677,6 @@ Connection_getDocument (Connection *self, PyObject *args)
   const char *format = NULL;
   const char *name = NULL;
   char docfilename[PATH_MAX];
-  const size_t tmplen = strlen (_PATH_TMP);
   int fd;
 
   if (!PyArg_ParseTuple (args, "Oii", &uriobj, &jobid, &docnum))
@@ -694,8 +695,7 @@ Connection_getDocument (Connection *self, PyObject *args)
   ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
 		 "document-number", docnum);
 
-  strcpy (docfilename, _PATH_TMP);
-  strcpy (docfilename + tmplen, "jobdoc-XXXXXX");
+  snprintf(docfilename, "%s/jobdoc-XXXXX", _PATH_TMP);
   fd = mkstemp (docfilename);
   if (fd < 0) {
     PyErr_SetFromErrno (PyExc_RuntimeError);
@@ -752,7 +752,11 @@ Connection_getDocument (Connection *self, PyObject *args)
 	       name ? name : "(nul)");
   ippDelete (answer);
   return dict;
-#endif /* CUPS 1.3 */
+#else /* earlier than CUPS 1.4 */
+  PyErr_SetString (PyExc_RuntimeError,
+		   "Operation not supported - recompile against CUPS 1.4 or later");
+  return NULL;
+#endif /* CUPS 1.4 */
 }
 
 static PyObject *
@@ -1382,14 +1386,12 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
 
   if (ppd) {
     // We've been given a cups.PPD object.  Construct a PPD file.
-    const char *template = "scp-ppd-XXXXXX";
-    size_t len = strlen (_PATH_TMP) + strlen (template) + 1;
-    char *p;
+    char template[PATH_MAX];
     int fd;
     PyObject *args, *result;
-    ppdfile = malloc (len);
-    p = stpcpy (ppdfile, _PATH_TMP);
-    strcpy (p, template);
+
+    snprintf(template, sizeof (template), "%s/scp-ppd-XXXXXX", _PATH_TMP);
+    ppdfile = strdup(template);
     fd = mkstemp (ppdfile);
     if (fd < 0) {
       PyErr_SetFromErrno (PyExc_RuntimeError);
@@ -1952,7 +1954,9 @@ Connection_setPrinterUsersDenied (Connection *self, PyObject *args)
 static char *
 PyObject_to_string (PyObject *pyvalue)
 {
+  char string[BUFSIZ];
   char *value = "{unknown type}";
+
   if (PyString_Check (pyvalue) ||
       PyUnicode_Check (pyvalue)) {
     value = PyString_AsString (pyvalue);
@@ -1960,12 +1964,12 @@ PyObject_to_string (PyObject *pyvalue)
     value = (pyvalue == Py_True) ? "true" : "false";
   } else if (PyInt_Check (pyvalue)) {
     long v = PyInt_AsLong (pyvalue);
-    value = alloca (20);
-    snprintf (value, 20, "%ld", v);
+    snprintf (string, sizeof (string), "%ld", v);
+    value = string;
   } else if (PyFloat_Check (pyvalue)) {
     double v = PyFloat_AsDouble (pyvalue);
-    value = alloca (100);
-    snprintf (value, 100, "%f", v);
+    snprintf (string, sizeof (string), "%f", v);
+    value = string;
   }
 
   return strdup (value);

@@ -451,6 +451,27 @@ PPD_nondefaultsMarked (PPD *self)
   return PyBool_FromLong (nondefaults_marked);
 }
 
+#ifdef __SVR4
+/*
+ * A rudimentary emulation of getline() for systems that dont support it
+ * natively.  Since this is used for PPD file reading, it assumes (possibly
+ * falsely) that BUFSIZ is big enough.
+ */
+ssize_t
+getline(char **line, size_t *linelen, FILE *fp)
+{
+  if (*linelen == 0) {
+    *linelen = BUFSIZ;
+    *line = malloc(*linelen);
+  }
+
+  memset(*line, 0, *linelen);
+  fgets(*line, *linelen, fp);
+
+  return (strlen(*line));
+}
+#endif
+
 PyObject *
 PPD_writeFd (PPD *self, PyObject *args)
 {
@@ -489,7 +510,8 @@ PPD_writeFd (PPD *self, PyObject *args)
       for (end = start; *end; end++)
 	if (isspace (*end) || *end == ':')
 	  break;
-      keyword = strndup (start, end-start);
+      keyword = calloc(1, (end - start) + 1);
+      strncpy(keyword, start, end - start);
       choice = ppdFindMarkedChoice (self->ppd, keyword);
 
       // Treat PageRegion, PaperDimension and ImageableArea specially:
