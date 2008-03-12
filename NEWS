@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New in 1.9.37:
+
+* cups.Connection.authenticateJob()
+
 New in 1.9.36:
 
 * cups.Connection.renewSubscription() now takes an optional parameter
