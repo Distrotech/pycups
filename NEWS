@@ -4,6 +4,7 @@ NEWS
 New in 1.9.37:
 
 * cups.Connection.authenticateJob()
+* cups.CUPS_PRINTER_DISCOVERED
 
 New in 1.9.36:
 

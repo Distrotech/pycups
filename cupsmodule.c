@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006, 2007  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2002, 2005, 2006, 2007, 2008  Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -446,6 +446,9 @@ initcups (void)
   INT_CONSTANT (CUPS_PRINTER_AUTHENTICATED);
   INT_CONSTANT (CUPS_PRINTER_COMMANDS);
   INT_CONSTANT (CUPS_PRINTER_OPTIONS);
+#if CUPS_VERSION_MAJOR >= 1 && CUPS_VERSION_MINOR >= 3
+  STR_CONSTANT (CUPS_PRINTER_DISCOVERED);
+#endif /* CUPS 1.3 */
 
   // HTTP encryption
   INT_CONSTANT (HTTP_ENCRYPT_IF_REQUESTED);
