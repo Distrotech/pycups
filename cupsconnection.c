@@ -2272,7 +2272,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
       // Make it a tuple.
       if (!strcmp (attr->name, "job-sheets-default") &&
 	  attr->value_tag == IPP_TAG_NAME) {
-	PyObject *startobj, *endobj;
+	PyObject *startobj, *endobj, *tuple;
 	const char *start, *end;
 	start = attr->values[0].string.text;
 	if (attr->num_values >= 2)
@@ -2282,10 +2282,11 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 
 	startobj = PyObj_from_UTF8 (start);
 	endobj = PyObj_from_UTF8 (end);
-	PyDict_SetItemString (ret, "job-sheets-default",
-			      Py_BuildValue ("(OO)", startobj, endobj));
+	tuple = Py_BuildValue ("(OO)", startobj, endobj);
 	Py_DECREF (startobj);
 	Py_DECREF (endobj);
+	PyDict_SetItemString (ret, "job-sheets-default", tuple);
+	Py_DECREF (tuple);
 	continue;
       }
 
@@ -2334,6 +2335,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 	  PyList_Append (list, val);
 	}
 	PyDict_SetItemString (ret, attr->name, list);
+	Py_DECREF (list);
       } else {
 	PyObject *val = PyObject_from_attr_value (attr, i);
 	PyDict_SetItemString (ret, attr->name, val);
@@ -3206,6 +3208,7 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
 
   ippDelete (answer);
   PyDict_SetItemString (result, "events", events);
+  Py_DECREF (events);
   debugprintf ("<- Connection_getNotifications()\n");
   return result;
 }
@@ -3946,9 +3949,11 @@ Dest_getOptions (Dest *self, void *closure)
 {
   PyObject *pyoptions = PyDict_New ();
   int i;
-  for (i = 0; i < self->num_options; i++)
-    PyDict_SetItemString (pyoptions, self->name[i],
-			  PyString_FromString (self->value[i]));
+  for (i = 0; i < self->num_options; i++) {
+    PyObject *string = PyString_FromString (self->value[i]);
+    PyDict_SetItemString (pyoptions, self->name[i], string);
+    Py_DECREF (string);
+  }
 
   return pyoptions;
 }

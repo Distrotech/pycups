@@ -1,3 +1,10 @@
+2008-03-15  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getPrinterAttributes): Prevent
+	memory leak.
+	(Connection_getNotifications): Likewise.
+	(Dest_getOptions): Likewise.
+
 2008-03-14  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsmodule.c (initcups): Add CUPS_PRINTER_DISCOVERED constant.
