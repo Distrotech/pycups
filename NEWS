@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.38:
+
+* cups.Connection.getFile() now accepts a file descriptor or a Python file
+  object as the destination.
+
 New in 1.9.37:
 
 * cups.Connection.authenticateJob()

@@ -24,6 +24,7 @@
 #ifndef __SVR4
 #include <paths.h>
 #endif
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -1297,17 +1298,40 @@ Connection_restartJob (Connection *self, PyObject *args)
 }
 
 static PyObject *
-Connection_getFile (Connection *self, PyObject *args)
+Connection_getFile (Connection *self, PyObject *args, PyObject *kwds)
 {
-  const char *resource, *filename;
+  static char *kwlist[] = { "resource", "filename", "fd", "file", NULL };
+  const char *resource, *filename = NULL;
+  int fd = -1;
+  PyObject *fileobj = NULL;
   http_status_t status;
 
-  if (!PyArg_ParseTuple (args, "ss", &resource, &filename))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|siO", kwlist,
+				    &resource, &filename, &fd, &fileobj))
     return NULL;
 
-  debugprintf ("-> Connection_getFile(%s, %s)\n", resource, filename);
-  debugprintf ("cupsGetFile()\n");
-  status = cupsGetFile (self->http, resource, filename);
+  if ((fd > -1 && (filename || fileobj)) ||
+      (filename && fileobj)) {
+    PyErr_SetString (PyExc_RuntimeError,
+		     "Only one destination type may be specified");
+    return NULL;
+  }
+
+  if (fileobj) {
+    FILE *f = PyFile_AsFile (fileobj);
+    fd = fileno (f);
+  }
+
+  if (filename) {
+    debugprintf ("-> Connection_getFile(%s, %s)\n", resource, filename);
+    debugprintf ("cupsGetFile()\n");
+    status = cupsGetFile (self->http, resource, filename);
+  } else {
+    debugprintf ("-> Connection_getFile(%s, %d)\n", resource, fd);
+    debugprintf ("cupsGetFd()\n");
+    status = cupsGetFd (self->http, resource, fd);
+  }
+
   if (status != HTTP_OK) {
     set_http_error (status);
     debugprintf ("<- Connection_getFile() (error)\n");
@@ -3430,8 +3454,8 @@ PyMethodDef Connection_methods[] =
       "@raise IPPError: IPP problem" },
 
     { "getFile",
-      (PyCFunction) Connection_getFile, METH_VARARGS,
-      "getFile(resource, filename) -> None\n\n"
+      (PyCFunction) Connection_getFile, METH_VARARGS | METH_KEYWORDS,
+      "getFile(resource, filename=None, fd=-1, file=None) -> None\n\n"
       "Fetch a CUPS server resource to a local file.\n\n"
       "This is for obtaining CUPS server configuration files and \n"
       "log files.\n\n"
@@ -3439,6 +3463,10 @@ PyMethodDef Connection_methods[] =
       "@param resource: resource name\n"
       "@type filename: string\n"
       "@param filename: name of local file for storage\n"
+      "@type fd: int\n"
+      "@param fd: file descriptor of local file\n"
+      "@type file: file\n"
+      "@param file: Python file object for local file\n"
       "@raise HTTPError: HTTP problem" },
 
     { "putFile",
