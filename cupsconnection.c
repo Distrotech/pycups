@@ -696,7 +696,7 @@ Connection_getDocument (Connection *self, PyObject *args)
   ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
 		 "document-number", docnum);
 
-  snprintf(docfilename, "%s/jobdoc-XXXXX", _PATH_TMP);
+  snprintf(docfilename, sizeof (docfilename), "%s/jobdoc-XXXXX", _PATH_TMP);
   fd = mkstemp (docfilename);
   if (fd < 0) {
     PyErr_SetFromErrno (PyExc_RuntimeError);
