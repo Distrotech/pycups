@@ -1,4 +1,3 @@
-* Add support for cupsGetPPD3(), to allow PPDs to be cached (1.4)
 * Add support for purge-job attribute in cancelJob() (1.4)
 * Add cups.Connection.getNamedDest() wrapper
 * Add cups.PPD.localizeMarkerName() wrapper
