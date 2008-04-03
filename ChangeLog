@@ -1,5 +1,9 @@
 2008-04-03  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.38.
+
+2008-04-03  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_getDocument): Fixed missing
 	argument to snprintf.
 
