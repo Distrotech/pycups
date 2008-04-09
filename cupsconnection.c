@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #ifndef _PATH_TMP
 #define _PATH_TMP P_tmpdir
@@ -2721,10 +2722,29 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
   }
     
   if (!fileobj) {
-    if ((datadir = getenv ("CUPS_DATADIR")) == NULL)
-      datadir = "/usr/share/cups";
+    const char *testprint = "%s/data/testprint.ps";
+    if ((datadir = getenv ("CUPS_DATADIR")) != NULL)
+      snprintf (filename, sizeof (filename), testprint, datadir);
+    else {
+      const char *const dirs[] = { "/usr/share/cups",
+				   "/usr/local/share/cups",
+				   NULL };
+      int i;
+      for (i = 0; (datadir = dirs[i]) != NULL; i++) {
+	snprintf (filename, sizeof (filename), testprint, datadir);
+	if (access (filename, R_OK) == 0)
+	  break;
+      }
 
-    snprintf (filename, sizeof (filename), "%s/data/testprint.ps", datadir);
+      if (datadir == NULL)
+	/* We haven't found the testprint.ps file, so just pick a path
+	 * and try it.  This will certainly fail with
+	 * client-error-not-found, but we'll let that happen rather
+	 * than raising an exception so as to be consistent with the
+	 * case where CUPS_DATADIR is set and we trust it. */
+	snprintf (filename, sizeof (filename), testprint, dirs[0]);
+    }
+
     file = filename;
   }
 
