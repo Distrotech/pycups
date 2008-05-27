@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New in 1.9.39:
+
+* cups.Connection.printFile()
+
 New in 1.9.38:
 
 * cups.Connection.getFile() now accepts a file descriptor or a Python file

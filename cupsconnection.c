@@ -3333,6 +3333,82 @@ Connection_cancelSubscription (Connection *self, PyObject *args)
   return Py_None;
 }
 
+static PyObject *
+Connection_printFile (Connection *self, PyObject *args, PyObject *kwds)
+{
+  static char *kwlist[] = { "printer", "filename", "title", "options", NULL };
+  PyObject *printer_obj;
+  char *printer;
+  PyObject *filename_obj;
+  char *filename;
+  PyObject *title_obj;
+  char *title;
+  PyObject *options_obj, *key, *val;
+  int num_settings = 0;
+  DICT_POS_TYPE pos = 0;
+  cups_option_t *settings = NULL;
+  int jobid;
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "OOOO", kwlist,
+				    &printer_obj, &filename_obj, &title_obj,
+				    &options_obj))
+    return NULL;
+
+  if (UTF8_from_PyObj (&printer, printer_obj) == NULL)
+    return NULL;
+  if (UTF8_from_PyObj (&filename, filename_obj) == NULL) {
+    free (printer);
+    return NULL;
+  }
+  if (UTF8_from_PyObj (&title, title_obj) == NULL) {
+    free (filename);
+    free (printer);
+    return NULL;
+  }
+
+  if (!PyDict_Check (options_obj)) {
+    free (title);
+    free (filename);
+    free (printer);
+    PyErr_SetString (PyExc_TypeError, "options must be a dict");
+    return NULL;
+  }
+  while (PyDict_Next (options_obj, &pos, &key, &val)) {
+    if (!PyString_Check (key) ||
+        !PyString_Check (val)) {
+      cupsFreeOptions (num_settings, settings);
+      free (title);
+      free (filename);
+      free (printer);
+      PyErr_SetString (PyExc_TypeError, "Keys and values must be strings");
+      return NULL;
+    }
+
+    num_settings = cupsAddOption (PyString_AsString (key),
+				  PyString_AsString (val),
+				  num_settings,
+				  &settings);
+  }
+
+  jobid = cupsPrintFile2 (self->http, printer, filename, title, num_settings,
+                          settings);
+
+  if (jobid < 0) {
+    cupsFreeOptions (num_settings, settings);
+    free (title);
+    free (filename);
+    free (printer);
+    set_ipp_error (cupsLastError ());
+    return NULL;
+  }
+
+  cupsFreeOptions (num_settings, settings);
+  free (title);
+  free (filename);
+  free (printer);
+  return PyInt_FromLong (jobid);
+}
+
 PyMethodDef Connection_methods[] =
   {
     { "getPrinters",
@@ -3871,6 +3947,21 @@ PyMethodDef Connection_methods[] =
       "@param id: subscription ID\n"
       "@type lease_duration: integer\n"
       "@param lease_duration: lease duration in seconds\n"
+      "@raise IPPError: IPP problem" },
+
+    { "printFile",
+      (PyCFunction) Connection_printFile, METH_VARARGS | METH_KEYWORDS,
+      "printFile(printer, filename, title, options) -> integer\n\n"
+      "Print a file.\n\n"
+      "@type printer: string\n"
+      "@param printer: queue name\n"
+      "@type filename: string\n"
+      "@param filename: local file path to the document\n"
+      "@type title: string\n"
+      "@param title: title of the print job\n"
+      "@type options: dict\n"
+      "@param options: dict of options\n"
+      "@return: job ID\n"
       "@raise IPPError: IPP problem" },
 
     { NULL } /* Sentinel */
