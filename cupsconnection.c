@@ -3409,6 +3409,110 @@ Connection_printFile (Connection *self, PyObject *args, PyObject *kwds)
   return PyInt_FromLong (jobid);
 }
 
+static void
+free_string_list (int num_string, char **strings)
+{
+  int i;
+  for (i = 0; i < num_string; ++i) {
+    free (strings[i]);
+  }
+  free (strings);
+}
+
+static PyObject *
+Connection_printFiles (Connection *self, PyObject *args, PyObject *kwds)
+{
+  static char *kwlist[] = { "printer", "filenames", "title", "options", NULL };
+  PyObject *printer_obj;
+  char *printer;
+  PyObject *filenames_obj;
+  int num_filenames;
+  char **filenames;
+  PyObject *title_obj;
+  char *title;
+  PyObject *options_obj, *key, *val;
+  int num_settings = 0;
+  DICT_POS_TYPE pos = 0;
+  cups_option_t *settings = NULL;
+  int jobid;
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "OOOO", kwlist,
+				    &printer_obj, &filenames_obj, &title_obj,
+				    &options_obj))
+    return NULL;
+
+  if (UTF8_from_PyObj (&printer, printer_obj) == NULL)
+    return NULL;
+
+  if (!PyList_Check (filenames_obj)) {
+    free (printer);
+    PyErr_SetString (PyExc_TypeError, "filenames must be a list");
+	return NULL;
+  }
+  num_filenames = PyList_Size (filenames_obj);
+  if (num_filenames == 0) {
+    free (printer);
+    PyErr_SetString (PyExc_RuntimeError, "filenames list is empty");
+	return NULL;
+  }
+  filenames = malloc (num_filenames * sizeof(char*));
+  for (pos = 0; pos < num_filenames; ++pos) {
+    PyObject *filename_obj = PyList_GetItem(filenames_obj, pos);
+    if (UTF8_from_PyObj (&filenames[pos], filename_obj) == NULL) {
+	  free_string_list (pos, filenames);
+      free (printer);
+	}
+  }
+  if (UTF8_from_PyObj (&title, title_obj) == NULL) {
+    free_string_list (num_filenames, filenames);
+    free (printer);
+    return NULL;
+  }
+
+  if (!PyDict_Check (options_obj)) {
+    free (title);
+    free_string_list (num_filenames, filenames);
+    free (printer);
+    PyErr_SetString (PyExc_TypeError, "options must be a dict");
+    return NULL;
+  }
+  while (PyDict_Next (options_obj, &pos, &key, &val)) {
+    if (!PyString_Check (key) ||
+        !PyString_Check (val)) {
+      cupsFreeOptions (num_settings, settings);
+      free (title);
+      free_string_list (num_filenames, filenames);
+      free (printer);
+      PyErr_SetString (PyExc_TypeError, "Keys and values must be strings");
+      return NULL;
+    }
+
+    num_settings = cupsAddOption (PyString_AsString (key),
+				  PyString_AsString (val),
+				  num_settings,
+				  &settings);
+  }
+
+  jobid = cupsPrintFiles2 (self->http, printer, num_filenames,
+                           (const char **) filenames, title, num_settings,
+						   settings);
+
+  if (jobid < 0) {
+    cupsFreeOptions (num_settings, settings);
+    free (title);
+    free_string_list (num_filenames, filenames);
+    free (printer);
+    set_ipp_error (cupsLastError ());
+    return NULL;
+  }
+
+  cupsFreeOptions (num_settings, settings);
+  free (title);
+  free_string_list (num_filenames, filenames);
+  free (printer);
+  return PyInt_FromLong (jobid);
+}
+
 PyMethodDef Connection_methods[] =
   {
     { "getPrinters",
@@ -3957,6 +4061,21 @@ PyMethodDef Connection_methods[] =
       "@param printer: queue name\n"
       "@type filename: string\n"
       "@param filename: local file path to the document\n"
+      "@type title: string\n"
+      "@param title: title of the print job\n"
+      "@type options: dict\n"
+      "@param options: dict of options\n"
+      "@return: job ID\n"
+      "@raise IPPError: IPP problem" },
+
+    { "printFiles",
+      (PyCFunction) Connection_printFiles, METH_VARARGS | METH_KEYWORDS,
+      "printFiles(printer, filenames, title, options) -> integer\n\n"
+      "Print a list of files.\n\n"
+      "@type printer: string\n"
+      "@param printer: queue name\n"
+      "@type filenames: list\n"
+      "@param filenames: list of local file paths to the documents\n"
       "@type title: string\n"
       "@param title: title of the print job\n"
       "@type options: dict\n"

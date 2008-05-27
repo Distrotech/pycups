@@ -1,5 +1,9 @@
 2008-05-27  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (free_string_list): New helper function.
+	(Connection_printFiles): New method.
+	Patch from Fabian Knittel.
+
 	* cupsconnection.c (Connection_printFile): New method.  Patch from
 	Fabian Knittel.
 

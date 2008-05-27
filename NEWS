@@ -4,6 +4,7 @@ NEWS
 New in 1.9.39:
 
 * cups.Connection.printFile()
+* cups.Connection.printFiles()
 
 New in 1.9.38:
 
