@@ -1,5 +1,9 @@
 2008-05-29  Tim Waugh  <twaugh@redhat.com>
 
+	* configure.in: Version 1.9.39.
+
+2008-05-29  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_authenticateJob): Allow auth
 	parameter to be optional in order to allow for Kerberos
 	authentication.
