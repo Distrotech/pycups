@@ -3,6 +3,7 @@ NEWS
 
 New in 1.9.39:
 
+* cups.Connection.authenticateJob() auth parameter is now optional
 * cups.Connection.printFile()
 * cups.Connection.printFiles()
 

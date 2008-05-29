@@ -1168,29 +1168,33 @@ Connection_authenticateJob (Connection *self, PyObject *args)
 {
   ipp_t *request, *answer;
   int job_id;
-  PyObject *auth_info_list;
-  int num_auth_info;
+  PyObject *auth_info_list = NULL;
+  int num_auth_info = 0; /* initialised to calm compiler */
   char *auth_info_values[3];
   int i;
   char uri[1024];
-  if (!PyArg_ParseTuple (args, "iO", &job_id, &auth_info_list))
+
+  if (!PyArg_ParseTuple (args, "i|O", &job_id, &auth_info_list))
     return NULL;
 
-  if (!PyList_Check (auth_info_list)) {
-    PyErr_SetString (PyExc_TypeError, "List required");
-    return NULL;
-  }
-
-  num_auth_info = PyList_Size (auth_info_list);
-  debugprintf ("sizeof values = %Zd\n", sizeof (auth_info_values));
-  if (num_auth_info > sizeof (auth_info_values))
-    num_auth_info = sizeof (auth_info_values);
-  for (i = 0; i < num_auth_info; i++) {
-    PyObject *val = PyList_GetItem (auth_info_list, i); // borrowed ref
-    if (UTF8_from_PyObj (&auth_info_values[i], val) == NULL) {
-      while (--i >= 0)
-	free (auth_info_values[i]);
+  if (auth_info_list) {
+    if (!PyList_Check (auth_info_list)) {
+      PyErr_SetString (PyExc_TypeError, "List required");
       return NULL;
+    }
+
+    num_auth_info = PyList_Size (auth_info_list);
+    debugprintf ("sizeof values = %Zd\n", sizeof (auth_info_values));
+    if (num_auth_info > sizeof (auth_info_values))
+      num_auth_info = sizeof (auth_info_values);
+
+    for (i = 0; i < num_auth_info; i++) {
+      PyObject *val = PyList_GetItem (auth_info_list, i); // borrowed ref
+      if (UTF8_from_PyObj (&auth_info_values[i], val) == NULL) {
+	while (--i >= 0)
+	  free (auth_info_values[i]);
+	return NULL;
+      }
     }
   }
 
@@ -1200,10 +1204,15 @@ Connection_authenticateJob (Connection *self, PyObject *args)
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri", NULL, uri);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		"requesting-user-name", NULL, cupsUser ());
-  ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_TEXT, "auth-info",
-		 num_auth_info, NULL, (const char *const *) auth_info_values);
-  for (i = 0; i < num_auth_info; i++)
-    free (auth_info_values[i]);
+  if (auth_info_list) 
+    {
+      ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_TEXT, "auth-info",
+		     num_auth_info, NULL,
+		     (const char *const *) auth_info_values);
+      for (i = 0; i < num_auth_info; i++)
+	free (auth_info_values[i]);
+    }
+
   debugprintf ("cupsDoRequest(\"/jobs/\")\n");
   answer = cupsDoRequest (self->http, request, "/jobs/");
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
@@ -3627,10 +3636,10 @@ PyMethodDef Connection_methods[] =
 
     { "authenticateJob",
       (PyCFunction) Connection_authenticateJob, METH_VARARGS,
-      "authenticateJob(jobid, auth_info) -> None\n\n"
+      "authenticateJob(jobid, auth_info=None) -> None\n\n"
       "@type jobid: integer\n"
       "@param jobid: job ID to authenticate\n"
-      "@type auth_info: string list\n"
+      "@type auth_info: optional string list\n"
       "@param auth_info: authentication details\n"
       "@raise IPPError: IPP problem" },
 
