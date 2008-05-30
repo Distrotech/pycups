@@ -2220,14 +2220,16 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
   char *name;
   PyObject *uriobj = NULL;
   char *uri;
+  PyObject *requested_attrs = NULL;
+  char **attrs = NULL; /* initialised to calm compiler */
   ipp_t *request, *answer;
   ipp_attribute_t *attr;
   char consuri[HTTP_MAX_URI];
   int i;
-  static char *kwlist[] = { "name", "uri", NULL };
+  static char *kwlist[] = { "name", "uri", "requested_attributes", NULL };
 
-  if (!PyArg_ParseTupleAndKeywords (args, kwds, "|OO", kwlist,
-				    &nameobj, &uriobj))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "|OOO", kwlist,
+				    &nameobj, &uriobj, &requested_attrs))
     return NULL;
 
   if (nameobj && uriobj) {
@@ -2248,8 +2250,45 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
     return NULL;
   }
 
+  if (requested_attrs) {
+    int i, n;
+
+    if (!PyList_Check (requested_attrs)) {
+      PyErr_SetString (PyExc_TypeError, "List required");
+      return NULL;
+    }
+
+    n = PyList_Size (requested_attrs);
+    attrs = malloc ((n + 1) * sizeof (char *));
+    for (i = 0; i < n; i++) {
+      PyObject *val = PyList_GetItem (requested_attrs, i); // borrowed ref
+      if (!PyString_Check (val)) {
+	PyErr_SetString (PyExc_TypeError, "String required");
+	while (--i >= 0)
+	  free (attrs[i]);
+	free (attrs);
+	if (nameobj)
+	  free (name);
+	else if (uriobj)
+	  free (uri);
+	return NULL;
+      }
+
+      attrs[i] = strdup (PyString_AsString (val));
+    }
+    attrs[n] = NULL;
+  }
+
   debugprintf ("-> Connection_getPrinterAttributes(%s)\n",
 	       nameobj ? name : uri);
+
+  if (requested_attrs) {
+    int i;
+    debugprintf ("Requested attributes:\n");
+    for (i = 0; attrs[i] != NULL; i++)
+      debugprintf ("  %s\n", attrs[i]);
+  }
+
   if (nameobj) {
     snprintf (consuri, sizeof (consuri), "ipp://localhost/printers/%s", name);
     uri = consuri;
@@ -2259,6 +2298,11 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
     request = ippNewRequest (IPP_GET_PRINTER_ATTRIBUTES);
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		  "printer-uri", NULL, uri);
+    if (requested_attrs)
+      ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
+		     "requested-attributes",
+		     sizeof (attrs) / sizeof (attrs[0]), NULL,
+		     (const char **) attrs);
     debugprintf ("trying request with uri %s\n", uri);
     answer = cupsDoRequest (self->http, request, "/");
     if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
@@ -2276,6 +2320,13 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 
   if (uriobj)
     free (uri);
+
+  if (requested_attrs) {
+    int i;
+    for (i = 0; attrs[i] != NULL; i++)
+      free (attrs[i]);
+    free (attrs);
+  }
 
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
@@ -3850,13 +3901,15 @@ PyMethodDef Connection_methods[] =
     { "getPrinterAttributes",
       (PyCFunction) Connection_getPrinterAttributes,
       METH_VARARGS | METH_KEYWORDS,
-      "getPrinterAttributes() -> dict\n"
+      "getPrinterAttributes(name=None, uri=None, requested_attributes=None) -> dict\n"
       "Fetch the attributes for a printer, specified either by name or by \n"
       "uri but not both.\n\n"
       "@type name: string\n"
       "@param name: queue name\n"
       "@type uri: string\n"
       "@param uri: queue URI\n"
+      "@type requested_attributes: string list\n"
+      "@param requested_attributes: list of requested attribute names\n"
       "@return: a dict, indexed by attribute, of printer attributes\n"
       "for the specified printer.\n\n"
       "Attributes:\n"

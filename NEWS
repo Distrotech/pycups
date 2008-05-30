@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.40:
+
+* cups.Connection.getPrinterAttributes() now takes an optional
+  requested_attributes argument
+
 New in 1.9.39:
 
 * cups.Connection.authenticateJob() auth parameter is now optional
