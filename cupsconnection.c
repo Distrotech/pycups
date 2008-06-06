@@ -2376,7 +2376,8 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
       }
 
       // Check for '-supported' suffix.  Any xxx-supported attribute
-      // that is a text type must be a list.
+      // that is a text type must be a list, *except* for
+      // printer-uri-supported.
       //
       // Also check for attributes that are known to allow multiple
       // string values, and make them lists.
@@ -2388,6 +2389,12 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 	    "requesting-user-name-denied",
 	    "finishings-supported",
 	    "printer-state-reasons",
+	    NULL
+	  };
+
+	const char *univalue_options[] =
+	  {
+	    "printer-uri-supported",
 	    NULL
 	  };
 
@@ -2405,6 +2412,11 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 	    const char **opt;
 	    for (opt = multivalue_options; !is_list && *opt; opt++)
 	      is_list = !strcmp (attr->name, *opt);
+	  }
+	  if (is_list) {
+	    const char **opt;
+	    for (opt = univalue_options; is_list && *opt; opt++)
+	      is_list = !!strcmp (attr->name, *opt);
 	  }
 
 	default:
