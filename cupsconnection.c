@@ -2386,7 +2386,6 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 	    "notify-events-default",
 	    "requesting-user-name-allowed",
 	    "requesting-user-name-denied",
-	    "finishings-supported",
 	    "printer-state-reasons",
 	    NULL
 	  };
@@ -2399,6 +2398,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 	case IPP_TAG_CHARSET:
 	case IPP_TAG_MIMETYPE:
 	case IPP_TAG_LANGUAGE:
+	case IPP_TAG_ENUM:
 	  is_list = !strcmp (attr->name + namelen - 10, "-supported");
 
 	  if (!is_list) {
