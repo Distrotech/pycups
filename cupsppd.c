@@ -1372,6 +1372,19 @@ Attribute_dealloc (Attribute *self)
   self->ob_type->tp_free ((PyObject *) self);
 }
 
+static PyObject *
+Attribute_repr (Attribute *self)
+{
+  ppd_attr_t *attribute = self->attribute;
+  if (!attribute)
+    return PyString_FromString ("<cups.Attribute>");
+
+  return PyString_FromFormat ("<cups.Attribute *%s%s%s>",
+			      attribute->name,
+			      attribute->spec[0] != '\0' ? " ": "",
+			      attribute->spec);
+}
+
 ///////////////
 // Attribute // ATTRIBUTES
 ///////////////
@@ -1453,7 +1466,7 @@ PyTypeObject cups_AttributeType =
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
     0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
+    (reprfunc)Attribute_repr,  /*tp_repr*/
     0,                         /*tp_as_number*/
     0,                         /*tp_as_sequence*/
     0,                         /*tp_as_mapping*/

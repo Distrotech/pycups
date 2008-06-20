@@ -1,5 +1,8 @@
 2008-06-20  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsppd.c (Attribute_repr): New method.
+	(cups_AttributeType): Set repr function.
+
 	* cupsppd.c (Group_repr): New method.
 	(cups_GroupType): Set repr function.
 
