@@ -788,7 +788,7 @@ Option_repr (Option *self)
 {
   ppd_option_t *option = self->option;
   if (!option)
-    return PyString_FromFormat ("<cups.Option>");
+    return PyString_FromString ("<cups.Option>");
 
   return PyString_FromFormat ("<cups.Option %s=%s>",
 			      option->keyword, option->defchoice);
@@ -1025,6 +1025,16 @@ Group_dealloc (Group *self)
   self->ob_type->tp_free ((PyObject *) self);
 }
 
+static PyObject *
+Group_repr (Group *self)
+{
+  ppd_group_t *group = self->group;
+  if (!group)
+    return PyString_FromString ("<cups.Group>");
+
+  return PyString_FromFormat ("<cups.Group %s>", group->name);
+}
+
 ///////////
 // Group // ATTRIBUTES
 ///////////
@@ -1145,7 +1155,7 @@ PyTypeObject cups_GroupType =
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
     0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
+    (reprfunc)Group_repr,      /*tp_repr*/
     0,                         /*tp_as_number*/
     0,                         /*tp_as_sequence*/
     0,                         /*tp_as_mapping*/
