@@ -197,10 +197,8 @@ Connection_dealloc (Connection *self)
 static PyObject *
 Connection_repr (Connection *self)
 {
-  char s[1024];
-  snprintf (s, sizeof (s),
-	    "<cups.Connection object for %s at %p>", self->host, self);
-  return PyString_FromString (s);
+  return PyString_FromFormat ("<cups.Connection object for %s at %p>",
+			      self->host, self);
 }
 
 ////////////////
