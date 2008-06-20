@@ -4197,8 +4197,11 @@ PyTypeObject cups_ConnectionType =
     "  A connection to the CUPS server.  Before it is created the \n"
     "  connection server and username should be set using \n"
     "  L{cups.setServer} and L{cups.setUser}; otherwise the defaults will \n"
-    "  be used.  When a Connection object is instantiated it results in a "
-    "  call to the libcups function httpConnectEncrypt()."
+    "  be used.  When a Connection object is instantiated it results in a \n"
+    "  call to the libcups function httpConnectEncrypt().\n\n"
+    "  The constructor takes optional arguments host, port, and encryption, \n"
+    "  which default to the values of L{cups.getServer}(), \n"
+    "  L{cups.getPort}(), and L{cups.getEncryption}().\n"
     "",         /* tp_doc */
     0,                         /* tp_traverse */
     0,                         /* tp_clear */
