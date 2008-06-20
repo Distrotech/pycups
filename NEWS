@@ -3,6 +3,8 @@ NEWS
 
 New in 1.9.40:
 
+* cups.Connection() now takes optional arguments host, port, and
+  encryption.
 * cups.Connection.getPrinterAttributes() now takes an optional
   requested_attributes argument
 
