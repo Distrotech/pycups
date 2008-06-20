@@ -148,18 +148,20 @@ Connection_new (PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 Connection_init (Connection *self, PyObject *args, PyObject *kwds)
 {
-  static char *kwlist[] = { NULL };
+  const char *host = cupsServer ();
+  int port = ippPort ();
+  int encryption = (http_encryption_t) cupsEncryption ();
+  static char *kwlist[] = { "host", "port", "encryption", NULL };
 
-  if (!PyArg_ParseTupleAndKeywords (args, kwds, "", kwlist))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "|sii", kwlist,
+				    &host, &port, &encryption))
     return -1;
 
   debugprintf ("-> Connection_init()\n");
 
   Py_BEGIN_ALLOW_THREADS;
   debugprintf ("httpConnectEncrypt(...)\n");
-  self->http = httpConnectEncrypt (cupsServer (),
-				   ippPort (),
-				   cupsEncryption ());
+  self->http = httpConnectEncrypt (host, port, (http_encryption_t) encryption);
   Py_END_ALLOW_THREADS;
 
   if (!self->http) {
