@@ -1,5 +1,8 @@
 2008-06-20  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Dest_repr): New method.
+	(cups_DestType): Set repr function.
+
 	* cupsconnection.c (Connection): New structure member, host.
 	(Connection_init): Store connected host name.
 	(Connection_dealloc): Free it.

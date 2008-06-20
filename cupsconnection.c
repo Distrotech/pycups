@@ -4178,7 +4178,7 @@ PyTypeObject cups_ConnectionType =
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
     0,                         /*tp_compare*/
-    Connection_repr,           /*tp_repr*/
+    (reprfunc)Connection_repr, /*tp_repr*/
     0,                         /*tp_as_number*/
     0,                         /*tp_as_sequence*/
     0,                         /*tp_as_mapping*/
@@ -4259,6 +4259,16 @@ Dest_dealloc (Dest *self)
   self->ob_type->tp_free ((PyObject *) self);
 }
 
+static PyObject *
+Dest_repr (Dest *self)
+{
+  return PyString_FromFormat ("<cups.Dest %s%s%s%s>",
+			      self->destname,
+			      self->instance ? "/" : "",
+			      self->instance ? self->instance : "",
+			      self->is_default ? " (default)" : "");
+}
+
 //////////
 // Dest // ATTRIBUTES
 //////////
@@ -4332,7 +4342,7 @@ PyTypeObject cups_DestType =
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
     0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
+    (reprfunc)Dest_repr,       /*tp_repr*/
     0,                         /*tp_as_number*/
     0,                         /*tp_as_sequence*/
     0,                         /*tp_as_mapping*/
