@@ -40,6 +40,7 @@ typedef struct
 {
   PyObject_HEAD
   http_t *http;
+  char *host; /* for repr */
 } Connection;
 
 typedef struct
@@ -139,8 +140,10 @@ Connection_new (PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
   Connection *self;
   self = (Connection *) type->tp_alloc (type, 0);
-  if (self != NULL)
+  if (self != NULL) {
     self->http = NULL;
+    self->host = NULL;
+  }
 
   return (PyObject *) self;
 }
@@ -157,7 +160,12 @@ Connection_init (Connection *self, PyObject *args, PyObject *kwds)
 				    &host, &port, &encryption))
     return -1;
 
-  debugprintf ("-> Connection_init()\n");
+  debugprintf ("-> Connection_init(host=%s)\n", host);
+  self->host = strdup (host);
+  if (!self->host) {
+    debugprintf ("<- Connection_init() = -1\n");
+    return -1;
+  }
 
   Py_BEGIN_ALLOW_THREADS;
   debugprintf ("httpConnectEncrypt(...)\n");
@@ -180,9 +188,19 @@ Connection_dealloc (Connection *self)
   if (self->http) {  
     debugprintf ("httpClose()\n");
     httpClose (self->http);
+    free (self->host);
   }
 
   self->ob_type->tp_free ((PyObject *) self);
+}
+
+static PyObject *
+Connection_repr (Connection *self)
+{
+  char s[1024];
+  snprintf (s, sizeof (s),
+	    "<cups.Connection object for %s at %p>", self->host, self);
+  return PyString_FromString (s);
 }
 
 ////////////////
@@ -4162,7 +4180,7 @@ PyTypeObject cups_ConnectionType =
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
     0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
+    Connection_repr,           /*tp_repr*/
     0,                         /*tp_as_number*/
     0,                         /*tp_as_sequence*/
     0,                         /*tp_as_mapping*/

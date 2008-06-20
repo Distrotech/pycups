@@ -1,5 +1,11 @@
 2008-06-20  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection): New structure member, host.
+	(Connection_init): Store connected host name.
+	(Connection_dealloc): Free it.
+	(Connection_repr): New method.  Include host name in repr string.
+	(cups_ConnectionType): Set repr function.
+
 	* cupsconnection.c (Connection_init): New optional arguments host,
 	port, and encryption.
 
