@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006, 2007  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2002, 2005, 2006, 2007, 2008  Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -783,6 +783,17 @@ Option_dealloc (Option *self)
   self->ob_type->tp_free ((PyObject *) self);
 }
 
+static PyObject *
+Option_repr (Option *self)
+{
+  ppd_option_t *option = self->option;
+  if (!option)
+    return PyString_FromFormat ("<cups.Option>");
+
+  return PyString_FromFormat ("<cups.Option %s=%s>",
+			      option->keyword, option->defchoice);
+}
+
 ////////////
 // Option // ATTRIBUTES
 ////////////
@@ -941,7 +952,7 @@ PyTypeObject cups_OptionType =
     0,                         /*tp_getattr*/
     0,                         /*tp_setattr*/
     0,                         /*tp_compare*/
-    0,                         /*tp_repr*/
+    (reprfunc)Option_repr,     /*tp_repr*/
     0,                         /*tp_as_number*/
     0,                         /*tp_as_sequence*/
     0,                         /*tp_as_mapping*/

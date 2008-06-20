@@ -1,5 +1,8 @@
 2008-06-20  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsppd.c (Option_repr): New method.
+	(cups_OptionType): Set repr function.
+
 	* cupsconnection.c (Dest_repr): New method.
 	(cups_DestType): Set repr function.
 
