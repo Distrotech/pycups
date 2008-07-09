@@ -2240,6 +2240,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
   char *uri;
   PyObject *requested_attrs = NULL;
   char **attrs = NULL; /* initialised to calm compiler */
+  size_t n_attrs;
   ipp_t *request, *answer;
   ipp_attribute_t *attr;
   char consuri[HTTP_MAX_URI];
@@ -2269,16 +2270,16 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
   }
 
   if (requested_attrs) {
-    int i, n;
+    int i;
 
     if (!PyList_Check (requested_attrs)) {
       PyErr_SetString (PyExc_TypeError, "List required");
       return NULL;
     }
 
-    n = PyList_Size (requested_attrs);
-    attrs = malloc ((n + 1) * sizeof (char *));
-    for (i = 0; i < n; i++) {
+    n_attrs = PyList_Size (requested_attrs);
+    attrs = malloc ((n_attrs + 1) * sizeof (char *));
+    for (i = 0; i < n_attrs; i++) {
       PyObject *val = PyList_GetItem (requested_attrs, i); // borrowed ref
       if (!PyString_Check (val)) {
 	PyErr_SetString (PyExc_TypeError, "String required");
@@ -2294,7 +2295,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 
       attrs[i] = strdup (PyString_AsString (val));
     }
-    attrs[n] = NULL;
+    attrs[n_attrs] = NULL;
   }
 
   debugprintf ("-> Connection_getPrinterAttributes(%s)\n",
@@ -2318,8 +2319,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 		  "printer-uri", NULL, uri);
     if (requested_attrs)
       ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
-		     "requested-attributes",
-		     sizeof (attrs) / sizeof (attrs[0]), NULL,
+		     "requested-attributes", n_attrs, NULL,
 		     (const char **) attrs);
     debugprintf ("trying request with uri %s\n", uri);
     answer = cupsDoRequest (self->http, request, "/");
