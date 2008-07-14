@@ -20,11 +20,11 @@ clean:
 	-rm -rf build cups.so *.pyc *~
 
 dist:
-	svn export . $(NAME)
+	rm -rf $(NAME)-$(VERSION)
 	mkdir $(NAME)-$(VERSION)
-	cd $(NAME); cp -a $(SOURCES) $(DIST) ../$(NAME)-$(VERSION); cd ..
+	cp -a $(SOURCES) $(DIST) $(NAME)-$(VERSION)
 	tar jcf $(NAME)-$(VERSION).tar.bz2 $(NAME)-$(VERSION)
-	rm -rf $(NAME)-$(VERSION) $(NAME)
+	rm -rf $(NAME)-$(VERSION)
 
 install:
 	ROOT= ; \
