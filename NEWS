@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.41:
+
+* cups.Connection.putFile() now accepts a file descriptor or a Python
+  file object as the destination.
+
 New in 1.9.40:
 
 * cups.Connection() now takes optional arguments host, port, and

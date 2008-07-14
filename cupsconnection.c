@@ -1372,17 +1372,40 @@ Connection_getFile (Connection *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-Connection_putFile (Connection *self, PyObject *args)
+Connection_putFile (Connection *self, PyObject *args, PyObject *kwds)
 {
+  static char *kwlist[] = { "resource", "filename", "fd", "file", NULL };
   const char *resource, *filename;
+  int fd = -1;
+  PyObject *fileobj = NULL;
   http_status_t status;
 
-  if (!PyArg_ParseTuple (args, "ss", &resource, &filename))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|siO", kwlist,
+				    &resource, &filename, &fd, &fileobj))
     return NULL;
 
-  debugprintf ("-> Connection_putFile(%s, %s)\n", resource, filename);
-  debugprintf ("cupsPutFile()\n");
-  status = cupsPutFile (self->http, resource, filename);
+  if ((fd > -1 && (filename || fileobj)) ||
+      (filename && fileobj)) {
+    PyErr_SetString (PyExc_RuntimeError,
+		     "Only one destination type may be specified");
+    return NULL;
+  }
+
+  if (fileobj) {
+    FILE *f = PyFile_AsFile (fileobj);
+    fd = fileno (f);
+  }
+
+  if (filename) {
+    debugprintf ("-> Connection_putFile(%s, %s)\n", resource, filename);
+    debugprintf ("cupsPutFile()\n");
+    status = cupsPutFile (self->http, resource, filename);
+  } else {
+    debugprintf ("-> Connection_putFile(%s, %d)\n", resource, fd);
+    debugprintf ("cupsPutFd()\n");
+    status = cupsPutFd (self->http, resource, fd);
+  }
+
   if (status != HTTP_OK && status != HTTP_CREATED) {
     set_http_error (status);
     debugprintf ("<- Connection_putFile() (error)\n");
@@ -3748,8 +3771,8 @@ PyMethodDef Connection_methods[] =
       "@raise HTTPError: HTTP problem" },
 
     { "putFile",
-      (PyCFunction) Connection_putFile, METH_VARARGS,
-      "putFile(resource, filename) -> None\n\n"
+      (PyCFunction) Connection_putFile, METH_VARARGS | METH_KEYWORDS,
+      "putFile(resource, filename=None, fd=-1, file=None) -> None\n\n"
       "This is for uploading new configuration files for the CUPS \n"
       "server.  Note: L{adminSetServerSettings} is a way of \n"
       "adjusting server settings without needing to parse the \n"
@@ -3758,6 +3781,10 @@ PyMethodDef Connection_methods[] =
       "@param resource: resource name\n"
       "@type filename: string\n"
       "@param filename: name of local file to upload\n"
+      "@type fd: int\n"
+      "@param fd: file descriptor of local file\n"
+      "@type file: file\n"
+      "@param file: Python file object for local file\n"
       "@raise HTTPError: HTTP problem"},
 
     { "addPrinter",
