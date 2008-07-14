@@ -1375,7 +1375,7 @@ static PyObject *
 Connection_putFile (Connection *self, PyObject *args, PyObject *kwds)
 {
   static char *kwlist[] = { "resource", "filename", "fd", "file", NULL };
-  const char *resource, *filename;
+  const char *resource, *filename = NULL;
   int fd = -1;
   PyObject *fileobj = NULL;
   http_status_t status;
