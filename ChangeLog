@@ -1,5 +1,9 @@
 2008-07-14  Tim Waugh  <twaugh@redhat.com>
 
+	* Makefile: Version 1.9.41.
+
+2008-07-14  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_putFile): Allow destination to be a
 	file descriptor or a Python file object, and call cupsPutFd() in
 	those cases.
