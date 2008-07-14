@@ -2240,7 +2240,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
   char *uri;
   PyObject *requested_attrs = NULL;
   char **attrs = NULL; /* initialised to calm compiler */
-  size_t n_attrs;
+  size_t n_attrs = 0; /* initialised to calm compiler */
   ipp_t *request, *answer;
   ipp_attribute_t *attr;
   char consuri[HTTP_MAX_URI];
