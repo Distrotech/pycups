@@ -3703,7 +3703,7 @@ PyMethodDef Connection_methods[] =
       "getJobAttributes(jobid) -> None\n\n"
       "Fetch job attributes.\n"
       "@type jobid: integer\n"
-      "@param jobid_jobs: job ID\n"
+      "@param jobid: job ID\n"
       "@return: a dict representing job attributes.\n"
       "@raise IPPError: IPP problem" },
 
@@ -4152,7 +4152,7 @@ PyMethodDef Connection_methods[] =
 
     { "renewSubscription",
       (PyCFunction) Connection_renewSubscription, METH_VARARGS | METH_KEYWORDS,
-      "renewSubscription(id) -> None\n\n"
+      "renewSubscription(id, lease_duration=-1) -> None\n\n"
       "Renew a subscription.\n\n"
       "@type id: integer\n"
       "@param id: subscription ID\n"
