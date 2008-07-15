@@ -1,3 +1,8 @@
+2008-07-15  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getPPDs): Return all attributes,
+	not just a selection.
+
 2008-07-14  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Version 1.9.41.

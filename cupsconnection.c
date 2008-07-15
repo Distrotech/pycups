@@ -581,6 +581,49 @@ Connection_getClasses (Connection *self)
 }
 
 static PyObject *
+PyObject_from_attr_value (ipp_attribute_t *attr, int i)
+{
+  PyObject *val = NULL;
+  switch (attr->value_tag) {
+  case IPP_TAG_NAME:
+  case IPP_TAG_TEXT:
+  case IPP_TAG_KEYWORD:
+  case IPP_TAG_URI:
+  case IPP_TAG_CHARSET:
+  case IPP_TAG_MIMETYPE:
+  case IPP_TAG_LANGUAGE:
+    val = PyObj_from_UTF8 (attr->values[i].string.text);
+    break;
+  case IPP_TAG_INTEGER:
+  case IPP_TAG_ENUM:
+    val = PyInt_FromLong (attr->values[i].integer);
+    break;
+  case IPP_TAG_BOOLEAN:
+    val = PyBool_FromLong (attr->values[i].integer);
+    break;
+  case IPP_TAG_RANGE:
+    val = Py_BuildValue ("(ii)",
+			 attr->values[i].range.lower,
+			 attr->values[i].range.upper);
+    break;
+  case IPP_TAG_NOVALUE:
+    Py_INCREF (Py_None);
+    val = Py_None;
+    break;
+
+    // TODO:
+  case IPP_TAG_DATE:
+    val = PyString_FromString ("(IPP_TAG_DATE)");
+    break;
+  default:
+    val = PyString_FromString ("(unknown IPP tag)");
+    break;
+  }
+
+  return val;
+}
+
+static PyObject *
 Connection_getPPDs (Connection *self)
 {
   PyObject *result;
@@ -622,16 +665,8 @@ Connection_getPPDs (Connection *self)
       if (!strcmp (attr->name, "ppd-name") &&
 	  attr->value_tag == IPP_TAG_NAME)
 	ppdname = attr->values[0].string.text;
-      else if ((!strcmp (attr->name, "ppd-natural-language") &&
-		attr->value_tag == IPP_TAG_LANGUAGE) ||
-	       (!strcmp (attr->name, "ppd-make-and-model") &&
-		attr->value_tag == IPP_TAG_TEXT) ||
-	       (!strcmp (attr->name, "ppd-make") &&
-		attr->value_tag == IPP_TAG_TEXT) ||
-	       (!strcmp (attr->name, "ppd-device-id") &&
-		attr->value_tag == IPP_TAG_TEXT)) {
-	val = PyObj_from_UTF8 (attr->values[0].string.text);
-      }
+      else
+	val = PyObject_from_attr_value (attr, 0);
 
       if (val) {
 	debugprintf ("Adding %s to ppd dict\n", attr->name);
@@ -958,49 +993,6 @@ Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
   ippDelete (answer);
   debugprintf ("<- Connection_getJobs() = dict\n");
   return result;
-}
-
-static PyObject *
-PyObject_from_attr_value (ipp_attribute_t *attr, int i)
-{
-  PyObject *val = NULL;
-  switch (attr->value_tag) {
-  case IPP_TAG_NAME:
-  case IPP_TAG_TEXT:
-  case IPP_TAG_KEYWORD:
-  case IPP_TAG_URI:
-  case IPP_TAG_CHARSET:
-  case IPP_TAG_MIMETYPE:
-  case IPP_TAG_LANGUAGE:
-    val = PyObj_from_UTF8 (attr->values[i].string.text);
-    break;
-  case IPP_TAG_INTEGER:
-  case IPP_TAG_ENUM:
-    val = PyInt_FromLong (attr->values[i].integer);
-    break;
-  case IPP_TAG_BOOLEAN:
-    val = PyBool_FromLong (attr->values[i].integer);
-    break;
-  case IPP_TAG_RANGE:
-    val = Py_BuildValue ("(ii)",
-			 attr->values[i].range.lower,
-			 attr->values[i].range.upper);
-    break;
-  case IPP_TAG_NOVALUE:
-    Py_INCREF (Py_None);
-    val = Py_None;
-    break;
-
-    // TODO:
-  case IPP_TAG_DATE:
-    val = PyString_FromString ("(IPP_TAG_DATE)");
-    break;
-  default:
-    val = PyString_FromString ("(unknown IPP tag)");
-    break;
-  }
-
-  return val;
 }
 
 static PyObject *
