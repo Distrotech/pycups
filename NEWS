@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.42:
+
+* cups.Connection.getJobs() now takes optional limit and first_job_id
+  arguments.
+
 New in 1.9.41:
 
 * cups.Connection.putFile() now accepts a file descriptor or a Python

@@ -898,9 +898,12 @@ Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
   ipp_attribute_t *attr;
   char *which = NULL;
   int my_jobs = 0;
-  static char *kwlist[] = { "which_jobs", "my_jobs", NULL };
-  if (!PyArg_ParseTupleAndKeywords (args, kwds, "|si", kwlist,
-				    &which, &my_jobs))
+  int limit = -1;
+  int first_job_id = -1;
+  static char *kwlist[] = { "which_jobs", "my_jobs", "limit", "first_job_id", 
+			    NULL };
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "|siii", kwlist,
+				    &which, &my_jobs, &limit, &first_job_id))
 	  return NULL;
 
   debugprintf ("-> Connection_getJobs(%s,%d)\n",
@@ -915,6 +918,14 @@ Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
   if (my_jobs)
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		  "requesting-user-name", NULL, cupsUser());
+
+  if (limit > 0)
+    ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+		   "limit", limit);
+
+  if (first_job_id > 0)
+    ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+		   "first-job-id", first_job_id);
 
   debugprintf ("cupsDoRequest(\"/\")\n");
   answer = cupsDoRequest (self->http, request, "/");
@@ -3678,7 +3689,7 @@ PyMethodDef Connection_methods[] =
 
     { "getJobs",
       (PyCFunction) Connection_getJobs, METH_VARARGS | METH_KEYWORDS,
-      "getJobs(which_jobs='not-completed', my_jobs=False) -> dict\n"
+      "getJobs(which_jobs='not-completed', my_jobs=False, limit=-1, first_job_id=-1) -> dict\n"
       "Fetch a list of jobs.\n"
       "@type which_jobs: string\n"
       "@param which_jobs: which jobs to fetch; possible values: \n"
@@ -3688,6 +3699,10 @@ PyMethodDef Connection_methods[] =
       "owned by the current CUPS user (as set by L{cups.setUser}).\n"
       "@return: a dict, indexed by job ID, of dicts representing job\n"
       "attributes.\n"
+      "@type limit: integer\n"
+      "@param limit: maximum number of jobs to return\n"
+      "@type first_job_id: integer\n"
+      "@param first_job_id: lowest job ID to return\n"
       "@raise IPPError: IPP problem" },
 
     { "getJobAttributes",
