@@ -2255,6 +2255,52 @@ Connection_deletePrinter (Connection *self, PyObject *args, PyObject *kwds)
   return do_printer_request (self, args, kwds, CUPS_DELETE_PRINTER);
 }
 
+static int
+get_requested_attrs (PyObject *requested_attrs, size_t *n_attrs, char ***attrs)
+{
+  int i;
+  size_t n;
+  char **as;
+
+  if (!PyList_Check (requested_attrs)) {
+    PyErr_SetString (PyExc_TypeError, "List required");
+    return -1;
+  }
+
+  n = PyList_Size (requested_attrs);
+  as = malloc ((n + 1) * sizeof (char *));
+  for (i = 0; i < n; i++) {
+    PyObject *val = PyList_GetItem (requested_attrs, i); // borrowed ref
+    if (!PyString_Check (val)) {
+      PyErr_SetString (PyExc_TypeError, "String required");
+      while (--i >= 0)
+	free (as[i]);
+      free (as);
+      return -1;
+    }
+
+    as[i] = strdup (PyString_AsString (val));
+  }
+  as[n] = NULL;
+
+  debugprintf ("Requested attributes:\n");
+  for (i = 0; as[i] != NULL; i++)
+    debugprintf ("  %s\n", as[i]);
+
+  *n_attrs = n;
+  *attrs = as;
+  return 0;
+}
+
+static void
+free_requested_attrs (size_t n_attrs, char **attrs)
+{
+  int i;
+  for (i = 0; i < n_attrs; i++)
+    free (attrs[i]);
+  free (attrs);
+}
+
 static PyObject *
 Connection_getPrinterAttributes (Connection *self, PyObject *args,
 				 PyObject *kwds)
@@ -2296,43 +2342,17 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
   }
 
   if (requested_attrs) {
-    int i;
-
-    if (!PyList_Check (requested_attrs)) {
-      PyErr_SetString (PyExc_TypeError, "List required");
+    if (get_requested_attrs (requested_attrs, &n_attrs, &attrs) == -1) {
+      if (nameobj)
+	free (name);
+      else if (uriobj)
+	free (uri);
       return NULL;
     }
-
-    n_attrs = PyList_Size (requested_attrs);
-    attrs = malloc ((n_attrs + 1) * sizeof (char *));
-    for (i = 0; i < n_attrs; i++) {
-      PyObject *val = PyList_GetItem (requested_attrs, i); // borrowed ref
-      if (!PyString_Check (val)) {
-	PyErr_SetString (PyExc_TypeError, "String required");
-	while (--i >= 0)
-	  free (attrs[i]);
-	free (attrs);
-	if (nameobj)
-	  free (name);
-	else if (uriobj)
-	  free (uri);
-	return NULL;
-      }
-
-      attrs[i] = strdup (PyString_AsString (val));
-    }
-    attrs[n_attrs] = NULL;
   }
 
   debugprintf ("-> Connection_getPrinterAttributes(%s)\n",
 	       nameobj ? name : uri);
-
-  if (requested_attrs) {
-    int i;
-    debugprintf ("Requested attributes:\n");
-    for (i = 0; attrs[i] != NULL; i++)
-      debugprintf ("  %s\n", attrs[i]);
-  }
 
   if (nameobj) {
     snprintf (consuri, sizeof (consuri), "ipp://localhost/printers/%s", name);
@@ -2365,12 +2385,8 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
   if (uriobj)
     free (uri);
 
-  if (requested_attrs) {
-    int i;
-    for (i = 0; attrs[i] != NULL; i++)
-      free (attrs[i]);
-    free (attrs);
-  }
+  if (requested_attrs)
+    free_requested_attrs (n_attrs, attrs);
 
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?

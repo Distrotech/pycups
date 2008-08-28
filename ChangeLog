@@ -1,3 +1,10 @@
+2008-08-28  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (get_requested_attrs): New function for
+	extracting requested attributes from list.
+	(free_requested_attrs): Deallocate memory.
+	(Connection_getPrinterAttributes): Use get/free_requested_attrs.
+
 2008-08-22  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_getJobs): Support limit and
