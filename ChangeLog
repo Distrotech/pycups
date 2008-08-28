@@ -1,3 +1,8 @@
+2008-08-28  Tim Waugh  <tim@localhost.localdomain>
+
+	* cupsconnection.c (Connection_methods): Documentation fix for
+	getJobAttributes.
+
 2008-08-28  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_getJobAttributes): New parameter

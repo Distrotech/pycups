@@ -3739,7 +3739,7 @@ PyMethodDef Connection_methods[] =
 
     { "getJobAttributes",
       (PyCFunction) Connection_getJobAttributes, METH_VARARGS | METH_KEYWORDS,
-      "getJobAttributes(jobid, requested_attributes=None) -> None\n\n"
+      "getJobAttributes(jobid, requested_attributes=None) -> dict\n\n"
       "Fetch job attributes.\n"
       "@type jobid: integer\n"
       "@param jobid: job ID\n"
