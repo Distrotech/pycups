@@ -1006,24 +1006,86 @@ Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
   return result;
 }
 
+static int
+get_requested_attrs (PyObject *requested_attrs, size_t *n_attrs, char ***attrs)
+{
+  int i;
+  size_t n;
+  char **as;
+
+  if (!PyList_Check (requested_attrs)) {
+    PyErr_SetString (PyExc_TypeError, "List required");
+    return -1;
+  }
+
+  n = PyList_Size (requested_attrs);
+  as = malloc ((n + 1) * sizeof (char *));
+  for (i = 0; i < n; i++) {
+    PyObject *val = PyList_GetItem (requested_attrs, i); // borrowed ref
+    if (!PyString_Check (val)) {
+      PyErr_SetString (PyExc_TypeError, "String required");
+      while (--i >= 0)
+	free (as[i]);
+      free (as);
+      return -1;
+    }
+
+    as[i] = strdup (PyString_AsString (val));
+  }
+  as[n] = NULL;
+
+  debugprintf ("Requested attributes:\n");
+  for (i = 0; as[i] != NULL; i++)
+    debugprintf ("  %s\n", as[i]);
+
+  *n_attrs = n;
+  *attrs = as;
+  return 0;
+}
+
+static void
+free_requested_attrs (size_t n_attrs, char **attrs)
+{
+  int i;
+  for (i = 0; i < n_attrs; i++)
+    free (attrs[i]);
+  free (attrs);
+}
+
 static PyObject *
-Connection_getJobAttributes (Connection *self, PyObject *args)
+Connection_getJobAttributes (Connection *self, PyObject *args, PyObject *kwds)
 {
   PyObject *result;
   ipp_t *request = ippNewRequest(IPP_GET_JOB_ATTRIBUTES), *answer;
   ipp_attribute_t *attr;
   int job_id;
+  PyObject *requested_attrs = NULL;
+  char **attrs = NULL; /* initialised to calm compiler */
+  size_t n_attrs = 0; /* initialised to calm compiler */
   char uri[1024];
-  if (!PyArg_ParseTuple (args, "i", &job_id))
+  static char *kwlist[] = { "job_id", "requested_attributes", NULL };
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "i|O", kwlist,
+				    &job_id, &requested_attrs))
     return NULL;
+
+  if (requested_attrs) {
+    if (get_requested_attrs (requested_attrs, &n_attrs, &attrs) == -1)
+      return NULL;
+  }
 
   debugprintf ("-> Connection_getJobAttributes(%d)\n", job_id);
   snprintf (uri, sizeof (uri), "ipp://localhost/jobs/%d", job_id);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri",
 		NULL, uri);
+  if (requested_attrs)
+    ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
+		   "requested-attributes", n_attrs, NULL,
+		   (const char **) attrs);
 
   debugprintf ("cupsDoRequest(\"/\")\n");
   answer = cupsDoRequest (self->http, request, "/");
+  if (requested_attrs)
+    free_requested_attrs (n_attrs, attrs);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -2253,52 +2315,6 @@ static PyObject *
 Connection_deletePrinter (Connection *self, PyObject *args, PyObject *kwds)
 {
   return do_printer_request (self, args, kwds, CUPS_DELETE_PRINTER);
-}
-
-static int
-get_requested_attrs (PyObject *requested_attrs, size_t *n_attrs, char ***attrs)
-{
-  int i;
-  size_t n;
-  char **as;
-
-  if (!PyList_Check (requested_attrs)) {
-    PyErr_SetString (PyExc_TypeError, "List required");
-    return -1;
-  }
-
-  n = PyList_Size (requested_attrs);
-  as = malloc ((n + 1) * sizeof (char *));
-  for (i = 0; i < n; i++) {
-    PyObject *val = PyList_GetItem (requested_attrs, i); // borrowed ref
-    if (!PyString_Check (val)) {
-      PyErr_SetString (PyExc_TypeError, "String required");
-      while (--i >= 0)
-	free (as[i]);
-      free (as);
-      return -1;
-    }
-
-    as[i] = strdup (PyString_AsString (val));
-  }
-  as[n] = NULL;
-
-  debugprintf ("Requested attributes:\n");
-  for (i = 0; as[i] != NULL; i++)
-    debugprintf ("  %s\n", as[i]);
-
-  *n_attrs = n;
-  *attrs = as;
-  return 0;
-}
-
-static void
-free_requested_attrs (size_t n_attrs, char **attrs)
-{
-  int i;
-  for (i = 0; i < n_attrs; i++)
-    free (attrs[i]);
-  free (attrs);
 }
 
 static PyObject *
@@ -3722,11 +3738,13 @@ PyMethodDef Connection_methods[] =
       "@raise IPPError: IPP problem" },
 
     { "getJobAttributes",
-      (PyCFunction) Connection_getJobAttributes, METH_VARARGS,
-      "getJobAttributes(jobid) -> None\n\n"
+      (PyCFunction) Connection_getJobAttributes, METH_VARARGS | METH_KEYWORDS,
+      "getJobAttributes(jobid, requested_attributes=None) -> None\n\n"
       "Fetch job attributes.\n"
       "@type jobid: integer\n"
       "@param jobid: job ID\n"
+      "@type requested_attributes: string list\n"
+      "@param requested_attributes: list of requested attribute names\n"
       "@return: a dict representing job attributes.\n"
       "@raise IPPError: IPP problem" },
 

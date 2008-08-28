@@ -3,6 +3,8 @@ NEWS
 
 New in 1.9.42:
 
+* cups.Connection.getJobAttributes() now takes optional requested_attributes
+  argument.
 * cups.Connection.getJobs() now takes optional limit and first_job_id
   arguments.
 
