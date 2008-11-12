@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2006, 2007  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2006, 2007, 2008  Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,5 +52,7 @@ extern void debugprintf (const char *fmt, ...) FORMAT ((__printf__, 1, 2));
 #ifndef HAVE_CUPS_1_2
 #error pycups requires CUPS 1.2.x
 #endif
+
+extern void *g_current_connection;
 
 #endif /* HAVE_CUPSMODULE_H */

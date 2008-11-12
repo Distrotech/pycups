@@ -30,6 +30,7 @@
 #include "cupsppd.h"
 
 static PyObject *cups_password_callback = NULL;
+void *g_current_connection = NULL;
 
 //////////////////////
 // Worker functions //
@@ -105,11 +106,17 @@ do_password_callback (const char *prompt)
   PyObject *result;
   const char *pwval;
 
+  debugprintf ("-> do_password_callback\n");
+  Connection_end_allow_threads (g_current_connection);
   args = Py_BuildValue ("(s)", prompt);
   result = PyEval_CallObject (cups_password_callback, args);
   Py_DECREF (args);
   if (result == NULL)
+  {
+    debugprintf ("<- do_password_callback (empty string)\n");
+    Connection_begin_allow_threads (g_current_connection);
     return "";
+  }
 
   if (password) {
     free (password);
@@ -120,8 +127,14 @@ do_password_callback (const char *prompt)
   password = strdup (pwval);
   Py_DECREF (result);
   if (!password)
+  {
+    debugprintf ("<- do_password_callback (empty string)\n");
+    Connection_begin_allow_threads (g_current_connection);
     return "";
-  
+  }
+
+  Connection_begin_allow_threads (g_current_connection);
+  debugprintf ("<- do_password_callback\n");
   return password;
 }
 

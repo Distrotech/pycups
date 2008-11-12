@@ -41,6 +41,7 @@ typedef struct
   PyObject_HEAD
   http_t *http;
   char *host; /* for repr */
+  PyThreadState *tstate;
 } Connection;
 
 typedef struct
@@ -143,6 +144,7 @@ Connection_new (PyTypeObject *type, PyObject *args, PyObject *kwds)
   if (self != NULL) {
     self->http = NULL;
     self->host = NULL;
+    self->tstate = NULL;
   }
 
   return (PyObject *) self;
@@ -167,10 +169,10 @@ Connection_init (Connection *self, PyObject *args, PyObject *kwds)
     return -1;
   }
 
-  Py_BEGIN_ALLOW_THREADS;
+  Connection_begin_allow_threads (self);
   debugprintf ("httpConnectEncrypt(...)\n");
   self->http = httpConnectEncrypt (host, port, (http_encryption_t) encryption);
-  Py_END_ALLOW_THREADS;
+  Connection_end_allow_threads (self);
 
   if (!self->http) {
     PyErr_SetString (PyExc_RuntimeError, "httpConnectionEncrypt failed");
@@ -199,6 +201,30 @@ Connection_repr (Connection *self)
 {
   return PyString_FromFormat ("<cups.Connection object for %s at %p>",
 			      self->host, self);
+}
+
+void
+Connection_begin_allow_threads (void *connection)
+{
+  Connection *self = (Connection *) connection;
+  if (!self || !self->tstate)
+    return;
+
+  debugprintf ("begin allow threads\n");
+  g_current_connection = connection;
+  self->tstate = PyEval_SaveThread ();
+}
+
+void
+Connection_end_allow_threads (void *connection)
+{
+  Connection *self = (Connection *) connection;
+  if (!self || !self->tstate)
+    return;
+
+  debugprintf ("end allow threads\n");
+  PyEval_RestoreThread (self->tstate);
+  self->tstate = NULL;
 }
 
 ////////////////
@@ -632,9 +658,9 @@ Connection_getPPDs (Connection *self)
 
   debugprintf ("-> Connection_getPPDs()\n");
   debugprintf ("cupsDoRequest(\"/\")\n");
-  Py_BEGIN_ALLOW_THREADS;
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/");
-  Py_END_ALLOW_THREADS;
+  Connection_end_allow_threads (self);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -700,9 +726,9 @@ Connection_getServerPPD (Connection *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "s", &ppd_name))
     return NULL;
   debugprintf ("-> Connection_getServerPPD()\n");
-  Py_BEGIN_ALLOW_THREADS;
+  Connection_begin_allow_threads (self);
   filename = cupsGetServerPPD (self->http, ppd_name);
-  Py_END_ALLOW_THREADS;
+  Connection_end_allow_threads (self);
   if (!filename) {
     set_ipp_error (cupsLastError ());
     debugprintf ("<- Connection_getServerPPD() (error)\n");
@@ -759,9 +785,9 @@ Connection_getDocument (Connection *self, PyObject *args)
     return NULL;
   }
 
-  Py_BEGIN_ALLOW_THREADS;
+  Connection_begin_allow_threads (self);
   answer = cupsDoIORequest (self->http, request, "/", -1, fd);
-  Py_END_ALLOW_THREADS;
+  Connection_end_allow_threads (self);
 
   close (fd);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
@@ -823,9 +849,9 @@ Connection_getDevices (Connection *self)
 
   debugprintf ("-> Connection_getDevices()\n");
   debugprintf ("cupsDoRequest(\"/\")\n");
-  Py_BEGIN_ALLOW_THREADS;
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/");
-  Py_END_ALLOW_THREADS;
+  Connection_end_allow_threads (self);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
