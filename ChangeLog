@@ -1,3 +1,8 @@
+2008-11-13  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getJobs): Set printer-uri
+	attribute instead of job-uri attribute.
+
 2008-11-12  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection): Store thread state in Connection

@@ -934,8 +934,8 @@ Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
 
   debugprintf ("-> Connection_getJobs(%s,%d)\n",
 	       which ? which : "(null)", my_jobs);
-  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri",
-		NULL, "ipp://localhost/jobs/");
+  ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "printer-uri",
+		NULL, "ipp://localhost/printers/");
 
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD, "which-jobs",
 		NULL, which ? which : "not-completed");
