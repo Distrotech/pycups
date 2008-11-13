@@ -207,9 +207,6 @@ void
 Connection_begin_allow_threads (void *connection)
 {
   Connection *self = (Connection *) connection;
-  if (!self || !self->tstate)
-    return;
-
   debugprintf ("begin allow threads\n");
   g_current_connection = connection;
   self->tstate = PyEval_SaveThread ();
@@ -219,9 +216,6 @@ void
 Connection_end_allow_threads (void *connection)
 {
   Connection *self = (Connection *) connection;
-  if (!self || !self->tstate)
-    return;
-
   debugprintf ("end allow threads\n");
   PyEval_RestoreThread (self->tstate);
   self->tstate = NULL;
@@ -284,7 +278,9 @@ do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
   }
 
   debugprintf ("cupsDoRequest(\"/admin/\")\n");
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/admin/");
+  Connection_end_allow_threads (self);
   if (PyErr_Occurred ()) {
     if (answer)
       ippDelete (answer);
@@ -414,7 +410,9 @@ Connection_getPrinters (Connection *self)
 		 sizeof (attributes) / sizeof (attributes[0]),
 		 NULL, attributes);
   debugprintf ("cupsDoRequest(\"/\")\n");
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/");
+  Connection_end_allow_threads (self);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     if (answer && answer->request.status.status_code == IPP_NOT_FOUND) {
       // No printers.
@@ -535,7 +533,9 @@ Connection_getClasses (Connection *self)
 		 sizeof (attributes) / sizeof (attributes[0]),
 		 NULL, attributes);
   debugprintf ("cupsDoRequest(\"/\")\n");
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/");
+  Connection_end_allow_threads (self);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     if (answer && answer->request.status.status_code == IPP_NOT_FOUND) {
       // No classes.
@@ -954,7 +954,9 @@ Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
 		   "first-job-id", first_job_id);
 
   debugprintf ("cupsDoRequest(\"/\")\n");
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/");
+  Connection_end_allow_threads (self);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -1109,7 +1111,9 @@ Connection_getJobAttributes (Connection *self, PyObject *args, PyObject *kwds)
 		   (const char **) attrs);
 
   debugprintf ("cupsDoRequest(\"/\")\n");
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/");
+  Connection_end_allow_threads (self);
   if (requested_attrs)
     free_requested_attrs (n_attrs, attrs);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
@@ -1167,7 +1171,9 @@ Connection_cancelJob (Connection *self, PyObject *args)
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		"requesting-user-name", NULL, cupsUser ());
   debugprintf ("cupsDoRequest(\"/jobs/\")\n");
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/jobs/");
+  Connection_end_allow_threads (self);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -1239,7 +1245,9 @@ Connection_cancelAllJobs (Connection *self, PyObject *args, PyObject *kwds)
 
     ippAddBoolean (request, IPP_TAG_OPERATION, "purge-jobs", purge_jobs);
     debugprintf ("cupsDoRequest(\"/admin/\") with printer-uri=%s\n", uri);
+    Connection_begin_allow_threads (self);
     answer = cupsDoRequest (self->http, request, "/admin/");
+    Connection_end_allow_threads (self);
     if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
       ippDelete (answer);
       if (uriobj)
@@ -1323,7 +1331,9 @@ Connection_authenticateJob (Connection *self, PyObject *args)
     }
 
   debugprintf ("cupsDoRequest(\"/jobs/\")\n");
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/jobs/");
+  Connection_end_allow_threads (self);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -1368,7 +1378,9 @@ Connection_setJobHoldUntil (Connection *self, PyObject *args)
   free (job_hold_until);
 
   debugprintf ("cupsDoRequest(\"/jobs/\")\n");
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/jobs/");
+  Connection_end_allow_threads (self);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -1400,7 +1412,9 @@ Connection_restartJob (Connection *self, PyObject *args)
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		"requesting-user-name", NULL, cupsUser ());
   debugprintf ("cupsDoRequest(\"/jobs/\")\n");
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/jobs/");
+  Connection_end_allow_threads (self);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -1670,10 +1684,12 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
     free (device);
   }
   
+  Connection_begin_allow_threads (self);
   if (ppdfile) {
     answer = cupsDoFileRequest (self->http, request, "/admin/", ppdfile);
   } else
     answer = cupsDoRequest (self->http, request, "/admin/");
+  Connection_end_allow_threads (self);
 
   if (ppd) {
     unlink (ppdfile);
@@ -1730,7 +1746,9 @@ Connection_setPrinterDevice (Connection *self, PyObject *args)
   ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_URI,
 		"device-uri", NULL, device_uri);
   free (device_uri);
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/admin/");
+  Connection_end_allow_threads (self);
   if (PyErr_Occurred ()) {
     if (answer)
       ippDelete (answer);
@@ -1776,7 +1794,9 @@ Connection_setPrinterInfo (Connection *self, PyObject *args)
   for (i = 0; i < 2; i++) {
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		  "printer-info", NULL, info);
+    Connection_begin_allow_threads (self);
     answer = cupsDoRequest (self->http, request, "/admin/");
+    Connection_end_allow_threads (self);
     if (PyErr_Occurred ()) {
       if (answer)
 	ippDelete (answer);
@@ -1831,7 +1851,9 @@ Connection_setPrinterLocation (Connection *self, PyObject *args)
   for (i = 0; i < 2; i++) {
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_TEXT,
 		  "printer-location", NULL, location);
+    Connection_begin_allow_threads (self);
     answer = cupsDoRequest (self->http, request, "/admin/");
+    Connection_end_allow_threads (self);
     if (PyErr_Occurred ()) {
       if (answer)
 	ippDelete (answer);
@@ -1879,7 +1901,9 @@ Connection_setPrinterShared (Connection *self, PyObject *args)
   request = add_modify_printer_request (name);
   for (i = 0; i < 2; i++) {
     ippAddBoolean (request, IPP_TAG_OPERATION, "printer-is-shared", sharing);
+    Connection_begin_allow_threads (self);
     answer = cupsDoRequest (self->http, request, "/admin/");
+    Connection_end_allow_threads (self);
     if (PyErr_Occurred ()) {
       if (answer)
 	ippDelete (answer);
@@ -1944,7 +1968,9 @@ Connection_setPrinterJobSheets (Connection *self, PyObject *args)
 		       "job-sheets-default", 2, NULL, NULL);
     a->values[0].string.text = strdup (start);
     a->values[1].string.text = strdup (end);
+    Connection_begin_allow_threads (self);
     answer = cupsDoRequest (self->http, request, "/admin/");
+    Connection_end_allow_threads (self);
     if (PyErr_Occurred ()) {
       if (answer)
 	ippDelete (answer);
@@ -2000,7 +2026,9 @@ Connection_setPrinterErrorPolicy (Connection *self, PyObject *args)
   for (i = 0; i < 2; i++) {
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
 		  "printer-error-policy", NULL, policy);
+    Connection_begin_allow_threads (self);
     answer = cupsDoRequest (self->http, request, "/admin/");
+    Connection_end_allow_threads (self);
     if (PyErr_Occurred ()) {
       if (answer)
 	ippDelete (answer);
@@ -2055,7 +2083,9 @@ Connection_setPrinterOpPolicy (Connection *self, PyObject *args)
   for (i = 0; i < 2; i++) {
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
 		  "printer-op-policy", NULL, policy);
+    Connection_begin_allow_threads (self);
     answer = cupsDoRequest (self->http, request, "/admin/");
+    Connection_end_allow_threads (self);
     if (PyErr_Occurred ()) {
       if (answer)
 	ippDelete (answer);
@@ -2134,7 +2164,9 @@ do_requesting_user_names (Connection *self, PyObject *args,
       else
 	attr->values[0].string.text = strdup ("all");
     }
+    Connection_begin_allow_threads (self);
     answer = cupsDoRequest (self->http, request, "/admin/");
+    Connection_end_allow_threads (self);
     if (PyErr_Occurred ()) {
       if (answer)
 	ippDelete (answer);
@@ -2245,7 +2277,9 @@ Connection_addPrinterOptionDefault (Connection *self, PyObject *args)
       ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_NAME,
 		    opt, NULL, PyObject_to_string (pyvalue));
 
+    Connection_begin_allow_threads (self);
     answer = cupsDoRequest (self->http, request, "/admin/");
+    Connection_end_allow_threads (self);
     if (PyErr_Occurred ()) {
       if (answer)
 	ippDelete (answer);
@@ -2307,7 +2341,9 @@ Connection_deletePrinterOptionDefault (Connection *self, PyObject *args)
   for (i = 0; i < 2; i++) {
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_DELETEATTR,
 		  opt, NULL, NULL);
+    Connection_begin_allow_threads (self);
     answer = cupsDoRequest (self->http, request, "/admin/");
+    Connection_end_allow_threads (self);
     if (PyErr_Occurred ()) {
       if (answer)
 	ippDelete (answer);
@@ -2410,7 +2446,9 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 		     "requested-attributes", n_attrs, NULL,
 		     (const char **) attrs);
     debugprintf ("trying request with uri %s\n", uri);
+    Connection_begin_allow_threads (self);
     answer = cupsDoRequest (self->http, request, "/");
+    Connection_end_allow_threads (self);
     if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
       ippDelete (answer);
       if (uriobj)
@@ -2566,7 +2604,9 @@ Connection_addPrinterToClass (Connection *self, PyObject *args)
   free (classname);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/");
+  Connection_end_allow_threads (self);
   if (answer) {
     ipp_attribute_t *printers;
     printers = ippFindAttribute (answer, "member-names", IPP_TAG_NAME);
@@ -2611,7 +2651,9 @@ Connection_addPrinterToClass (Connection *self, PyObject *args)
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_URI,
 		  "member-uris", NULL, printeruri);
 
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/admin/");
+  Connection_end_allow_threads (self);
   if (PyErr_Occurred ()) {
     if (answer)
       ippDelete (answer);
@@ -2662,7 +2704,9 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
   free (classname);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/");
+  Connection_end_allow_threads (self);
   if (!answer) {
     set_ipp_error (cupsLastError ());
     free (printername);
@@ -2705,7 +2749,9 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
   }
 
   ippDelete (answer);
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/admin/");
+  Connection_end_allow_threads (self);
   if (PyErr_Occurred ()) {
     if (answer)
       ippDelete (answer);
@@ -2746,7 +2792,9 @@ Connection_deleteClass (Connection *self, PyObject *args)
   free (classname);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/admin/");
+  Connection_end_allow_threads (self);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ?
 		   answer->request.status.status_code :
@@ -2931,7 +2979,9 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
 		  NULL, title);
     ippAddString (request, IPP_TAG_JOB, IPP_TAG_MIMETYPE, "document-format",
 		  NULL, format);
+    Connection_begin_allow_threads (self);
     answer = cupsDoFileRequest (self->http, request, resource, file);
+    Connection_end_allow_threads (self);
     if (answer && answer->request.status.status_code == IPP_NOT_POSSIBLE) {
       ippDelete (answer);
       // Perhaps it's a class, not a printer.
@@ -3077,7 +3127,9 @@ Connection_getSubscriptions (Connection *self, PyObject *args, PyObject *kwds)
     ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
 		   "job-id", job_id);
 
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/");
+  Connection_end_allow_threads (self);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ? answer->request.status.status_code :
 		   cupsLastError ());
@@ -3238,7 +3290,9 @@ Connection_createSubscription (Connection *self, PyObject *args,
     ippAddInteger (request, IPP_TAG_SUBSCRIPTION, IPP_TAG_INTEGER,
 		   "notify-job-id", job_id);
 
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/");
+  Connection_end_allow_threads (self);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ? answer->request.status.status_code :
 		   cupsLastError ());
@@ -3334,7 +3388,9 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
     }
   }
   
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/");
+  Connection_end_allow_threads (self);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ? answer->request.status.status_code :
 		   cupsLastError ());
@@ -3444,7 +3500,9 @@ Connection_renewSubscription (Connection *self, PyObject *args, PyObject *kwds)
     ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
 		   "notify-lease-duration", lease_duration);
 
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/");
+  Connection_end_allow_threads (self);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ? answer->request.status.status_code :
 		   cupsLastError ());
@@ -3479,7 +3537,9 @@ Connection_cancelSubscription (Connection *self, PyObject *args)
   attr = ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
 			 "notify-subscription-id", id);
 
+  Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/");
+  Connection_end_allow_threads (self);
   if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
     set_ipp_error (answer ? answer->request.status.status_code :
 		   cupsLastError ());

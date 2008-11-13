@@ -1,5 +1,11 @@
 2008-11-13  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_begin_allow_threads,
+	Connection_end_allow_threads): Fix these functions so they
+	actually work.
+
+2008-11-13  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_getJobs): Set printer-uri
 	attribute instead of job-uri attribute.
 
