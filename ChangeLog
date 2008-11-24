@@ -1,3 +1,9 @@
+2008-11-24  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_adminGetServerSettings): Save
+	thread state during call.
+	(Connection_adminSetServerSettings): Likewise.
+
 2008-11-21  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Version 1.9.43.

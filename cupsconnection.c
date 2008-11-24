@@ -3022,7 +3022,10 @@ Connection_adminGetServerSettings (Connection *self)
   PyObject *ret = PyDict_New ();
   int num_settings, i;
   cups_option_t *settings;
+  debugprintf ("-> Connection_adminGetServerSettings()\n");
+  Connection_begin_allow_threads (self);
   cupsAdminGetServerSettings (self->http, &num_settings, &settings);
+  Connection_end_allow_threads (self);
   for (i = 0; i < num_settings; i++) {
     PyObject *string = PyString_FromString (settings[i].value);
     PyDict_SetItemString (ret, settings[i].name, string);
@@ -3030,6 +3033,7 @@ Connection_adminGetServerSettings (Connection *self)
   }
 
   cupsFreeOptions (num_settings, settings);
+  debugprintf ("<- Connection_adminGetServerSettings()\n");
   return ret;
 }
 
@@ -3043,6 +3047,7 @@ Connection_adminSetServerSettings (Connection *self, PyObject *args)
 #endif
 
   PyObject *dict, *key, *val;
+  int ret;
   int num_settings = 0;
   DICT_POS_TYPE pos = 0;
   cups_option_t *settings = NULL;
@@ -3074,7 +3079,10 @@ Connection_adminSetServerSettings (Connection *self, PyObject *args)
   }
 
   debugprintf ("num_settings=%d, settings=%p\n", num_settings, settings);
-  if (!cupsAdminSetServerSettings (self->http, num_settings, settings)) {
+  Connection_begin_allow_threads (self);
+  ret = cupsAdminSetServerSettings (self->http, num_settings, settings);
+  Connection_end_allow_threads (self);
+  if (!ret) {
     cupsFreeOptions (num_settings, settings);
     PyErr_SetString (PyExc_RuntimeError, "Failed to set settings");
     debugprintf ("<- Connection_adminSetServerSettings() EXCEPTION\n");
