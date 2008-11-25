@@ -314,7 +314,9 @@ Connection_getDests (Connection *self)
 
   debugprintf ("-> Connection_getDests()\n");
   debugprintf ("cupsGetDests2()\n");
+  Connection_begin_allow_threads (self);
   num_dests = cupsGetDests2 (self->http, &dests);
+  Connection_end_allow_threads (self);
 
   // Create a dict indexed by (name,instance)
   for (i = 0; i <= num_dests; i++) {
@@ -1458,11 +1460,15 @@ Connection_getFile (Connection *self, PyObject *args, PyObject *kwds)
   if (filename) {
     debugprintf ("-> Connection_getFile(%s, %s)\n", resource, filename);
     debugprintf ("cupsGetFile()\n");
+    Connection_begin_allow_threads (self);
     status = cupsGetFile (self->http, resource, filename);
+    Connection_end_allow_threads (self);
   } else {
     debugprintf ("-> Connection_getFile(%s, %d)\n", resource, fd);
     debugprintf ("cupsGetFd()\n");
+    Connection_begin_allow_threads (self);
     status = cupsGetFd (self->http, resource, fd);
+    Connection_end_allow_threads (self);
   }
 
   if (status != HTTP_OK) {
@@ -1504,11 +1510,15 @@ Connection_putFile (Connection *self, PyObject *args, PyObject *kwds)
   if (filename) {
     debugprintf ("-> Connection_putFile(%s, %s)\n", resource, filename);
     debugprintf ("cupsPutFile()\n");
+    Connection_begin_allow_threads (self);
     status = cupsPutFile (self->http, resource, filename);
+    Connection_end_allow_threads (self);
   } else {
     debugprintf ("-> Connection_putFile(%s, %d)\n", resource, fd);
     debugprintf ("cupsPutFd()\n");
+    Connection_begin_allow_threads (self);
     status = cupsPutFd (self->http, resource, fd);
+    Connection_end_allow_threads (self);
   }
 
   if (status != HTTP_OK && status != HTTP_CREATED) {
@@ -2839,7 +2849,9 @@ Connection_getDefault (Connection *self, PyObject *args)
   const char *def;
   PyObject *ret;
   debugprintf ("-> Connection_getDefault()\n");
+  Connection_begin_allow_threads (self);
   def = cupsGetDefault2 (self->http);
+  Connection_end_allow_threads (self);
   if (def == NULL) {
     debugprintf ("<- Connection_getDefault() = None\n");
     ret = Py_None;
@@ -2872,7 +2884,9 @@ Connection_getPPD (Connection *self, PyObject *args)
   if (UTF8_from_PyObj (&printer, printerobj) == NULL)
     return NULL;
 
+  Connection_begin_allow_threads (self);
   ppdfile = cupsGetPPD2 (self->http, printer);
+  Connection_end_allow_threads (self);
   free (printer);
   if (!ppdfile) {
     ipp_status_t err = cupsLastError ();
@@ -3620,8 +3634,10 @@ Connection_printFile (Connection *self, PyObject *args, PyObject *kwds)
 				  &settings);
   }
 
+  Connection_begin_allow_threads (self);
   jobid = cupsPrintFile2 (self->http, printer, filename, title, num_settings,
                           settings);
+  Connection_end_allow_threads (self);
 
   if (jobid < 0) {
     cupsFreeOptions (num_settings, settings);
@@ -3723,9 +3739,11 @@ Connection_printFiles (Connection *self, PyObject *args, PyObject *kwds)
 				  &settings);
   }
 
+  Connection_begin_allow_threads (self);
   jobid = cupsPrintFiles2 (self->http, printer, num_filenames,
                            (const char **) filenames, title, num_settings,
 						   settings);
+  Connection_end_allow_threads (self);
 
   if (jobid < 0) {
     cupsFreeOptions (num_settings, settings);

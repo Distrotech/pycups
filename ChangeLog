@@ -1,3 +1,14 @@
+2008-11-25  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getFile): Save thread state during
+	call.
+	(Connection_putFile): Likewise.
+	(Connection_getDests): Likewise.
+	(Connection_getDefault): Likewise.
+	(Connection_getPPD): Likewise.
+	(Connection_printFile): Likewise.
+	(Connection_printFiles): Likewise.
+
 2008-11-24  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_adminGetServerSettings): Save
