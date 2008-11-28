@@ -1,3 +1,7 @@
+2008-11-28  Tim Waugh  <twaugh@redhat.com>
+
+	* Makefile: Version 1.9.44.
+
 2008-11-25  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_getFile): Save thread state during
