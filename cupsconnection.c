@@ -2908,13 +2908,13 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
   PyObject *printerobj;
   char *printer;
   PyObject *fileobj = NULL;
-  char *file;
+  char *file = NULL;
   PyObject *titleobj = NULL;
-  char *title;
+  char *title = NULL;
   PyObject *formatobj = NULL;
-  char *format;
+  char *format = NULL;
   PyObject *userobj = NULL;
-  char *user;
+  char *user = NULL;
   const char *datadir;
   char filename[PATH_MAX];
   char uri[HTTP_MAX_URI];
