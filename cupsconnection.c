@@ -2975,9 +2975,6 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
   if (!titleobj)
     title = "Test Page";
 
-  if (!formatobj)
-    format = "application/postscript";
-
   if (!userobj)
 	  user = (char *) cupsUser();
 
@@ -2991,8 +2988,10 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
 		  "requesting-user-name", NULL, user);
     ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME, "job-name",
 		  NULL, title);
-    ippAddString (request, IPP_TAG_JOB, IPP_TAG_MIMETYPE, "document-format",
-		  NULL, format);
+    if (format)
+      ippAddString (request, IPP_TAG_JOB, IPP_TAG_MIMETYPE, "document-format",
+		    NULL, format);
+
     Connection_begin_allow_threads (self);
     answer = cupsDoFileRequest (self->http, request, resource, file);
     Connection_end_allow_threads (self);

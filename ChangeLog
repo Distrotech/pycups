@@ -1,5 +1,10 @@
 2008-12-17  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_printTestPage): Only set a
+	document-format attribute if one is specified.
+
+2008-12-17  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_printTestPage): Avoid crash when
 	given bad parameters.
 
