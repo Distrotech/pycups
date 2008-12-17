@@ -1,5 +1,11 @@
 2008-12-17  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_printTestPage): Look for
+	"testprint" as well as "testprint.ps", as that is the name of the
+	test page file in CUPS 1.4 (bug #476612).
+
+2008-12-17  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_printTestPage): Only set a
 	document-format attribute if one is specified.
 

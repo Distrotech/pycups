@@ -2946,17 +2946,33 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
   }
     
   if (!fileobj) {
-    const char *testprint = "%s/data/testprint.ps";
-    if ((datadir = getenv ("CUPS_DATADIR")) != NULL)
-      snprintf (filename, sizeof (filename), testprint, datadir);
-    else {
+    const char *testprint[] = { "%s/data/testprint",
+				"%s/data/testprint.ps",
+				NULL };
+    if ((datadir = getenv ("CUPS_DATADIR")) != NULL) {
+      const char **pattern;
+      for (pattern = testprint; *pattern != NULL; pattern++) {
+	snprintf (filename, sizeof (filename), *pattern, datadir);
+	if (access (filename, R_OK) == 0)
+	  break;
+      }
+    } else {
       const char *const dirs[] = { "/usr/share/cups",
 				   "/usr/local/share/cups",
 				   NULL };
+      int found = 0;
       int i;
       for (i = 0; (datadir = dirs[i]) != NULL; i++) {
-	snprintf (filename, sizeof (filename), testprint, datadir);
-	if (access (filename, R_OK) == 0)
+	const char **pattern;
+	for (pattern = testprint; *pattern != NULL; pattern++) {
+	  snprintf (filename, sizeof (filename), *pattern, datadir);
+	  if (access (filename, R_OK) == 0) {
+	    found = 1;
+	    break;
+	  }
+	}
+
+	if (found)
 	  break;
       }
 
@@ -2966,7 +2982,7 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
 	 * client-error-not-found, but we'll let that happen rather
 	 * than raising an exception so as to be consistent with the
 	 * case where CUPS_DATADIR is set and we trust it. */
-	snprintf (filename, sizeof (filename), testprint, dirs[0]);
+	snprintf (filename, sizeof (filename), testprint[0], dirs[0]);
     }
 
     file = filename;
