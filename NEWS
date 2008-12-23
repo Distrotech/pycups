@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.45:
+
+* cups.PPD.localizeIPPReason()
+* cups.PPD.localizeMarkerName()
+
 New in 1.9.42:
 
 * cups.Connection.getJobAttributes() now takes optional requested_attributes

@@ -260,6 +260,62 @@ PPD_localize (PPD *self)
 }
 
 static PyObject *
+PPD_localizeIPPReason (PPD *self, PyObject *args, PyObject *kwds)
+{
+  PyObject *ret;
+  const char *reason;
+  const char *scheme = NULL;
+  char *buffer;
+  const size_t bufsize = 1024;
+  static char *kwlist[] = { "reason", "scheme", NULL };
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|s", kwlist,
+				    &reason, &scheme))
+    return NULL;
+
+  buffer = malloc (bufsize);
+  if (ppdLocalizeIPPReason (self->ppd, reason, scheme, buffer, bufsize))
+  {
+    ret = make_PyUnicode_from_ppd_string (self, buffer);
+  } else {
+    ret = Py_None;
+    Py_INCREF (Py_None);
+  }
+
+  free (buffer);
+  return ret;
+}
+
+static PyObject *
+PPD_localizeMarkerName (PPD *self, PyObject *args)
+{
+#if CUPS_VERSION_MAJOR > 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 4)
+  PyObject *ret;
+  const char *name;
+  const char *lname;
+
+  if (!PyArg_ParseTuple (args, "s", &name))
+    return NULL;
+
+  lname = ppdLocalizeMarkerName (self->ppd, name);
+
+  if (lname != NULL)
+  {
+    ret = make_PyUnicode_from_ppd_string (self, lname);
+  } else {
+    ret = Py_None;
+    Py_INCREF (Py_None);
+  }
+
+  return ret;
+#else /* earlier than CUPS 1.4 */
+  PyErr_SetString (PyExc_RuntimeError,
+		   "Operation not supported - recompile against CUPS 1.4 or later");
+  return NULL;
+#endif /* CUPS 1.4 */
+}
+
+static PyObject *
 PPD_markDefaults (PPD *self)
 {
   ppdMarkDefaults (self->ppd);
@@ -640,6 +696,16 @@ PyMethodDef PPD_methods[] =
       (PyCFunction) PPD_localize, METH_NOARGS,
       "localize() -> None\n\n"
       "Localize PPD to the current locale." },
+
+    { "localizeIPPReason",
+      (PyCFunction) PPD_localizeIPPReason, METH_VARARGS | METH_KEYWORDS,
+      "localizeIPPReason(reason, scheme) -> string or None\n\n"
+      "Localize IPP reason to the current locale." },
+
+    { "localizeMarkerName",
+      (PyCFunction) PPD_localizeMarkerName, METH_VARARGS,
+      "localizeMarkerName(name) -> string or None\n\n"
+      "Localize marker name to the current locale." },
 
     { "markDefaults",
       (PyCFunction) PPD_markDefaults, METH_NOARGS,
