@@ -1,5 +1,12 @@
 2008-12-23  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_getServerPPD): Fixed version
+	check.
+	(Connection_getDocument): Likewise.
+	* cupsmodule.c (initcups): Likewise.
+
+2008-12-23  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsppd.c (PPD_localizeIPPReason): New method.
 	(PPD_localizeMarkerName): Likewise.
 

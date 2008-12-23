@@ -723,7 +723,7 @@ Connection_getPPDs (Connection *self)
 static PyObject *
 Connection_getServerPPD (Connection *self, PyObject *args)
 {
-#if CUPS_VERSION_MAJOR >= 1 && CUPS_VERSION_MINOR >= 3
+#if CUPS_VERSION_MAJOR > 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 3)
   const char *ppd_name, *filename;
   if (!PyArg_ParseTuple (args, "s", &ppd_name))
     return NULL;
@@ -749,7 +749,7 @@ Connection_getServerPPD (Connection *self, PyObject *args)
 static PyObject *
 Connection_getDocument (Connection *self, PyObject *args)
 {
-#if CUPS_VERSION_MAJOR >= 1 && CUPS_VERSION_MINOR >= 4
+#if CUPS_VERSION_MAJOR > 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 4)
   PyObject *dict;
   PyObject *obj;
   PyObject *uriobj;
