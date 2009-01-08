@@ -1,3 +1,7 @@
+2009-01-08  Tim Waugh  <twaugh@redhat.com>
+
+	* Makefile: Version 1.9.45.
+
 2008-12-23  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_getServerPPD): Fixed version
