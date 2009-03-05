@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006, 2007, 2008  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009  Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -3708,21 +3708,22 @@ Connection_printFiles (Connection *self, PyObject *args, PyObject *kwds)
   if (!PyList_Check (filenames_obj)) {
     free (printer);
     PyErr_SetString (PyExc_TypeError, "filenames must be a list");
-	return NULL;
+    return NULL;
   }
   num_filenames = PyList_Size (filenames_obj);
   if (num_filenames == 0) {
     free (printer);
     PyErr_SetString (PyExc_RuntimeError, "filenames list is empty");
-	return NULL;
+    return NULL;
   }
   filenames = malloc (num_filenames * sizeof(char*));
   for (pos = 0; pos < num_filenames; ++pos) {
     PyObject *filename_obj = PyList_GetItem(filenames_obj, pos);
     if (UTF8_from_PyObj (&filenames[pos], filename_obj) == NULL) {
-	  free_string_list (pos, filenames);
+      free_string_list (pos, filenames);
       free (printer);
-	}
+      return NULL;
+    }
   }
   if (UTF8_from_PyObj (&title, title_obj) == NULL) {
     free_string_list (num_filenames, filenames);
