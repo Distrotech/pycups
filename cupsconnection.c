@@ -2537,6 +2537,10 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 	    "requesting-user-name-allowed",
 	    "requesting-user-name-denied",
 	    "printer-state-reasons",
+	    "marker-colors",
+	    "marker-names",
+	    "marker-types",
+	    "marker-levels",
 	    NULL
 	  };
 
@@ -2549,6 +2553,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 	case IPP_TAG_MIMETYPE:
 	case IPP_TAG_LANGUAGE:
 	case IPP_TAG_ENUM:
+	case IPP_TAG_INTEGER:
 	  is_list = !strcmp (attr->name + namelen - 10, "-supported");
 
 	  if (!is_list) {
