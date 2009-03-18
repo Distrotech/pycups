@@ -1,3 +1,10 @@
+2009-03-18  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getPPDs): New optional arguments
+	limit, exclude_schemes, include_schemes, ppd_device_id, ppd_make,
+	ppd_make_and_model, ppd_model_number, ppd_product, ppd_psversion,
+	ppd_type and ppd_natural_language (trac #5).
+
 2009-03-10  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_getPrinterAttributes): The marker-*

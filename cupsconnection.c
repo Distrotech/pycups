@@ -652,11 +652,205 @@ PyObject_from_attr_value (ipp_attribute_t *attr, int i)
 }
 
 static PyObject *
-Connection_getPPDs (Connection *self)
+Connection_getPPDs (Connection *self, PyObject *args, PyObject *kwds)
 {
-  PyObject *result;
+  PyObject *result = NULL;
   ipp_t *request = ippNewRequest(CUPS_GET_PPDS), *answer;
   ipp_attribute_t *attr;
+  int limit = 0;
+  PyObject *exclude_schemes_obj = NULL;	/* string list */
+  PyObject *include_schemes_obj = NULL;	/* string list */
+  char *ppd_natural_language = NULL;
+  PyObject *ppd_device_id_obj = NULL;	/* UTF-8 string */
+  char *ppd_device_id;
+  PyObject *ppd_make_obj = NULL;	/* UTF-8 string */
+  char *ppd_make;
+  PyObject *ppd_make_and_model_obj = NULL; /* UTF-8 string */
+  char *ppd_make_and_model;
+  int ppd_model_number = -1;
+  PyObject *ppd_product_obj = NULL;	/* UTF-8 string */
+  char *ppd_product;
+  PyObject *ppd_psversion_obj = NULL;	/* UTF-8 string */
+  char *ppd_psversion;
+  char *ppd_type = NULL;
+  static char *kwlist[] = { "limit",
+			    "exclude_schemes",
+			    "include_schemes",
+			    "ppd_natural_language",
+			    "ppd_device_id",
+			    "ppd_make",
+			    "ppd_make_and_model",
+			    "ppd_model_number",
+			    "ppd_product",
+			    "ppd_psversion",
+			    "ppd_type",
+			    NULL };
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "|iOOsOOOiOOs", kwlist,
+				    &limit,
+				    &exclude_schemes_obj, &include_schemes_obj,
+				    &ppd_natural_language,
+				    &ppd_device_id_obj, &ppd_make_obj,
+				    &ppd_make_and_model_obj,
+				    &ppd_model_number,
+				    &ppd_product_obj, &ppd_psversion_obj,
+				    &ppd_type))
+    return NULL;
+
+  if (limit > 0)
+    ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+		   "limit", limit);
+
+  if (exclude_schemes_obj)
+    {
+      size_t i, n;
+      char **ss;
+      if (!PyList_Check (exclude_schemes_obj))
+	{
+	  PyErr_SetString (PyExc_TypeError, "List required (exclude_schemes)");
+	  ippDelete (request);
+	  return NULL;
+	}
+
+      n = PyList_Size (exclude_schemes_obj);
+      ss = calloc (n + 1, sizeof (char *));
+      for (i = 0; i < n; i++)
+	{
+	  PyObject *val = PyList_GetItem (exclude_schemes_obj, i); // borrowed
+	  if (!PyString_Check (val))
+	    {
+	      PyErr_SetString (PyExc_TypeError,
+			       "String list required (exclude_schemes)");
+	      ippDelete (request);
+	      while (i > 0)
+		free (ss[--i]);
+	      free (ss);
+	      return NULL;
+	    }
+
+	  ss[i] = strdup (PyString_AsString (val));
+	}
+      ss[n] = NULL;
+      ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		     "exclude-schemes", n, NULL, (const char **) ss);
+      for (i = 0; i < n; i++)
+	free (ss[i]);
+      free (ss);
+    }
+
+  if (include_schemes_obj)
+    {
+      size_t i, n;
+      char **ss;
+      if (!PyList_Check (include_schemes_obj))
+	{
+	  PyErr_SetString (PyExc_TypeError, "List required (include_schemes)");
+	  ippDelete (request);
+	  return NULL;
+	}
+
+      n = PyList_Size (include_schemes_obj);
+      ss = calloc (n + 1, sizeof (char *));
+      for (i = 0; i < n; i++)
+	{
+	  PyObject *val = PyList_GetItem (include_schemes_obj, i); // borrowed
+	  if (!PyString_Check (val))
+	    {
+	      PyErr_SetString (PyExc_TypeError,
+			       "String list required (include_schemes)");
+	      ippDelete (request);
+	      while (i > 0)
+		free (ss[--i]);
+	      free (ss);
+	      return NULL;
+	    }
+
+	  ss[i] = strdup (PyString_AsString (val));
+	}
+      ss[n] = NULL;
+      ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		     "include-schemes", n, NULL, (const char **) ss);
+      for (i = 0; i < n; i++)
+	free (ss[i]);
+      free (ss);
+    }
+
+  if (ppd_device_id_obj)
+    {
+      if (UTF8_from_PyObj (&ppd_device_id, ppd_device_id_obj) == NULL)
+	{
+	  ippDelete (request);
+	  return NULL;
+	}
+
+      ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_TEXT,
+		    "ppd-device-id", NULL, ppd_device_id);
+      free (ppd_device_id);
+    }
+
+  if (ppd_make_obj)
+    {
+      if (UTF8_from_PyObj (&ppd_make, ppd_make_obj) == NULL)
+	{
+	  ippDelete (request);
+	  return NULL;
+	}
+
+      ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_TEXT,
+		    "ppd-make", NULL, ppd_make);
+      free (ppd_make);
+    }
+
+  if (ppd_make_and_model_obj)
+    {
+      if (UTF8_from_PyObj (&ppd_make_and_model, ppd_make_and_model_obj) == NULL)
+	{
+	  ippDelete (request);
+	  return NULL;
+	}
+
+      ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_TEXT,
+		    "ppd-make-and-model", NULL, ppd_make_and_model);
+      free (ppd_make_and_model);
+    }
+
+  if (ppd_model_number >= 0)
+    ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+		   "ppd-model-number", ppd_model_number);
+
+  if (ppd_product_obj)
+    {
+      if (UTF8_from_PyObj (&ppd_product, ppd_product_obj) == NULL)
+	{
+	  ippDelete (request);
+	  return NULL;
+	}
+
+      ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_TEXT,
+		    "ppd-product", NULL, ppd_product);
+      free (ppd_product);
+    }
+
+  if (ppd_psversion_obj)
+    {
+      if (UTF8_from_PyObj (&ppd_psversion, ppd_psversion_obj) == NULL)
+	{
+	  ippDelete (request);
+	  return NULL;
+	}
+
+      ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_TEXT,
+		    "ppd-psversion", NULL, ppd_psversion);
+      free (ppd_psversion);
+    }
+
+  if (ppd_natural_language)
+    ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_LANGUAGE,
+		  "ppd-natural-language", NULL, ppd_natural_language);
+
+  if (ppd_type)
+    ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
+		  "ppd-type", NULL, ppd_type);
 
   debugprintf ("-> Connection_getPPDs()\n");
   debugprintf ("cupsDoRequest(\"/\")\n");
@@ -3812,8 +4006,35 @@ PyMethodDef Connection_methods[] =
       "@raise IPPError: IPP problem" },
 
     { "getPPDs",
-      (PyCFunction) Connection_getPPDs, METH_NOARGS,
-      "getPPDs() -> dict\n\n"
+      (PyCFunction) Connection_getPPDs, METH_VARARGS | METH_KEYWORDS,
+      "getPPDs(limit=0, exclude_schemes=None, include_schemes=None, \n"
+      "ppd_natural_language=None, ppd_device_id=None, ppd_make=None, \n"
+      "ppd_make_and_model=None, ppd_model_number=-1, ppd_product=None, \n"
+      "ppd_psversion=None, ppd_type=None) -> dict\n\n"
+      "@type limit: integer\n"
+      "@param limit: maximum number of PPDs to return\n"
+      "@type exclude_schemes: string list\n"
+      "@param exclude_schemes: list of PPD schemes to exclude\n"
+      "@type include_schemes: string list\n"
+      "@param include_schemes: list of PPD schemes to include\n"
+      "@type ppd_natural_language: string\n"
+      "@param ppd_natural_language: required language\n"
+      "@type ppd_device_id: string\n"
+      "@param ppd_device_id: IEEE 1284 Device ID to match against\n"
+      "@type ppd_make: string\n"
+      "@param ppd_make: required printer manufacturer\n"
+      "@type ppd_make_and_model: string\n"
+      "@param ppd_make_and_model: required make and model\n"
+      "@type ppd_model_number: integer\n"
+      "@param ppd_model_number: model number required (from cupsModelNumber \n"
+      "in PPD file)\n"
+      "@type ppd_product: string\n"
+      "@param ppd_product: required PostScript product string (Product)\n"
+      "@type ppd_psversion: string\n"
+      "@param ppd_psversion: required PostScript version (PSVersion)\n"
+      "@type ppd_type: string\n"
+      "@param ppd_type: required type of PPD. Valid values are fax; pdf; \n"
+      "postscript; raster; unknown."
       "@return: a dict, indexed by PPD name, of dicts representing\n"
       "PPDs, indexed by attribute.\n"
       "@raise IPPError: IPP problem" },
