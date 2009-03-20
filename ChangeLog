@@ -1,3 +1,8 @@
+2009-03-20  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getDevices): New optional arguments
+	limit, exclude_schemes and include_schemes.
+
 2009-03-18  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_getPPDs): New optional arguments

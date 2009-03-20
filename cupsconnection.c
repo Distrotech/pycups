@@ -1037,11 +1037,103 @@ Connection_getDocument (Connection *self, PyObject *args)
 }
 
 static PyObject *
-Connection_getDevices (Connection *self)
+Connection_getDevices (Connection *self, PyObject *args, PyObject *kwds)
 {
   PyObject *result;
   ipp_t *request = ippNewRequest(CUPS_GET_DEVICES), *answer;
   ipp_attribute_t *attr;
+  int limit = 0;
+  int timeout = 0;
+  PyObject *exclude_schemes = NULL;
+  PyObject *include_schemes = NULL;
+  static char *kwlist[] = { "limit",
+			    "exclude_schemes",
+			    "include_schemes",
+			    NULL };
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "|iOO", kwlist, &limit,
+				    &exclude_schemes, &include_schemes))
+    return NULL;
+
+  if (limit > 0)
+    ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+		   "limit", limit);
+
+  if (exclude_schemes)
+    {
+      size_t i, n;
+      char **ss;
+      if (!PyList_Check (exclude_schemes))
+	{
+	  PyErr_SetString (PyExc_TypeError, "List required (exclude_schemes)");
+	  ippDelete (request);
+	  return NULL;
+	}
+
+      n = PyList_Size (exclude_schemes);
+      ss = calloc (n + 1, sizeof (char *));
+      for (i = 0; i < n; i++)
+	{
+	  PyObject *val = PyList_GetItem (exclude_schemes, i); // borrowed ref
+	  if (!PyString_Check (val))
+	    {
+	      PyErr_SetString (PyExc_TypeError,
+			       "String list required (exclude_schemes)");
+	      ippDelete (request);
+	      while (i > 0)
+		free (ss[--i]);
+	      free (ss);
+	      return NULL;
+	    }
+
+	  ss[i] = strdup (PyString_AsString (val));
+	}
+
+      ss[n] = NULL;
+      ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		     "exclude-schemes", n, NULL, (const char **) ss);
+      for (i = 0; i < n; i++)
+	free (ss[i]);
+      free (ss);
+    }
+
+  if (include_schemes)
+    {
+      size_t i, n;
+      char **ss;
+      if (!PyList_Check (include_schemes))
+	{
+	  PyErr_SetString (PyExc_TypeError, "List required (include_schemes)");
+	  ippDelete (request);
+	  return NULL;
+	}
+
+      n = PyList_Size (include_schemes);
+      ss = calloc (n + 1, sizeof (char *));
+      for (i = 0; i < n; i++)
+	{
+	  PyObject *val = PyList_GetItem (include_schemes, i); // borrowed ref
+	  if (!PyString_Check (val))
+	    {
+	      PyErr_SetString (PyExc_TypeError,
+			       "String list required (include_schemes)");
+	      ippDelete (request);
+	      while (i > 0)
+		free (ss[--i]);
+	      free (ss);
+	      return NULL;
+	    }
+
+	  ss[i] = strdup (PyString_AsString (val));
+	}
+
+      ss[n] = NULL;
+      ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		     "include-schemes", n, NULL, (const char **) ss);
+      for (i = 0; i < n; i++)
+	free (ss[i]);
+      free (ss);
+    }
 
   debugprintf ("-> Connection_getDevices()\n");
   debugprintf ("cupsDoRequest(\"/\")\n");
@@ -4067,8 +4159,14 @@ PyMethodDef Connection_methods[] =
       "@raise IPPError: IPP problem" },
     
     { "getDevices",
-      (PyCFunction) Connection_getDevices, METH_NOARGS,
-      "getDevices() -> dict\n\n"
+      (PyCFunction) Connection_getDevices, METH_VARARGS | METH_KEYWORDS,
+      "getDevices(limit=0, exclude_schemes=None, include_schemes=None) -> dict\n\n"
+      "@type limit: integer\n"
+      "@param limit: maximum number of devices to return\n"
+      "@type exclude_schemes: string list\n"
+      "@param exclude_schemes: URI schemes to exclude\n"
+      "@type include_schemes: string list\n"
+      "@param include_schemes: URI schemes to include\n"
       "@return: a dict, indexed by device URI, of dicts representing\n"
       "devices, indexed by attribute.\n"
       "@raise IPPError: IPP problem" },    

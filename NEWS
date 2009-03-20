@@ -3,6 +3,8 @@ NEWS
 
 New in 1.9.46:
 
+* cups.Connection.getDevices() now takes optional limit,
+  exclude_schemes and include_schemes arguments.
 * cups.Connection.getPPDs() now takes optional limit, exclude_schemes,
   include_schemes, ppd_device_id, ppd_make, ppd_make_and_model,
   ppd_model_number, ppd_product, ppd_psversion, ppd_type and
