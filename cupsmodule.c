@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006, 2007, 2008  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009  Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -250,6 +250,18 @@ cups_setPasswordCB (PyObject *self, PyObject *args)
 }
 
 static PyObject *
+cups_ppdSetConformance (PyObject *self, PyObject *args)
+{
+  int level;
+  if (!PyArg_ParseTuple (args, "i", &level))
+    return NULL;
+
+  ppdSetConformance (level);
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
+static PyObject *
 cups_require (PyObject *self, PyObject *args)
 {
   const char *version = VERSION;
@@ -351,6 +363,12 @@ static PyMethodDef CupsMethods[] = {
     "abort the operation it may return the empty string ('').\n\n"
     "@type fn: callable object\n"
     "@param fn: callback function" },
+
+  { "ppdSetConformance", cups_ppdSetConformance, METH_VARARGS,
+    "ppdSetConformance(level) -> None\n\n"
+    "Set PPD conformance level.\n\n"
+    "@type level: integer\n"
+    "@param level: PPD_CONFORM_RELAXED or PPD_CONFORM_STRICT" },
 
   { "require", cups_require, METH_VARARGS,
     "require(version) -> None\n\n"
@@ -577,6 +595,10 @@ initcups (void)
 
   // Limits
   INT_CONSTANT (IPP_MAX_NAME);
+
+  // PPD conformance levels
+  INT_CONSTANT (PPD_CONFORM_RELAXED);
+  INT_CONSTANT (PPD_CONFORM_STRICT);
 
   // Admin Util constants
   STR_CONSTANT (CUPS_SERVER_DEBUG_LOGGING);
