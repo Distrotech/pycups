@@ -12,6 +12,7 @@ New in 1.9.46:
 * cups.ppdSetConformance() method.
 * cups.PPD_CONFORM_RELAXED constant.
 * cups.PPD_CONFORM_STRICT constant.
+* cups.modelSort() now accepts Unicode strings.
 
 New in 1.9.45:
 
