@@ -1043,7 +1043,6 @@ Connection_getDevices (Connection *self, PyObject *args, PyObject *kwds)
   ipp_t *request = ippNewRequest(CUPS_GET_DEVICES), *answer;
   ipp_attribute_t *attr;
   int limit = 0;
-  int timeout = 0;
   PyObject *exclude_schemes = NULL;
   PyObject *include_schemes = NULL;
   static char *kwlist[] = { "limit",
