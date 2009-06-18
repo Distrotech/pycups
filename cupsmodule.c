@@ -25,6 +25,8 @@
 #include "cupsmodule.h"
 
 #include <locale.h>
+#include <wchar.h>
+#include <wctype.h>
 
 #include "cupsconnection.h"
 #include "cupsppd.h"
@@ -37,42 +39,44 @@ void *g_current_connection = NULL;
 //////////////////////
 
 static int
-do_model_compare (const char *a, const char *b)
+do_model_compare (const wchar_t *a, const wchar_t *b)
 {
-  const char *digits = "0123456789";
-  char quick_a, quick_b;
-  while ((quick_a = *a) != '\0' && (quick_b = *b) != '\0') {
-    int end_a = strspn (a, digits);
-    int end_b = strspn (b, digits);
+  const wchar_t *digits = L"0123456789";
+  wchar_t quick_a, quick_b;
+  while ((quick_a = *a) != L'\0' && (quick_b = *b) != L'\0') {
+    int end_a = wcsspn (a, digits);
+    int end_b = wcsspn (b, digits);
     int min;
     int a_is_digit = 1;
     int cmp;
 
-    if (quick_a != quick_b && !isdigit (quick_a) && !isdigit (quick_b)) {
+    if (quick_a != quick_b && !iswdigit (quick_a) && !iswdigit (quick_b)) {
       if (quick_a < quick_b) return -1;
       else return 1;
     }
 
     if (!end_a) {
-      end_a = strcspn (a, digits);
+      end_a = wcscspn (a, digits);
       a_is_digit = 0;
     }
 
     if (!end_b) {
       if (a_is_digit)
 	return -1;
-      end_b = strcspn (b, digits);
+      end_b = wcscspn (b, digits);
     } else if (!a_is_digit)
       return 1;
 
     if (a_is_digit) {
-      int n_a = atoi (a), n_b = atoi (b);
+      unsigned long n_a, n_b;
+      n_a = wcstoul (a, NULL, 10);
+      n_b = wcstoul (b, NULL, 10);
       if (n_a < n_b) cmp = -1;
       else if (n_a == n_b) cmp = 0;
       else cmp = 1;
     } else {
       min = end_a < end_b ? end_a : end_b;
-      cmp = strncmp (a, b, min);
+      cmp = wcsncmp (a, b, min);
     }
 
     if (!cmp) {
@@ -87,8 +91,8 @@ do_model_compare (const char *a, const char *b)
     return cmp;
   }
 
-  if (quick_a == '\0') {
-    if (*b == '\0')
+  if (quick_a == L'\0') {
+    if (*b == L'\0')
       return 0;
 
     return -1;
@@ -145,12 +149,64 @@ do_password_callback (const char *prompt)
 static PyObject *
 cups_modelSort (PyObject *self, PyObject *args)
 {
-  char *a, *b;
+  PyObject *Oa, *Ob, *a, *b;
+  int len_a, len_b;
+  size_t size_a, size_b;
+  wchar_t *wca, *wcb;
 
-  if (!PyArg_ParseTuple (args, "ss", &a, &b))
+  if (!PyArg_ParseTuple (args, "OO", &Oa, &Ob))
     return NULL;
 
-  return Py_BuildValue ("i", do_model_compare (a, b));
+  a = PyUnicode_FromObject (Oa);
+  b = PyUnicode_FromObject (Ob);
+  if (a == NULL || b == NULL || !PyUnicode_Check (a) || !PyUnicode_Check (b)) {
+    if (a) {
+      Py_DECREF (a);
+    }
+    if (b) {
+      Py_DECREF (b);
+    }
+
+    PyErr_SetString (PyExc_TypeError, "Unable to convert to Unicode");
+    return NULL;
+  }
+
+  len_a = 1 + PyUnicode_GetSize (a);
+  size_a = len_a * sizeof (wchar_t);
+  if ((size_a / sizeof (wchar_t)) != len_a) {
+    Py_DECREF (a);
+    Py_DECREF (b);
+    PyErr_SetString (PyExc_RuntimeError, "String too long");
+    return NULL;
+  }
+
+  wca = malloc (size_a);
+
+  len_b = 1 + PyUnicode_GetSize (b);
+  size_b = len_b * sizeof (wchar_t);
+  if ((size_b / sizeof (wchar_t)) != len_b) {
+    Py_DECREF (a);
+    Py_DECREF (b);
+    PyErr_SetString (PyExc_RuntimeError, "String too long");
+    return NULL;
+  }
+
+  wcb = malloc (size_b);
+  
+  if (wca == NULL || wcb == NULL) {
+    Py_DECREF (a);
+    Py_DECREF (b);
+    free (wca);
+    free (wcb);
+    PyErr_SetString (PyExc_RuntimeError, "Insufficient memory");
+    return NULL;
+  }
+
+  PyUnicode_AsWideChar ((PyUnicodeObject *) a, wca, size_a);
+  PyUnicode_AsWideChar ((PyUnicodeObject *) b, wcb, size_b);
+  Py_DECREF (a);
+  Py_DECREF (b);
+  return Py_BuildValue ("i", do_model_compare (wca, wcb));
 }
 
 static PyObject *

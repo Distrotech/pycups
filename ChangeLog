@@ -1,5 +1,11 @@
 2009-06-18  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsmodule.c (do_model_compare): Handle wide characters.
+	(cups_modelSort): Coersce arguments to Unicode and convert them to
+	wide character strings (trac #8).
+
+2009-06-18  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsconnection.c (Connection_getDevices): Removed unused
 	variable.
 
