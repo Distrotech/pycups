@@ -2,6 +2,7 @@
 
 	* examples/cupstree.py (getippqueue): IPP printers won't support
 	CUPS-Get-Printers so don't try recursing.
+	(getqueue): Slightly prettier display.
 
 2009-06-18  Tim Waugh  <twaugh@redhat.com>
 
