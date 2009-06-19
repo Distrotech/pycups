@@ -13,10 +13,22 @@ def getippqueue (dev, queue, depth):
 		e = dev.find ('/')
 	host = dev[:e]
 	cups.setServer (host)
-	c = cups.Connection ()
-	printers = c.getPrinters ()
-	classes = c.getClasses ()
-	queue = c.getPrinters ()[name]
+	try:
+		c = cups.Connection ()
+		printers = c.getPrinters ()
+		classes = c.getClasses ()
+	except RuntimeError:
+		# Failed to connect.
+		return
+	except cups.IPPError, e:
+		if e == cups.IPP_OPERATION_NOT_SUPPORTED:
+			# CUPS-Get-Printers not supported so not a CUPS server.
+			printers = {}
+			classes = {}
+		else:
+			return
+
+	queue = c.getPrinterAttributes (name)
 	dev = queue['device-uri']
 	getqueue (name, queue, host, depth + 1, printers, classes)
 

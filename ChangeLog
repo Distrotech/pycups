@@ -1,3 +1,8 @@
+2009-06-19  Tim Waugh  <twaugh@redhat.com>
+
+	* examples/cupstree.py (getippqueue): IPP printers won't support
+	CUPS-Get-Printers so don't try recursing.
+
 2009-06-18  Tim Waugh  <twaugh@redhat.com>
 
 	* Makefile: Version 1.9.46.
