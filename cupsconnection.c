@@ -1568,6 +1568,79 @@ Connection_cancelAllJobs (Connection *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
+Connection_moveJob (Connection *self, PyObject *args, PyObject *kwds)
+{
+  int job_id = -1;
+  PyObject *printeruriobj = NULL;
+  char *printeruri;
+  PyObject *jobprinteruriobj = NULL;
+  char *jobprinteruri;
+  ipp_t *request, *answer;
+  static char *kwlist[] = { "printer_uri", "job_id", "job_printer_uri", NULL };
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "|OiO", kwlist,
+				    &printeruriobj, &job_id,
+				    &jobprinteruriobj))
+    return NULL;
+
+  if (!jobprinteruriobj) {
+    PyErr_SetString (PyExc_RuntimeError,
+		     "No job_printer_uri (destination) given");
+    return NULL;
+  }
+
+  if (printeruriobj) {
+    if (UTF8_from_PyObj (&printeruri, printeruriobj) == NULL)
+      return NULL;
+  } else if (job_id == -1) {
+    PyErr_SetString (PyExc_RuntimeError,
+		     "job_id or printer_uri required");
+    return NULL;
+  }
+
+  if (UTF8_from_PyObj (&jobprinteruri, jobprinteruriobj) == NULL) {
+    if (printeruriobj)
+      free (printeruri);
+    return NULL;
+  }
+
+  request = ippNewRequest (CUPS_MOVE_JOB);
+  if (!printeruriobj) {
+    char joburi[HTTP_MAX_URI];
+    snprintf (joburi, sizeof (joburi), "ipp://localhost/jobs/%d", job_id);
+    ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri", NULL,
+		  joburi);
+  } else {
+    ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "printer-uri", NULL,
+		  printeruri);
+    free (printeruri);
+
+    if (job_id != -1)
+      ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER, "job-id",
+		     job_id);
+  }
+
+  ippAddString (request, IPP_TAG_JOB, IPP_TAG_URI, "job-printer-uri", NULL,
+		jobprinteruri);
+  free (jobprinteruri);
+  Connection_begin_allow_threads (self);
+  answer = cupsDoRequest (self->http, request, "/jobs");
+  Connection_end_allow_threads (self);
+  if (!answer || answer->request.status.status_code > IPP_OK_CONFLICT) {
+    set_ipp_error (answer ?
+		   answer->request.status.status_code :
+		   cupsLastError ());
+    if (answer)
+      ippDelete (answer);
+    return NULL;
+  }
+
+  ippDelete (answer);
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+
+static PyObject *
 Connection_authenticateJob (Connection *self, PyObject *args)
 {
   ipp_t *request, *answer;
@@ -4216,6 +4289,19 @@ PyMethodDef Connection_methods[] =
       "the current CUPS user (as set by L{cups.setUser}).\n"
       "@type purge_jobs: boolean\n"
       "@param purge_jobs: whether to remove data and control files\n"
+      "@raise IPPError: IPP problem" },
+
+    { "moveJob",
+      (PyCFunction) Connection_moveJob, METH_VARARGS | METH_KEYWORDS,
+      "moveJob(printer_uri=None, job_id=-1, job_printer_uri) -> None\n\n"
+      "Move a job specified by printer_uri and jobid (only one need be given)\n"
+      "to the printer specified by job_printer_uri.\n\n"
+      "@type job_id: integer\n"
+      "@param job_id: job ID to move\n"
+      "@type printer_uri: string\n"
+      "@param printer_uri: printer to move job(s) from\n"
+      "@type job_printer_uri: string\n"
+      "@param job_printer_uri: printer to move job(s) to\n"
       "@raise IPPError: IPP problem" },
 
     { "authenticateJob",
