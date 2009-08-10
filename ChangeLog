@@ -1,3 +1,8 @@
+2009-08-10  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c: Fixed missing newline in documentation for
+	getPPDs.
+
 2009-07-07  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_moveJob): New method.

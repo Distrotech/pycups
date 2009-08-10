@@ -4198,7 +4198,7 @@ PyMethodDef Connection_methods[] =
       "@param ppd_psversion: required PostScript version (PSVersion)\n"
       "@type ppd_type: string\n"
       "@param ppd_type: required type of PPD. Valid values are fax; pdf; \n"
-      "postscript; raster; unknown."
+      "postscript; raster; unknown.\n"
       "@return: a dict, indexed by PPD name, of dicts representing\n"
       "PPDs, indexed by attribute.\n"
       "@raise IPPError: IPP problem" },
