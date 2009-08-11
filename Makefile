@@ -1,8 +1,8 @@
 NAME=pycups
 VERSION=1.9.46
 
-SOURCES=cupsmodule.c cupsconnection.c cupsppd.c setup.py \
-	cupsppd.h cupsconnection.h cupsmodule.h
+SOURCES=cupsmodule.c cupsconnection.c cupsppd.c cupsipp.c setup.py \
+	cupsppd.h cupsipp.h cupsconnection.h cupsmodule.h
 
 DIST=Makefile test.py \
 	examples \

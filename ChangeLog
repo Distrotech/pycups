@@ -1,3 +1,11 @@
+2009-08-17  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsipp.c: New file implementing IPPRequest and IPPAttribute
+	types.
+	* setup.py: Include it as part of the module.
+	* Makefile: Add to SOURCES.
+	* cupsmodule.c: Define IPP constants.
+
 2009-08-10  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c: Fixed missing newline in documentation for

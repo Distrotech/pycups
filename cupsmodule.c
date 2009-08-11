@@ -30,6 +30,7 @@
 
 #include "cupsconnection.h"
 #include "cupsppd.h"
+#include "cupsipp.h"
 
 static PyObject *cups_password_callback = NULL;
 void *g_current_connection = NULL;
@@ -499,6 +500,22 @@ initcups (void)
   PyModule_AddObject (m, "Dest",
 		      (PyObject *)&cups_DestType);
 
+  // IPPRequest type
+  cups_IPPRequestType.tp_new = PyType_GenericNew;
+  if (PyType_Ready (&cups_IPPRequestType) < 0)
+      return;
+
+  PyModule_AddObject (m, "IPPRequest",
+		      (PyObject *)&cups_IPPRequestType);
+
+  // IPPAttribute type
+  cups_IPPAttributeType.tp_new = PyType_GenericNew;
+  if (PyType_Ready (&cups_IPPAttributeType) < 0)
+      return;
+
+  PyModule_AddObject (m, "IPPAttribute",
+		      (PyObject *)&cups_IPPAttributeType);
+
   // Constants
 
 #define INT_CONSTANT(name)					\
@@ -648,6 +665,13 @@ initcups (void)
   INT_CONSTANT (IPP_ERROR_JOB_CANCELLED);
   INT_CONSTANT (IPP_MULTIPLE_JOBS_NOT_SUPPORTED);
   INT_CONSTANT (IPP_PRINTER_IS_DEACTIVATED);
+
+  // IPP states
+  INT_CONSTANT (IPP_ERROR);
+  INT_CONSTANT (IPP_IDLE);
+  INT_CONSTANT (IPP_HEADER);
+  INT_CONSTANT (IPP_ATTRIBUTE);
+  INT_CONSTANT (IPP_DATA);
 
   // Limits
   INT_CONSTANT (IPP_MAX_NAME);

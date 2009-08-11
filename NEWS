@@ -4,6 +4,8 @@ NEWS
 New in 1.9.47:
 
 * cups.Connection.moveJob() method.
+* cups.IPPAttribute and cups.IPPRequest types.
+* IPP state constants.
 
 New in 1.9.46:
 
