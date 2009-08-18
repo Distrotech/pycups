@@ -436,7 +436,7 @@ IPPRequest_getAttributes (IPPRequest *self, void *closure)
 	Py_DECREF (values);
       } else
 	largs = Py_BuildValue ("(iis)", attr->group_tag, attr->value_tag,
-			       attr->name);
+			       attr->name ? attr->name : "");
 
       lkwlist = Py_BuildValue ("{}");
       attribute = (IPPAttribute *) PyType_GenericNew (&cups_IPPAttributeType,
