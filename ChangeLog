@@ -1,5 +1,7 @@
 2009-08-18  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsmodule.c: Define some IPP attribute tag constants.
+
 	* cupsipp.c (IPPRequest_getAttributes): Handle IPP_TAG_ZERO
 	attributes which have no attribute name.
 
