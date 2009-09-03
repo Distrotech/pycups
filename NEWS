@@ -6,6 +6,7 @@ New in 1.9.47:
 * cups.Connection.moveJob() method.
 * cups.IPPAttribute and cups.IPPRequest types.
 * IPP state constants.
+* cups.Connection.getDevices() now takes optional timeout argument.
 
 New in 1.9.46:
 

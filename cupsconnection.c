@@ -1043,15 +1043,18 @@ Connection_getDevices (Connection *self, PyObject *args, PyObject *kwds)
   ipp_t *request = ippNewRequest(CUPS_GET_DEVICES), *answer;
   ipp_attribute_t *attr;
   int limit = 0;
+  int timeout = 0;
   PyObject *exclude_schemes = NULL;
   PyObject *include_schemes = NULL;
   static char *kwlist[] = { "limit",
 			    "exclude_schemes",
 			    "include_schemes",
+			    "timeout",
 			    NULL };
 
-  if (!PyArg_ParseTupleAndKeywords (args, kwds, "|iOO", kwlist, &limit,
-				    &exclude_schemes, &include_schemes))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "|iOOi", kwlist, &limit,
+				    &exclude_schemes, &include_schemes,
+				    &timeout))
     return NULL;
 
   if (limit > 0)
@@ -1133,6 +1136,10 @@ Connection_getDevices (Connection *self, PyObject *args, PyObject *kwds)
 	free (ss[i]);
       free (ss);
     }
+
+  if (timeout > 0)
+    ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+		   "timeout", timeout);
 
   debugprintf ("-> Connection_getDevices()\n");
   debugprintf ("cupsDoRequest(\"/\")\n");
