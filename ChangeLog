@@ -1,3 +1,8 @@
+2009-12-08  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_printFile): If cupsPrintFile2()
+	fails it returns zero, not -1 (trac #9).
+
 2009-09-03  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_getDevices): Added optional timeout
