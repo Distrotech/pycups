@@ -1183,6 +1183,8 @@ Connection_getDevices (Connection *self, PyObject *args, PyObject *kwds)
 	       (!strcmp (attr->name, "device-info") &&
 		attr->value_tag == IPP_TAG_TEXT) ||
 	       (!strcmp (attr->name, "device-id") &&
+		attr->value_tag == IPP_TAG_TEXT) ||
+	       (!strcmp (attr->name, "device-location") &&
 		attr->value_tag == IPP_TAG_TEXT))
 	val = PyObj_from_UTF8 (attr->values[0].string.text);
 
