@@ -1176,17 +1176,8 @@ Connection_getDevices (Connection *self, PyObject *args, PyObject *kwds)
       if (!strcmp (attr->name, "device-uri") &&
 	  attr->value_tag == IPP_TAG_URI)
 	device_uri = attr->values[0].string.text;
-      else if ((!strcmp (attr->name, "device-class") &&
-		attr->value_tag == IPP_TAG_KEYWORD) ||
-	       (!strcmp (attr->name, "device-make-and-model") &&
-		attr->value_tag == IPP_TAG_TEXT) ||
-	       (!strcmp (attr->name, "device-info") &&
-		attr->value_tag == IPP_TAG_TEXT) ||
-	       (!strcmp (attr->name, "device-id") &&
-		attr->value_tag == IPP_TAG_TEXT) ||
-	       (!strcmp (attr->name, "device-location") &&
-		attr->value_tag == IPP_TAG_TEXT))
-	val = PyObj_from_UTF8 (attr->values[0].string.text);
+      else
+	val = PyObject_from_attr_value (attr, 0);
 
       if (val) {
 	debugprintf ("Adding %s to device dict\n", attr->name);
