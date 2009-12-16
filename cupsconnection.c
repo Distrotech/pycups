@@ -201,7 +201,7 @@ Connection_dealloc (Connection *self)
     free (self->host);
 #ifdef HAVE_CUPS_1_4
     if (self->cb)
-      cupsSetPasswordCB2 (NULL);
+      cupsSetPasswordCB2 (NULL, NULL);
 
     Py_XDECREF (self->cb);
     Py_XDECREF (self->cb_context);
