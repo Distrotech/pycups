@@ -32,8 +32,13 @@
 #include "cupsppd.h"
 #include "cupsipp.h"
 
-static PyObject *cups_password_callback = NULL;
+PyObject *cups_password_callback = NULL;
+
+#ifdef HAVE_CUPS_1_4
+PyObject *cups_password_callback_context = NULL;
+#else /* !HAVE_CUPS_1_4 */
 void *g_current_connection = NULL;
+#endif /* !HAVE_CUPS_1_4 */
 
 //////////////////////
 // Worker functions //
@@ -102,6 +107,7 @@ do_model_compare (const wchar_t *a, const wchar_t *b)
   return 1;
 }
 
+#ifndef HAVE_CUPS_1_4
 static const char *
 do_password_callback (const char *prompt)
 {
@@ -142,6 +148,7 @@ do_password_callback (const char *prompt)
   debugprintf ("<- do_password_callback\n");
   return password;
 }
+#endif /* !HAVE_CUPS_1_4 */
 
 //////////////////////////
 // Module-level methods //
@@ -288,6 +295,7 @@ cups_getEncryption (PyObject *self)
 static PyObject *
 cups_setPasswordCB (PyObject *self, PyObject *args)
 {
+  static PyObject *current_cb_context;
   PyObject *cb;
 
   if (!PyArg_ParseTuple (args, "O:cups_setPasswordCB", &cb))
@@ -298,13 +306,59 @@ cups_setPasswordCB (PyObject *self, PyObject *args)
     return NULL;
   }
 
+  debugprintf ("-> cups_setPasswordCB\n");
+  Py_XDECREF (current_cb_context);
+  current_cb_context = NULL;
+
   Py_XINCREF (cb);
   Py_XDECREF (cups_password_callback);
   cups_password_callback = cb;
+
+#ifdef HAVE_CUPS_1_4
+  cupsSetPasswordCB2 (password_callback_oldstyle, NULL);
+#else
   cupsSetPasswordCB (do_password_callback);
+#endif
+
+  debugprintf ("<- cups_setPasswordCB\n");
   Py_INCREF (Py_None);
   return Py_None;
 }
+
+#ifdef HAVE_CUPS_1_4
+static PyObject *
+cups_setPasswordCB2 (PyObject *self, PyObject *args)
+{
+  static PyObject *current_cb_context;
+  PyObject *cb;
+  PyObject *cb_context = NULL;
+
+  if (!PyArg_ParseTuple (args, "O|O", &cb, &cb_context))
+    return NULL;
+
+  if (!PyCallable_Check (cb)) {
+    PyErr_SetString (PyExc_TypeError, "Parameter must be callable");
+    return NULL;
+  }
+
+  debugprintf ("-> cups_setPasswordCB2\n");
+
+  Py_XINCREF (cb_context);
+  Py_XDECREF (current_cb_context);
+  current_cb_context = cb_context;
+
+  Py_XINCREF (cb);
+  Py_XDECREF (cups_password_callback);
+  cups_password_callback = cb;
+
+  cupsSetPasswordCB2 (password_callback_newstyle, cb_context);
+
+  debugprintf ("<- cups_setPasswordCB2\n");
+
+  Py_INCREF (Py_None);
+  return Py_None;
+}
+#endif /* HAVE_CUPS_1_4 */
 
 static PyObject *
 cups_ppdSetConformance (PyObject *self, PyObject *args)
@@ -420,6 +474,19 @@ static PyMethodDef CupsMethods[] = {
     "abort the operation it may return the empty string ('').\n\n"
     "@type fn: callable object\n"
     "@param fn: callback function" },
+
+#ifdef HAVE_CUPS_1_4
+  { "setPasswordCB2", cups_setPasswordCB2, METH_VARARGS,
+    "setPasswordCB2(fn, context=None) -> None\n\n"
+    "Set password callback function.  This Python function will be called \n"
+    "when a password is required.  It must take parameters of type string \n"
+    "(the password prompt), instance (the cups.Connection), string (the HTTP "
+    "method), string (the HTTP resource) and, optionally, the user-supplied "
+    "context.  It must return a string (the password).  To \n"
+    "abort the operation it may return the empty string ('').\n\n"
+    "@type fn: callable object\n"
+    "@param fn: callback function" },
+#endif /* HAVE_CUPS_1_4 */
 
   { "ppdSetConformance", cups_ppdSetConformance, METH_VARARGS,
     "ppdSetConformance(level) -> None\n\n"

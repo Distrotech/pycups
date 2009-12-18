@@ -41,6 +41,9 @@ typedef struct
   PyObject_HEAD
   http_t *http;
   char *host; /* for repr */
+#ifdef HAVE_CUPS_1_4
+  char *cb_password;
+#endif /* HAVE_CUPS_1_4 */
   PyThreadState *tstate;
 } Connection;
 
@@ -56,6 +59,9 @@ typedef struct
   char **name;
   char **value;
 } Dest;
+
+static Connection **Connections = NULL;
+static int NumConnections = 0;
 
 static void
 set_http_error (http_status_t status)
@@ -145,6 +151,9 @@ Connection_new (PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->http = NULL;
     self->host = NULL;
     self->tstate = NULL;
+#ifdef HAVE_CUPS_1_4
+    self->cb_password = NULL;
+#endif /* HAVE_CUPS_1_4 */
   }
 
   return (PyObject *) self;
@@ -180,6 +189,38 @@ Connection_init (Connection *self, PyObject *args, PyObject *kwds)
     return -1;
   }
 
+  if (NumConnections == 0)
+  {
+    Connections = malloc (sizeof (Connection *));
+    if (Connections == NULL) {
+      PyErr_SetString (PyExc_RuntimeError, "insufficient memory");
+      debugprintf ("<- Connection_init() = -1\n");
+      return -1;
+    }
+  }
+  else
+  {
+    Connection **old_array = Connections;
+
+    if ((1 + NumConnections) >= UINT_MAX / sizeof (Connection *))
+    {
+      PyErr_SetString (PyExc_RuntimeError, "too many connections");
+      debugprintf ("<- Connection_init() == -1\n");
+      return -1;
+    }
+
+    Connections = realloc (Connections,
+			   (1 + NumConnections) * sizeof (Connection *));
+    if (Connections == NULL) {
+      Connections = old_array;
+      PyErr_SetString (PyExc_RuntimeError, "insufficient memory");
+      debugprintf ("<- Connection_init() = -1\n");
+      return -1;
+    }
+  }
+
+  Connections[NumConnections++] = self;
+
   debugprintf ("<- Connection_init() = 0\n");
   return 0;
 }
@@ -187,10 +228,47 @@ Connection_init (Connection *self, PyObject *args, PyObject *kwds)
 static void
 Connection_dealloc (Connection *self)
 {
+  int i, j;
+
+  if (NumConnections > 1)
+  {
+    Connection **new_array = calloc (NumConnections - 1,
+				     sizeof (Connection *));
+
+    for (i = 0, j = 0; i < NumConnections; i++)
+    {
+      if (Connections[i] == self)
+      {
+	if (!new_array)
+	  Connections[i] = NULL;
+
+	continue;
+      }
+
+      if (new_array)
+	new_array[j++] = Connections[i];
+    }
+
+    if (new_array) {
+      free (Connections);
+      Connections = new_array;
+      NumConnections--;
+    }
+  }
+  else
+  {
+    free (Connections);
+    Connections = NULL;
+    NumConnections = 0;
+  }
+
   if (self->http) {  
     debugprintf ("httpClose()\n");
     httpClose (self->http);
     free (self->host);
+#ifdef HAVE_CUPS_1_4
+    free (self->cb_password);
+#endif /* HAVE_CUPS_1_4 */
   }
 
   self->ob_type->tp_free ((PyObject *) self);
@@ -208,7 +286,11 @@ Connection_begin_allow_threads (void *connection)
 {
   Connection *self = (Connection *) connection;
   debugprintf ("begin allow threads\n");
+
+#ifndef HAVE_CUPS_1_4
   g_current_connection = connection;
+#endif /* !HAVE_CUPS_1_4 */
+
   self->tstate = PyEval_SaveThread ();
 }
 
@@ -224,6 +306,96 @@ Connection_end_allow_threads (void *connection)
 ////////////////
 // Connection // METHODS
 ////////////////
+
+#ifdef HAVE_CUPS_1_4
+static const char *
+password_callback (int newstyle,
+		   const char *prompt,
+		   http_t *http,
+		   const char *method,
+		   const char *resource,
+		   void *user_data)
+{
+  PyObject *cb_context = user_data;
+  Connection *self = NULL;
+  PyObject *args;
+  PyObject *result;
+  const char *pwval;
+  int i;
+
+  debugprintf ("-> password_callback for http=%p, newstyle=%d\n",
+	       http, newstyle);
+
+  for (i = 0; i < NumConnections; i++)
+    if (Connections[i]->http == http)
+    {
+      self = Connections[i];
+      break;
+    }
+
+  if (!self)
+  {
+    debugprintf ("cannot find self!\n");
+    return "";
+  }
+
+  Connection_end_allow_threads (self);
+  if (newstyle)
+  {
+    /* New-style callback. */
+    if (cb_context)
+      args = Py_BuildValue ("(sOssO)", prompt, self, method, resource,
+			    cb_context);
+    else
+      args = Py_BuildValue ("(sOss)", prompt, self, method, resource);
+  } else
+    args = Py_BuildValue ("(s)", prompt);
+
+  result = PyEval_CallObject (cups_password_callback, args);
+  Py_DECREF (args);
+  if (result == NULL)
+  {
+    debugprintf ("<- password_callback (empty string)\n");
+    Connection_begin_allow_threads (self);
+    return "";
+  }
+
+  pwval = PyString_AsString (result);
+  free (self->cb_password);
+  self->cb_password = strdup (pwval);
+  Py_DECREF (result);
+  if (!self->cb_password)
+  {
+    debugprintf ("<- password_callback (empty string)\n");
+    Connection_begin_allow_threads (self);
+    return "";
+  }
+
+  Connection_begin_allow_threads (self);
+  debugprintf ("<- password_callback\n");
+  return self->cb_password;
+}
+
+const char *
+password_callback_oldstyle (const char *prompt,
+			    http_t *http,
+			    const char *method,
+			    const char *resource,
+			    void *user_data)
+{
+  return password_callback (0, prompt, http, method, resource, user_data);
+}
+
+const char *
+password_callback_newstyle (const char *prompt,
+			    http_t *http,
+			    const char *method,
+			    const char *resource,
+			    void *user_data)
+{
+  return password_callback (1, prompt, http, method, resource, user_data);
+}
+#endif /* !HAVE_CUPS_1_4 */
 
 static PyObject *
 do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
@@ -4796,7 +4968,8 @@ PyTypeObject cups_ConnectionType =
     0,                         /*tp_getattro*/
     0,                         /*tp_setattro*/
     0,                         /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,        /*tp_flags*/
+    Py_TPFLAGS_DEFAULT |
+    Py_TPFLAGS_BASETYPE,       /*tp_flags*/
     "CUPS connection\n"
     "===============\n\n"
 

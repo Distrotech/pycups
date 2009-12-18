@@ -1,3 +1,8 @@
+2009-12-16  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (password_callback,
+	Connection_setPasswordCB): New method.
+
 2009-12-08  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_printFile): If cupsPrintFile2()
