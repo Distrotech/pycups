@@ -1447,8 +1447,9 @@ Connection_cancelJob (Connection *self, PyObject *args)
 {
   ipp_t *request, *answer;
   int job_id;
+  int purge_job = 0;
   char uri[1024];
-  if (!PyArg_ParseTuple (args, "i", &job_id))
+  if (!PyArg_ParseTuple (args, "i|i", &job_id, &purge_job))
     return NULL;
 
   debugprintf ("-> Connection_cancelJob(%d)\n", job_id);
@@ -1457,6 +1458,8 @@ Connection_cancelJob (Connection *self, PyObject *args)
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri", NULL, uri);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		"requesting-user-name", NULL, cupsUser ());
+  if (purge_job)
+    ippAddBoolean(request, IPP_TAG_OPERATION, "purge-job", 1);
   debugprintf ("cupsDoRequest(\"/jobs/\")\n");
   Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/jobs/");
