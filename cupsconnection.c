@@ -42,8 +42,6 @@ typedef struct
   http_t *http;
   char *host; /* for repr */
 #ifdef HAVE_CUPS_1_4
-  PyObject *cb; /* password callback */
-  PyObject *cb_context;
   char *cb_password;
 #endif /* HAVE_CUPS_1_4 */
   PyThreadState *tstate;
@@ -61,6 +59,9 @@ typedef struct
   char **name;
   char **value;
 } Dest;
+
+static Connection **Connections = NULL;
+static int NumConnections = 0;
 
 static void
 set_http_error (http_status_t status)
@@ -150,9 +151,9 @@ Connection_new (PyTypeObject *type, PyObject *args, PyObject *kwds)
     self->http = NULL;
     self->host = NULL;
     self->tstate = NULL;
-    self->cb = NULL;
-    self->cb_context = NULL;
+#ifdef HAVE_CUPS_1_4
     self->cb_password = NULL;
+#endif /* HAVE_CUPS_1_4 */
   }
 
   return (PyObject *) self;
@@ -188,6 +189,38 @@ Connection_init (Connection *self, PyObject *args, PyObject *kwds)
     return -1;
   }
 
+  if (NumConnections == 0)
+  {
+    Connections = malloc (sizeof (Connection *));
+    if (Connections == NULL) {
+      PyErr_SetString (PyExc_RuntimeError, "insufficient memory");
+      debugprintf ("<- Connection_init() = -1\n");
+      return -1;
+    }
+  }
+  else
+  {
+    Connection **old_array = Connections;
+
+    if ((1 + NumConnections) >= UINT_MAX / sizeof (Connection *))
+    {
+      PyErr_SetString (PyExc_RuntimeError, "too many connections");
+      debugprintf ("<- Connection_init() == -1\n");
+      return -1;
+    }
+
+    Connections = realloc (Connections,
+			   (1 + NumConnections) * sizeof (Connection *));
+    if (Connections == NULL) {
+      Connections = old_array;
+      PyErr_SetString (PyExc_RuntimeError, "insufficient memory");
+      debugprintf ("<- Connection_init() = -1\n");
+      return -1;
+    }
+  }
+
+  Connections[NumConnections++] = self;
+
   debugprintf ("<- Connection_init() = 0\n");
   return 0;
 }
@@ -195,16 +228,45 @@ Connection_init (Connection *self, PyObject *args, PyObject *kwds)
 static void
 Connection_dealloc (Connection *self)
 {
+  int i, j;
+
+  if (NumConnections > 1)
+  {
+    Connection **new_array = calloc (NumConnections - 1,
+				     sizeof (Connection *));
+
+    for (i = 0, j = 0; i < NumConnections; i++)
+    {
+      if (Connections[i] == self)
+      {
+	if (!new_array)
+	  Connections[i] = NULL;
+
+	continue;
+      }
+
+      if (new_array)
+	new_array[j++] = Connections[i];
+    }
+
+    if (new_array) {
+      free (Connections);
+      Connections = new_array;
+      NumConnections--;
+    }
+  }
+  else
+  {
+    free (Connections);
+    Connections = NULL;
+    NumConnections = 0;
+  }
+
   if (self->http) {  
     debugprintf ("httpClose()\n");
     httpClose (self->http);
     free (self->host);
 #ifdef HAVE_CUPS_1_4
-    if (self->cb)
-      cupsSetPasswordCB2 (NULL, NULL);
-
-    Py_XDECREF (self->cb);
-    Py_XDECREF (self->cb_context);
     free (self->cb_password);
 #endif /* HAVE_CUPS_1_4 */
   }
@@ -224,7 +286,11 @@ Connection_begin_allow_threads (void *connection)
 {
   Connection *self = (Connection *) connection;
   debugprintf ("begin allow threads\n");
+
+#ifndef HAVE_CUPS_1_4
   g_current_connection = connection;
+#endif /* !HAVE_CUPS_1_4 */
+
   self->tstate = PyEval_SaveThread ();
 }
 
@@ -243,26 +309,49 @@ Connection_end_allow_threads (void *connection)
 
 #ifdef HAVE_CUPS_1_4
 static const char *
-password_callback (const char *prompt,
+password_callback (int newstyle,
+		   const char *prompt,
 		   http_t *http,
 		   const char *method,
 		   const char *resource,
 		   void *user_data)
 {
-  Connection *self = user_data;
+  PyObject *cb_context = user_data;
+  Connection *self = NULL;
   PyObject *args;
   PyObject *result;
   const char *pwval;
+  int i;
 
-  debugprintf ("-> password_callback\n");
+  debugprintf ("-> password_callback for http=%p, newstyle=%d\n",
+	       http, newstyle);
+
+  for (i = 0; i < NumConnections; i++)
+    if (Connections[i]->http == http)
+    {
+      self = Connections[i];
+      break;
+    }
+
+  if (!self)
+  {
+    debugprintf ("cannot find self!\n");
+    return "";
+  }
+
   Connection_end_allow_threads (self);
-  if (self->cb_context)
-    args = Py_BuildValue ("(sOssO)", prompt, self, method, resource,
-			  self->cb_context);
-  else
-    args = Py_BuildValue ("(sOss)", prompt, self, method, resource);
+  if (newstyle)
+  {
+    /* New-style callback. */
+    if (cb_context)
+      args = Py_BuildValue ("(sOssO)", prompt, self, method, resource,
+			    cb_context);
+    else
+      args = Py_BuildValue ("(sOss)", prompt, self, method, resource);
+  } else
+    args = Py_BuildValue ("(s)", prompt);
 
-  result = PyEval_CallObject (self->cb, args);
+  result = PyEval_CallObject (cups_password_callback, args);
   Py_DECREF (args);
   if (result == NULL)
   {
@@ -287,32 +376,26 @@ password_callback (const char *prompt,
   return self->cb_password;
 }
 
-static PyObject *
-Connection_setPasswordCB (Connection *self, PyObject *args)
+const char *
+password_callback_oldstyle (const char *prompt,
+			    http_t *http,
+			    const char *method,
+			    const char *resource,
+			    void *user_data)
 {
-  PyObject *cb;
-  PyObject *cb_context = NULL;
-
-  if (!PyArg_ParseTuple (args, "O|O", &cb, &cb_context))
-    return NULL;
-
-  if (!PyCallable_Check (cb)) {
-    PyErr_SetString (PyExc_TypeError, "Parameter must be callable");
-    return NULL;
-  }
-
-  Py_INCREF (cb);
-  if (cb_context)
-    Py_INCREF (cb_context);
-  Py_XDECREF (self->cb);
-  Py_XDECREF (self->cb_context);
-  self->cb = cb;
-  self->cb_context = cb_context;
-  cupsSetPasswordCB2 (password_callback, self);
-  Py_INCREF (Py_None);
-  return Py_None;
+  return password_callback (0, prompt, http, method, resource, user_data);
 }
-#endif /* HAVE_CUPS_1_4 */
+
+const char *
+password_callback_newstyle (const char *prompt,
+			    http_t *http,
+			    const char *method,
+			    const char *resource,
+			    void *user_data)
+{
+  return password_callback (1, prompt, http, method, resource, user_data);
+}
+#endif /* !HAVE_CUPS_1_4 */
 
 static PyObject *
 do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
@@ -4231,17 +4314,6 @@ Connection_printFiles (Connection *self, PyObject *args, PyObject *kwds)
 
 PyMethodDef Connection_methods[] =
   {
-#ifdef HAVE_CUPS_1_4
-    { "setPasswordCB",
-      (PyCFunction) Connection_setPasswordCB, METH_VARARGS,
-      "setPasswordCB(fn, ctx=None) -> None\n\n"
-      "@type fn: callable\n"
-      "@param fn: callback function, given parameters prompt,\n"
-      "cups.Connection, method, resource, and (if specified) context.\n"
-      "@type ctx: object\n"
-      "@param ctx: optional context for callback\n" },
-#endif /* HAVE_CUPS_1_4 */
-
     { "getPrinters",
       (PyCFunction) Connection_getPrinters, METH_NOARGS,
       "getPrinters() -> dict\n\n"
