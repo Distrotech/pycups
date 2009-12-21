@@ -336,7 +336,11 @@ cups_setPasswordCB2 (PyObject *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "O|O", &cb, &cb_context))
     return NULL;
 
-  if (!PyCallable_Check (cb)) {
+  if (cb == Py_None && cb_context != NULL) {
+    PyErr_SetString (PyExc_TypeError, "Default callback takes no context");
+    return NULL;
+  }
+  else if (cb != Py_None && !PyCallable_Check (cb)) {
     PyErr_SetString (PyExc_TypeError, "Parameter must be callable");
     return NULL;
   }
@@ -347,14 +351,21 @@ cups_setPasswordCB2 (PyObject *self, PyObject *args)
   Py_XDECREF (current_cb_context);
   current_cb_context = cb_context;
 
-  Py_XINCREF (cb);
-  Py_XDECREF (cups_password_callback);
-  cups_password_callback = cb;
-
-  cupsSetPasswordCB2 (password_callback_newstyle, cb_context);
+  if (cb == Py_None)
+  {
+    Py_XDECREF (cups_password_callback);
+    cups_password_callback = NULL;
+    cupsSetPasswordCB2 (NULL, NULL);
+  }
+  else
+  {
+    Py_XINCREF (cb);
+    Py_XDECREF (cups_password_callback);
+    cups_password_callback = cb;
+    cupsSetPasswordCB2 (password_callback_newstyle, cb_context);
+  }
 
   debugprintf ("<- cups_setPasswordCB2\n");
-
   Py_INCREF (Py_None);
   return Py_None;
 }
@@ -484,7 +495,7 @@ static PyMethodDef CupsMethods[] = {
     "method), string (the HTTP resource) and, optionally, the user-supplied "
     "context.  It must return a string (the password).  To \n"
     "abort the operation it may return the empty string ('').\n\n"
-    "@type fn: callable object\n"
+    "@type fn: callable object, or None for default handler\n"
     "@param fn: callback function" },
 #endif /* HAVE_CUPS_1_4 */
 
