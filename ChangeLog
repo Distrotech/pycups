@@ -1,3 +1,8 @@
+2009-12-18  Jiri Popelka  <jpopelka@redhat.com>
+
+	* cupsconnection.c (Connection.cancelJob):
+	Added optional purge_job patameter.
+
 2009-12-16  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (password_callback,

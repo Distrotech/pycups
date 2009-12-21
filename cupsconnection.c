@@ -4449,9 +4449,11 @@ PyMethodDef Connection_methods[] =
 
     { "cancelJob",
       (PyCFunction) Connection_cancelJob, METH_VARARGS,
-      "cancelJob(jobid) -> None\n\n"
+      "cancelJob(jobid, purge_job=False) -> None\n\n"
       "@type jobid: integer\n"
       "@param jobid: job ID to cancel\n"
+      "@type purge_job: boolean\n"
+      "@param purge_job: whether to remove data and control files\n"
       "@raise IPPError: IPP problem" },
 
     { "cancelAllJobs",

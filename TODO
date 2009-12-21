@@ -1,3 +1,2 @@
-* Add support for purge-job attribute in cancelJob() (1.4)
 * Add cups.Connection.getNamedDest() wrapper
 * Add cups.PPD.localizeMarkerName() wrapper
