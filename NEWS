@@ -3,6 +3,7 @@ NEWS
 
 New in 1.9.47:
 
+* cups.restartJob() now takes optional job_hold_until argument.
 * cups.cancelJob() now takes optional purge_job argument.
 * cups.setPasswordCB2() method.
 * cups.Connection.moveJob() method.

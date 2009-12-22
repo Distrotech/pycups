@@ -1932,12 +1932,15 @@ Connection_setJobHoldUntil (Connection *self, PyObject *args)
 }
 
 static PyObject *
-Connection_restartJob (Connection *self, PyObject *args)
+Connection_restartJob (Connection *self, PyObject *args, PyObject *kwds)
 {
+  static char *kwlist[] = { "job_id", "job_hold_until", NULL };
   ipp_t *request, *answer;
   int job_id;
+  char *job_hold_until = NULL;
   char uri[1024];
-  if (!PyArg_ParseTuple (args, "i", &job_id))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "i|s", kwlist,
+				    &job_id, &job_hold_until))
     return NULL;
 
   debugprintf ("-> Connection_restartJob(%d)\n", job_id);
@@ -1946,6 +1949,10 @@ Connection_restartJob (Connection *self, PyObject *args)
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri", NULL, uri);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		"requesting-user-name", NULL, cupsUser ());
+  if (job_hold_until)
+    ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
+		  "job-hold-until", NULL, job_hold_until);
+
   debugprintf ("cupsDoRequest(\"/jobs/\")\n");
   Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/jobs/");
@@ -4502,11 +4509,13 @@ PyMethodDef Connection_methods[] =
       "@raise IPPError: IPP problem"},
     
     { "restartJob",
-      (PyCFunction) Connection_restartJob, METH_VARARGS,
-      "restartJob(jobid) -> None\n\n"
+      (PyCFunction) Connection_restartJob, METH_VARARGS | METH_KEYWORDS,
+      "restartJob(job_id, job_hold_until=None) -> None\n\n"
       "Restart a job.\n\n"
-      "@type jobid: integer\n"
-      "@param jobid: job ID to restart\n"
+      "@type job_id: integer\n"
+      "@param job_id: job ID to restart\n"
+      "@type job_hold_until: string\n"
+      "@param job_hold_until: new job-hold-until value for job\n"
       "@raise IPPError: IPP problem" },
 
     { "getFile",
