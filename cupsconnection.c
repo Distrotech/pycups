@@ -184,7 +184,7 @@ Connection_init (Connection *self, PyObject *args, PyObject *kwds)
   Connection_end_allow_threads (self);
 
   if (!self->http) {
-    PyErr_SetString (PyExc_RuntimeError, "httpConnectionEncrypt failed");
+    PyErr_SetString (PyExc_RuntimeError, "failed to connect to server");
     debugprintf ("<- Connection_init() = -1\n");
     return -1;
   }

@@ -1,3 +1,8 @@
+2009-12-22  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_init): Use more descriptive
+	exception message (trac #10).
+
 2009-12-21  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsmodule.c (cups_setPasswordCB2): Allow None.
