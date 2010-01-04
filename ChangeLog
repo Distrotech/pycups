@@ -1,3 +1,8 @@
+2010-01-04  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_cancelJob): Optional second
+	argument is now a keyword.
+
 2009-12-22  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_init): Use more descriptive
