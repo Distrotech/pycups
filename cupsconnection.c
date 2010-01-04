@@ -1,6 +1,7 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010  Red Hat, Inc
+ * Author: Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1615,13 +1616,15 @@ Connection_getJobAttributes (Connection *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
-Connection_cancelJob (Connection *self, PyObject *args)
+Connection_cancelJob (Connection *self, PyObject *args, PyObject *kwds)
 {
   ipp_t *request, *answer;
   int job_id;
   int purge_job = 0;
   char uri[1024];
-  if (!PyArg_ParseTuple (args, "i|i", &job_id, &purge_job))
+  static char *kwlist[] = { "job_id", "purge_job", NULL };
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "i|i", kwlist,
+				    &job_id, &purge_job))
     return NULL;
 
   debugprintf ("-> Connection_cancelJob(%d)\n", job_id);
@@ -4455,7 +4458,7 @@ PyMethodDef Connection_methods[] =
       "@raise IPPError: IPP problem" },
 
     { "cancelJob",
-      (PyCFunction) Connection_cancelJob, METH_VARARGS,
+      (PyCFunction) Connection_cancelJob, METH_VARARGS | METH_KEYWORDS,
       "cancelJob(jobid, purge_job=False) -> None\n\n"
       "@type jobid: integer\n"
       "@param jobid: job ID to cancel\n"
