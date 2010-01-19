@@ -1,7 +1,7 @@
 NEWS
 ----
 
-New in 1.9.47:
+New in 1.9.48:
 
 * cups.cancelJob()'s optional second argument is now a keyword.
 
