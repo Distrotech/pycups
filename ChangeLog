@@ -1,3 +1,8 @@
+2010-02-23  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_dealloc): Be more cautious when
+	removing the Connection object from the list (bug #567386).
+
 2010-01-06  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsipp.c (IPPRequest_getAttributes): Continue to next

@@ -231,36 +231,42 @@ Connection_dealloc (Connection *self)
 {
   int i, j;
 
-  if (NumConnections > 1)
+  for (j = 0; j < NumConnections; j++)
+    if (Connections[j] == self)
+      break;
+
+  if (j < NumConnections)
   {
-    Connection **new_array = calloc (NumConnections - 1,
-				     sizeof (Connection *));
-
-    for (i = 0, j = 0; i < NumConnections; i++)
+    if (NumConnections > 1)
     {
-      if (Connections[i] == self)
-      {
-	if (!new_array)
-	  Connections[i] = NULL;
-
-	continue;
-      }
+      Connection **new_array = calloc (NumConnections - 1,
+				       sizeof (Connection *));
 
       if (new_array)
-	new_array[j++] = Connections[i];
-    }
+      {
+	int k;
+	for (i = 0, k = 0; i < NumConnections; i++)
+	{
+	  if (i == j)
+	    continue;
 
-    if (new_array) {
-      free (Connections);
-      Connections = new_array;
-      NumConnections--;
+	  new_array[k++] = Connections[i];
+	}
+
+	free (Connections);
+	Connections = new_array;
+	NumConnections--;
+      } else
+	/* Failed to allocate memory. Just clear out the reference. */
+	Connections[j] = NULL;
     }
-  }
-  else
-  {
-    free (Connections);
-    Connections = NULL;
-    NumConnections = 0;
+    else
+    {
+      /* The only element is the one we no longer need. */
+      free (Connections);
+      Connections = NULL;
+      NumConnections = 0;
+    }
   }
 
   if (self->http) {  
