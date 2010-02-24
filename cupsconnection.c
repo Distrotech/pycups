@@ -3438,6 +3438,7 @@ Connection_getPPD (Connection *self, PyObject *args)
   if (UTF8_from_PyObj (&printer, printerobj) == NULL)
     return NULL;
 
+  debugprintf ("-> Connection_getPPD()\n");
   Connection_begin_allow_threads (self);
   ppdfile = cupsGetPPD2 (self->http, printer);
   Connection_end_allow_threads (self);
@@ -3449,10 +3450,12 @@ Connection_getPPD (Connection *self, PyObject *args)
     else
       PyErr_SetString (PyExc_RuntimeError, "cupsGetPPD2 failed");
 
+    debugprintf ("<- Connection_getPPD() (error)\n");
     return NULL;
   }
 
   ret = PyString_FromString (ppdfile);
+  debugprintf ("<- Connection_getPPD() = %s\n", ppdfile);
   return ret;
 }
 
