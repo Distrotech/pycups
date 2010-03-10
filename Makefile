@@ -1,5 +1,5 @@
 NAME=pycups
-VERSION=1.9.48
+VERSION=1.9.49
 
 SOURCES=cupsmodule.c cupsconnection.c cupsppd.c cupsipp.c setup.py \
 	cupsppd.h cupsipp.h cupsconnection.h cupsmodule.h
