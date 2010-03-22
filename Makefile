@@ -29,7 +29,7 @@ dist:
 install:
 	ROOT= ; \
 	if [ -n "$$DESTDIR" ]; then ROOT="--root $$DESTDIR"; fi; \
-	python setup.py install $$ROOT
+	CFLAGS=-DVERSION=\\\"$(VERSION)\\\" python setup.py install $$ROOT
 
 .PHONY: doc clean dist install
 
