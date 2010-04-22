@@ -1,5 +1,8 @@
 2010-04-22  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_getJobs): Optional
+	requested_attributes argument (bug #584806).
+
 	* cupsconnection.c (Connection_getPPDs, Connection_getDevices,
 	Connection_getJobs, Connection_getJobAttributes): Avoid memory
 	leak when argument parsing fails.
