@@ -834,7 +834,7 @@ static PyObject *
 Connection_getPPDs (Connection *self, PyObject *args, PyObject *kwds)
 {
   PyObject *result = NULL;
-  ipp_t *request = ippNewRequest(CUPS_GET_PPDS), *answer;
+  ipp_t *request, *answer;
   ipp_attribute_t *attr;
   int limit = 0;
   PyObject *exclude_schemes_obj = NULL;	/* string list */
@@ -876,6 +876,7 @@ Connection_getPPDs (Connection *self, PyObject *args, PyObject *kwds)
 				    &ppd_type))
     return NULL;
 
+  request = ippNewRequest(CUPS_GET_PPDS);
   if (limit > 0)
     ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
 		   "limit", limit);
@@ -1219,7 +1220,7 @@ static PyObject *
 Connection_getDevices (Connection *self, PyObject *args, PyObject *kwds)
 {
   PyObject *result;
-  ipp_t *request = ippNewRequest(CUPS_GET_DEVICES), *answer;
+  ipp_t *request, *answer;
   ipp_attribute_t *attr;
   int limit = 0;
   int timeout = 0;
@@ -1236,6 +1237,7 @@ Connection_getDevices (Connection *self, PyObject *args, PyObject *kwds)
 				    &timeout))
     return NULL;
 
+  request = ippNewRequest(CUPS_GET_DEVICES);
   if (limit > 0)
     ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
 		   "limit", limit);
@@ -1386,7 +1388,7 @@ static PyObject *
 Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
 {
   PyObject *result;
-  ipp_t *request = ippNewRequest(IPP_GET_JOBS), *answer;
+  ipp_t *request, *answer;
   ipp_attribute_t *attr;
   char *which = NULL;
   int my_jobs = 0;
@@ -1396,10 +1398,11 @@ Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
 			    NULL };
   if (!PyArg_ParseTupleAndKeywords (args, kwds, "|siii", kwlist,
 				    &which, &my_jobs, &limit, &first_job_id))
-	  return NULL;
+    return NULL;
 
   debugprintf ("-> Connection_getJobs(%s,%d)\n",
 	       which ? which : "(null)", my_jobs);
+  request = ippNewRequest(IPP_GET_JOBS);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "printer-uri",
 		NULL, "ipp://localhost/printers/");
 
@@ -1550,7 +1553,7 @@ static PyObject *
 Connection_getJobAttributes (Connection *self, PyObject *args, PyObject *kwds)
 {
   PyObject *result;
-  ipp_t *request = ippNewRequest(IPP_GET_JOB_ATTRIBUTES), *answer;
+  ipp_t *request, *answer;
   ipp_attribute_t *attr;
   int job_id;
   PyObject *requested_attrs = NULL;
@@ -1568,6 +1571,7 @@ Connection_getJobAttributes (Connection *self, PyObject *args, PyObject *kwds)
   }
 
   debugprintf ("-> Connection_getJobAttributes(%d)\n", job_id);
+  request = ippNewRequest(IPP_GET_JOB_ATTRIBUTES);
   snprintf (uri, sizeof (uri), "ipp://localhost/jobs/%d", job_id);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI, "job-uri",
 		NULL, uri);

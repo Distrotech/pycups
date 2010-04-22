@@ -1,3 +1,9 @@
+2010-04-22  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_getPPDs, Connection_getDevices,
+	Connection_getJobs, Connection_getJobAttributes): Avoid memory
+	leak when argument parsing fails.
+
 2010-02-23  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c (Connection_dealloc): Be more cautious when
