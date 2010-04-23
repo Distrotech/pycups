@@ -528,6 +528,148 @@ getline(char **line, size_t *linelen, FILE *fp)
 }
 #endif
 
+/*
+ * emit marked options by returning a string.
+ */
+
+static PyObject *
+PPD_emitString (PPD *self, PyObject *args)
+{
+  ppd_section_t section;
+  float min_order;
+  char *emitted;
+  PyObject *ret;
+
+  if (!PyArg_ParseTuple (args, "if", &section, &min_order))
+    return NULL;
+
+  emitted = ppdEmitString(self->ppd, section, min_order);
+
+  if (emitted) {
+    ret = PyString_FromString(emitted);
+    free (emitted);
+  } else {
+    ret = Py_None;
+  }
+
+  Py_INCREF (ret);
+
+  return ret;
+}
+
+/*
+ * emit marked options by writing to a file object.
+ */
+
+static PyObject *
+PPD_emit (PPD *self, PyObject *args)
+{
+  PyObject *pyFile;
+  ppd_section_t section;
+  FILE *f;
+
+  if (!PyArg_ParseTuple (args, "Oi", &pyFile, &section))
+    return NULL;
+
+  f = PyFile_AsFile(pyFile);
+  if (!f)
+    return NULL;
+
+  if (!ppdEmit(self->ppd, f, section))
+    return Py_None;
+  return PyErr_SetFromErrno (PyExc_RuntimeError);
+}
+
+/*
+ * emit marked options after order dependency by writing to a file object.
+ */
+
+static PyObject *
+PPD_emitAfterOrder (PPD *self, PyObject *args)
+{
+  PyObject *pyFile;
+  ppd_section_t section;
+  FILE *f;
+  int limit;
+  float min_order;
+
+  if (!PyArg_ParseTuple (args, "Oiif", &pyFile, &section, &limit, &min_order))
+    return NULL;
+
+  f = PyFile_AsFile(pyFile);
+  if (!f)
+    return NULL;
+
+  if (!ppdEmitAfterOrder(self->ppd, f, section, limit, min_order))
+    return Py_None;
+  return PyErr_SetFromErrno (PyExc_RuntimeError);
+}
+
+/*
+ * emit marked options by writing to a file descriptor.
+ */
+
+static PyObject *
+PPD_emitFd (PPD *self, PyObject *args)
+{
+  ppd_section_t section;
+  int f;
+
+  if (!PyArg_ParseTuple (args, "ii", &f, &section))
+    return NULL;
+
+  if (!ppdEmitFd(self->ppd, f, section))
+    return Py_None;
+  return PyErr_SetFromErrno (PyExc_RuntimeError);
+}
+
+/*
+ * emit JCL options by writing to a file object.
+ */
+
+static PyObject *
+PPD_emitJCL (PPD *self, PyObject *args)
+{
+  PyObject *pyFile;
+  int job_id;
+  const char *user;
+  const char *title;
+  FILE *f;
+
+  if (!PyArg_ParseTuple (args, "Oiss", &pyFile, &job_id, &user, &title))
+    return NULL;
+
+  f = PyFile_AsFile(pyFile);
+  if (!f)
+    return NULL;
+
+  if (!ppdEmitJCL(self->ppd, f, job_id, user, title))
+    return Py_None;
+  return PyErr_SetFromErrno (PyExc_RuntimeError);
+}
+
+/*
+ * emit JCL end by writing to a file object.
+ */
+
+static PyObject *
+PPD_emitJCLEnd (PPD *self, PyObject *args)
+{
+  PyObject *pyFile;
+  FILE *f;
+
+  if (!PyArg_ParseTuple (args, "O", &pyFile))
+    return NULL;
+
+  f = PyFile_AsFile(pyFile);
+  if (!f)
+    return NULL;
+
+  if (!ppdEmitJCLEnd(self->ppd, f))
+    return Py_None;
+  return PyErr_SetFromErrno (PyExc_RuntimeError);
+}
+
 PyObject *
 PPD_writeFd (PPD *self, PyObject *args)
 {
@@ -759,6 +901,67 @@ PyMethodDef PPD_methods[] =
       (PyCFunction) PPD_nondefaultsMarked, METH_NOARGS,
       "nondefaultsMarked() -> boolean\n\n"
       "Returns true if any non-default option choices are marked." },
+
+    { "emitString",
+      (PyCFunction) PPD_emitString, METH_VARARGS,
+      "emitString(section, min_order) -> string\n\n"
+      "Return a string with the marked options for section, with at least min_order order dependency.\n"
+      "@type section: integer\n"
+      "@param section: section id\n"
+      "@type min_order: float\n"
+      "@param min_order: minumum order dependency\n"
+      "@return: string containing emitted postscript" },
+
+    { "emit",
+      (PyCFunction) PPD_emit, METH_VARARGS,
+      "emit(file, section) -> None\n\n"
+      "Output marked options for section to a file.\n"
+      "@type file: file\n"
+      "@param file: file object\n"
+      "@type section: integer\n"
+      "@param section: section id" },
+
+    { "emitAfterOrder",
+      (PyCFunction) PPD_emitAfterOrder, METH_VARARGS,
+      "emitAfterOrder(file, section, limit, min_order) -> None\n\n"
+      "Output marked options for section to a file.\n"
+      "@type file: file\n"
+      "@param file: file object\n"
+      "@type section: integer\n"
+      "@param section: section id\n"
+      "@type limit: integer\n"
+      "@param limit: non-zero to use min_order\n"
+      "@type min_order: float\n"
+      "@param min_order: minumum order dependency" },
+
+    { "emitFd",
+      (PyCFunction) PPD_emitFd, METH_VARARGS,
+      "emitFd(fd, section) -> None\n\n"
+      "Output marked options for section to a file descriptor.\n"
+      "@type fd: integer\n"
+      "@param fd: file descriptor\n"
+      "@type section: integer\n"
+      "@param section: section id" },
+
+    { "emitJCL",
+      (PyCFunction) PPD_emitJCL, METH_VARARGS,
+      "emitJCL(file, job_id, user, title) -> None\n\n"
+      "Emit code for JCL options to a file.\n"
+      "@type file: file object\n"
+      "@param file: file\n"
+      "@type job_id: integer\n"
+      "@param job_id: job id\n"
+      "@type user: string\n"
+      "@param user: user name on job\n"
+      "@type title: string\n"
+      "@param title: title of job" },
+
+    { "emitJCLEnd",
+      (PyCFunction) PPD_emitJCLEnd, METH_VARARGS,
+      "emitJCLEnd(file) -> None\n\n"
+      "Emit JCLEnd code to a file.\n"
+      "@type file: file object\n"
+      "@param file: file" },
 
     { "writeFd",
       (PyCFunction) PPD_writeFd, METH_VARARGS,
