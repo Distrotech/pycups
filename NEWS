@@ -4,6 +4,18 @@ NEWS
 New in 1.9.50:
 
 * cups.getJobs() now takes optional requested_attributes argument.
+* cups.PPD_ORDER_ANY constant.
+* cups.PPD_ORDER_DOCUMENT constant.
+* cups.PPD_ORDER_EXIT constant.
+* cups.PPD_ORDER_JCL constant.
+* cups.PPD_ORDER_PAGE constant.
+* cups.PPD_ORDER_PROLOG constant.
+* cups.PPD.emitString() method.
+* cups.PPD.emit() method.
+* cups.PPD.emitAfterOrder() method.
+* cups.PPD.emitFd() method.
+* cups.PPD.emitJCL() method.
+* cups.PPD.emitJCLEnd() method.
 
 New in 1.9.48:
 
