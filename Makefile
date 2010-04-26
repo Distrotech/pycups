@@ -1,5 +1,4 @@
 NAME=pycups
-VERSION=1.9.49
 
 SOURCES=cupsmodule.c cupsconnection.c cupsppd.c cupsipp.c setup.py \
 	cupsppd.h cupsipp.h cupsconnection.h cupsmodule.h
@@ -9,7 +8,7 @@ DIST=Makefile test.py \
 	COPYING NEWS README TODO ChangeLog
 
 cups.so: $(SOURCES)
-	CFLAGS=-DVERSION=\\\"$(VERSION)\\\" python setup.py build
+	python setup.py build
 	mv build/lib*/$@ .
 
 doc:	cups.so
@@ -29,7 +28,7 @@ dist:
 install:
 	ROOT= ; \
 	if [ -n "$$DESTDIR" ]; then ROOT="--root $$DESTDIR"; fi; \
-	CFLAGS=-DVERSION=\\\"$(VERSION)\\\" python setup.py install $$ROOT
+	python setup.py install $$ROOT
 
 .PHONY: doc clean dist install
 
