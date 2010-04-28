@@ -2274,6 +2274,9 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
 		  "device-uri", NULL, device);
     free (device);
   }
+  if (ppds_specified)
+    ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_KEYWORD,
+		  "printer-state-reasons", NULL, "none");
   
   Connection_begin_allow_threads (self);
   if (ppdfile) {
