@@ -3125,6 +3125,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 	    "marker-names",
 	    "marker-types",
 	    "marker-levels",
+	    "member-names",
 	    NULL
 	  };
 
