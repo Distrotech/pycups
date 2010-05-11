@@ -3563,7 +3563,6 @@ Connection_getPPD3 (Connection *self, PyObject *args, PyObject *kwds)
   PyTuple_SetItem (ret, 1, obj);
 
   obj = PyString_FromString (fname);
-  obj = PyFloat_FromDouble ((double) modtime);
   if (!obj) {
     Py_DECREF (ret);
     return NULL;
