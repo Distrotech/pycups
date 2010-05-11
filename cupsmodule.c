@@ -1,6 +1,7 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010  Red Hat, Inc
+ * Author: Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -641,6 +642,7 @@ initcups (void)
   // Selected HTTP status codes
   INT_CONSTANT (HTTP_ERROR);
   INT_CONSTANT (HTTP_OK);
+  INT_CONSTANT (HTTP_NOT_MODIFIED);
   INT_CONSTANT (HTTP_BAD_REQUEST);
   INT_CONSTANT (HTTP_UNAUTHORIZED);
   INT_CONSTANT (HTTP_FORBIDDEN);

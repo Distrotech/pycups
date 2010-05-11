@@ -3,8 +3,10 @@ NEWS
 
 New in 1.9.50:
 
+* cups.getPPD3()
 * cups.getJobs() now takes optional requested_attributes argument.
 * cups.getPrinterAttributes(): member-names is now always a list.
+* cups.HTTP_NOT_MODIFIED constant.
 * cups.PPD_ORDER_ANY constant.
 * cups.PPD_ORDER_DOCUMENT constant.
 * cups.PPD_ORDER_EXIT constant.

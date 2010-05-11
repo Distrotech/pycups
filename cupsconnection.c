@@ -3496,6 +3496,87 @@ Connection_getPPD (Connection *self, PyObject *args)
 }
 
 static PyObject *
+Connection_getPPD3 (Connection *self, PyObject *args, PyObject *kwds)
+{
+  PyObject *ret, *obj;
+  PyObject *printerobj;
+  PyObject *fmodtime = NULL;
+  char *printer;
+  time_t modtime;
+  const char *filename = NULL;
+  char fname[PATH_MAX];
+  http_status_t status;
+  static char *kwlist[] = { "name", "modtime", "filename", NULL };
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|Os", kwlist,
+				    &printerobj, &fmodtime, &filename))
+    return NULL;
+
+  if (fmodtime) {
+    double d = PyFloat_AsDouble (fmodtime);
+    if (PyErr_Occurred())
+      return NULL;
+
+    modtime = (time_t) d;
+  } else
+    modtime = 0;
+
+  if (filename) {
+    if (strlen (filename) > sizeof (fname)) {
+      PyErr_SetString (PyExc_TypeError, "overlength filename");
+      return NULL;
+    }
+
+    strcpy (fname, filename);
+  } else
+    fname[0] = '\0';
+
+  if (UTF8_from_PyObj (&printer, printerobj) == NULL)
+    return NULL;
+
+  debugprintf ("-> Connection_getPPD3()\n");
+  Connection_begin_allow_threads (self);
+  status = cupsGetPPD3 (self->http, printer, &modtime,
+			fname, sizeof (fname));
+  Connection_end_allow_threads (self);
+
+  free (printer);
+
+  ret = PyTuple_New (3);
+  if (!ret)
+    return NULL;
+
+  obj = PyInt_FromLong ((long) status);
+  if (!obj) {
+    Py_DECREF (ret);
+    return NULL;
+  }
+
+  PyTuple_SetItem (ret, 0, obj);
+
+  obj = PyFloat_FromDouble ((double) modtime);
+  if (!obj) {
+    Py_DECREF (ret);
+    return NULL;
+  }
+
+  PyTuple_SetItem (ret, 1, obj);
+
+  obj = PyString_FromString (fname);
+  obj = PyFloat_FromDouble ((double) modtime);
+  if (!obj) {
+    Py_DECREF (ret);
+    return NULL;
+  }
+
+  PyTuple_SetItem (ret, 2, obj);
+
+  debugprintf ("<- Connection_getPPD3() = (%d,%ld,%s)\n",
+	       status, modtime, fname);
+  return ret;
+}
+
+static PyObject *
 Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
 {
   PyObject *printerobj;
@@ -4835,6 +4916,18 @@ PyMethodDef Connection_methods[] =
       "@param name: queue name\n"
       "@return: temporary PPD file name\n"
       "@raise IPPError: IPP problem" },
+
+    { "getPPD3",
+      (PyCFunction) Connection_getPPD3, METH_VARARGS | METH_KEYWORDS,
+      "getPPD3(name[, modtime, filename]) -> (status,modtime,filename)\n\n"
+      "Fetch a printer's PPD if it is newer.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type modtime: float\n"
+      "@param modtime: modification time of existing file\n"
+      "@type filename: string\n"
+      "@param filename: filename of existing file\n"
+      "@return: tuple of HTTP status, modification time, and filename\n" },
 
     { "enablePrinter",
       (PyCFunction) Connection_enablePrinter, METH_VARARGS | METH_KEYWORDS,
