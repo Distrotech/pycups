@@ -1,4 +1,5 @@
 NAME=pycups
+VERSION:=$(shell python setup.py --version)
 
 SOURCES=cupsmodule.c cupsconnection.c cupsppd.c cupsipp.c setup.py \
 	cupsppd.h cupsipp.h cupsconnection.h cupsmodule.h

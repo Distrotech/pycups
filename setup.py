@@ -1,7 +1,9 @@
 from distutils.core import setup, Extension
-setup (name="cups", version="1.0",
+VERSION="1.9.49"
+setup (name="pycups",
+       version=VERSION,
        ext_modules=[Extension("cups",
                               ["cupsmodule.c", "cupsconnection.c",
                                "cupsppd.c", "cupsipp.c"],
                               libraries=["cups"],
-                              define_macros=[("VERSION", '"1.9.49"')])])
+                              define_macros=[("VERSION", '"%s"' % VERSION)])])
