@@ -2910,7 +2910,7 @@ Connection_deletePrinterOptionDefault (Connection *self, PyObject *args)
   char *name;
   PyObject *optionobj;
   char *option;
-  const char *const suffix = "-default";
+  const char const suffix[] = "-default";
   char *opt;
   ipp_t *request, *answer;
   int i;
