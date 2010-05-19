@@ -2853,7 +2853,7 @@ Connection_addPrinterOptionDefault (Connection *self, PyObject *args)
   optionlen = strlen (option);
   opt = malloc (optionlen + sizeof (suffix) + 1);
   memcpy (opt, option, optionlen);
-  sprintf (opt + optionlen, suffix);
+  strcpy (opt + optionlen, suffix);
   request = add_modify_printer_request (name);
   for (i = 0; i < 2; i++) {
     if (!PyString_Check (pyvalue) && !PyUnicode_Check (pyvalue) &&
@@ -2930,7 +2930,7 @@ Connection_deletePrinterOptionDefault (Connection *self, PyObject *args)
   optionlen = strlen (option);
   opt = malloc (optionlen + sizeof (suffix) + 1);
   memcpy (opt, option, optionlen);
-  sprintf (opt + optionlen, suffix);
+  strcpy (opt + optionlen, suffix);
   request = add_modify_printer_request (name);
   for (i = 0; i < 2; i++) {
     ippAddString (request, IPP_TAG_PRINTER, IPP_TAG_DELETEATTR,
