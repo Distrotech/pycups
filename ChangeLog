@@ -1,3 +1,9 @@
+2010-10-18  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection.getPPDs): Allow multi-valued
+	attributes and expose them via {name}-all key.  Based on a
+	patch from Till Kamppeter.
+
 2010-05-11  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsmodule.c: New HTTP_NOT_MODIFIED int constant.

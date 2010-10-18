@@ -1062,18 +1062,45 @@ Connection_getPPDs (Connection *self, PyObject *args, PyObject *kwds)
     for (; attr && attr->group_tag == IPP_TAG_PRINTER;
 	 attr = attr->next) {
       PyObject *val = NULL;
+      size_t i;
 
       debugprintf ("Attribute: %s\n", attr->name);
       if (!strcmp (attr->name, "ppd-name") &&
 	  attr->value_tag == IPP_TAG_NAME)
 	ppdname = attr->values[0].string.text;
-      else
+      else {
 	val = PyObject_from_attr_value (attr, 0);
+	if (val) {
+	  debugprintf ("Adding %s to ppd dict\n", attr->name);
+	  PyDict_SetItemString (dict, attr->name, val);
+	  Py_DECREF (val);
+	}
 
-      if (val) {
-	debugprintf ("Adding %s to ppd dict\n", attr->name);
-	PyDict_SetItemString (dict, attr->name, val);
-	Py_DECREF (val);
+	if (attr->num_values > 0) {
+	  PyObject *list = PyList_New (0);
+	  PyObject *key;
+	  size_t namelen = strlen (attr->name);
+	  char *keystr = malloc (namelen + 4 + 1);
+	  if (keystr) {
+	    strcpy (keystr, attr->name);
+	    strcpy (keystr + namelen, "-all");
+	    for (i = 0; i < attr->num_values; i++) {
+	      val = PyObject_from_attr_value (attr, i);
+	      if (val) {
+		debugprintf ("Adding %s to ppd dict (%d)\n", keystr, (int) i);
+		PyList_Append (list, val);
+		Py_DECREF (val);
+	      }
+	    }
+
+	    key = PyObj_from_UTF8 (keystr);
+	    debugprintf ("Added list %s\n", keystr);
+	    free (keystr);
+	    PyDict_SetItem (dict, key, list);
+	    Py_DECREF (key);
+	    Py_DECREF (list);
+	  }
+	}
       }
     }
 

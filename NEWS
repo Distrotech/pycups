@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.52:
+
+* cups.Connection.getPPDs(): {name}-all keys for multi-valued
+  attributes.
+
 New in 1.9.50:
 
 * cups.Connection.getPPD3()
