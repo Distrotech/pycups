@@ -3,8 +3,8 @@ NEWS
 
 New in 1.9.52:
 
-* cups.Connection.getPPDs(): {name}-all keys for multi-valued
-  attributes.
+* cups.Connection.getPPDs2(): New method, identical to getPPDs() but
+  returning all attribute values as lists.
 
 New in 1.9.50:
 

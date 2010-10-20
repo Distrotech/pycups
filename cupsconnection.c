@@ -549,18 +549,63 @@ Connection_getDests (Connection *self)
 }
 
 static PyObject *
-build_list_from_attribute_strings (ipp_attribute_t *attr)
+PyObject_from_attr_value (ipp_attribute_t *attr, int i)
+{
+  PyObject *val = NULL;
+  switch (attr->value_tag) {
+  case IPP_TAG_NAME:
+  case IPP_TAG_TEXT:
+  case IPP_TAG_KEYWORD:
+  case IPP_TAG_URI:
+  case IPP_TAG_CHARSET:
+  case IPP_TAG_MIMETYPE:
+  case IPP_TAG_LANGUAGE:
+    val = PyObj_from_UTF8 (attr->values[i].string.text);
+    break;
+  case IPP_TAG_INTEGER:
+  case IPP_TAG_ENUM:
+    val = PyInt_FromLong (attr->values[i].integer);
+    break;
+  case IPP_TAG_BOOLEAN:
+    val = PyBool_FromLong (attr->values[i].integer);
+    break;
+  case IPP_TAG_RANGE:
+    val = Py_BuildValue ("(ii)",
+			 attr->values[i].range.lower,
+			 attr->values[i].range.upper);
+    break;
+  case IPP_TAG_NOVALUE:
+    Py_INCREF (Py_None);
+    val = Py_None;
+    break;
+
+    // TODO:
+  case IPP_TAG_DATE:
+    val = PyString_FromString ("(IPP_TAG_DATE)");
+    break;
+  default:
+    val = PyString_FromString ("(unknown IPP tag)");
+    break;
+  }
+
+  return val;
+}
+
+static PyObject *
+PyList_from_attr_values (ipp_attribute_t *attr)
 {
   PyObject *list = PyList_New (0);
   int i;
-  debugprintf ("-> build_list_from_attribute_strings()\n");
+  debugprintf ("-> PyList_from_attr_values()\n");
   for (i = 0; i < attr->num_values; i++) {
-    PyObject *val = PyObj_from_UTF8 (attr->values[i].string.text);
-    PyList_Append (list, val);
-    Py_DECREF (val);
-    debugprintf ("%s\n", attr->values[i].string.text);
+    PyObject *val = PyObject_from_attr_value (attr, i);
+    if (val) {
+      PyList_Append (list, val);
+      Py_DECREF (val);
+    }
   }
-  debugprintf ("<- build_list_from_attribute_strings()\n");
+
+  debugprintf ("<- PyList_from_attr_values()\n");
   return list;
 }
 
@@ -648,7 +693,7 @@ Connection_getPrinters (Connection *self)
       else if (!strcmp (attr->name,
 			"printer-state-reasons") &&
 	       attr->value_tag == IPP_TAG_KEYWORD) {
-	val = build_list_from_attribute_strings (attr);
+	val = PyList_from_attr_values (attr);
       }
       else if (!strcmp (attr->name,
 			"printer-is-accepting-jobs") &&
@@ -758,7 +803,7 @@ Connection_getClasses (Connection *self)
       else if (!strcmp (attr->name, "member-names") &&
 	       attr->value_tag == IPP_TAG_NAME) {
 	Py_XDECREF (members);
-	members = build_list_from_attribute_strings (attr);
+	members = PyList_from_attr_values (attr);
       }
     }
 
@@ -788,50 +833,7 @@ Connection_getClasses (Connection *self)
 }
 
 static PyObject *
-PyObject_from_attr_value (ipp_attribute_t *attr, int i)
-{
-  PyObject *val = NULL;
-  switch (attr->value_tag) {
-  case IPP_TAG_NAME:
-  case IPP_TAG_TEXT:
-  case IPP_TAG_KEYWORD:
-  case IPP_TAG_URI:
-  case IPP_TAG_CHARSET:
-  case IPP_TAG_MIMETYPE:
-  case IPP_TAG_LANGUAGE:
-    val = PyObj_from_UTF8 (attr->values[i].string.text);
-    break;
-  case IPP_TAG_INTEGER:
-  case IPP_TAG_ENUM:
-    val = PyInt_FromLong (attr->values[i].integer);
-    break;
-  case IPP_TAG_BOOLEAN:
-    val = PyBool_FromLong (attr->values[i].integer);
-    break;
-  case IPP_TAG_RANGE:
-    val = Py_BuildValue ("(ii)",
-			 attr->values[i].range.lower,
-			 attr->values[i].range.upper);
-    break;
-  case IPP_TAG_NOVALUE:
-    Py_INCREF (Py_None);
-    val = Py_None;
-    break;
-
-    // TODO:
-  case IPP_TAG_DATE:
-    val = PyString_FromString ("(IPP_TAG_DATE)");
-    break;
-  default:
-    val = PyString_FromString ("(unknown IPP tag)");
-    break;
-  }
-
-  return val;
-}
-
-static PyObject *
-Connection_getPPDs (Connection *self, PyObject *args, PyObject *kwds)
+do_getPPDs (Connection *self, PyObject *args, PyObject *kwds, int all_lists)
 {
   PyObject *result = NULL;
   ipp_t *request, *answer;
@@ -1062,44 +1064,20 @@ Connection_getPPDs (Connection *self, PyObject *args, PyObject *kwds)
     for (; attr && attr->group_tag == IPP_TAG_PRINTER;
 	 attr = attr->next) {
       PyObject *val = NULL;
-      size_t i;
-
       debugprintf ("Attribute: %s\n", attr->name);
       if (!strcmp (attr->name, "ppd-name") &&
 	  attr->value_tag == IPP_TAG_NAME)
 	ppdname = attr->values[0].string.text;
       else {
-	val = PyObject_from_attr_value (attr, 0);
+	if (all_lists)
+	  val = PyList_from_attr_values (attr);
+	else
+	  val = PyObject_from_attr_value (attr, 0);
+
 	if (val) {
 	  debugprintf ("Adding %s to ppd dict\n", attr->name);
 	  PyDict_SetItemString (dict, attr->name, val);
 	  Py_DECREF (val);
-	}
-
-	if (attr->num_values > 0) {
-	  PyObject *list = PyList_New (0);
-	  PyObject *key;
-	  size_t namelen = strlen (attr->name);
-	  char *keystr = malloc (namelen + 4 + 1);
-	  if (keystr) {
-	    strcpy (keystr, attr->name);
-	    strcpy (keystr + namelen, "-all");
-	    for (i = 0; i < attr->num_values; i++) {
-	      val = PyObject_from_attr_value (attr, i);
-	      if (val) {
-		debugprintf ("Adding %s to ppd dict (%d)\n", keystr, (int) i);
-		PyList_Append (list, val);
-		Py_DECREF (val);
-	      }
-	    }
-
-	    key = PyObj_from_UTF8 (keystr);
-	    debugprintf ("Added list %s\n", keystr);
-	    free (keystr);
-	    PyDict_SetItem (dict, key, list);
-	    Py_DECREF (key);
-	    Py_DECREF (list);
-	  }
 	}
       }
     }
@@ -1119,6 +1097,18 @@ Connection_getPPDs (Connection *self, PyObject *args, PyObject *kwds)
   ippDelete (answer);
   debugprintf ("<- Connection_getPPDs() = dict\n");
   return result;
+}
+
+static PyObject *
+Connection_getPPDs (Connection *self, PyObject *args, PyObject *kwds)
+{
+  return do_getPPDs (self, args, kwds, 0);
+}
+
+static PyObject *
+Connection_getPPDs2 (Connection *self, PyObject *args, PyObject *kwds)
+{
+  return do_getPPDs (self, args, kwds, 1);
 }
 
 static PyObject *
@@ -1567,15 +1557,9 @@ Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
 	       attr->value_tag == IPP_TAG_BOOLEAN)
 	val = PyBool_FromLong (attr->values[0].integer);
       else {
-	if (attr->num_values > 1) {
-	  int i;
-	  val = PyList_New (0);
-	  for (i = 0; i < attr->num_values; i++) {
-	    PyObject *item = PyObject_from_attr_value (attr, i);
-	    if (item)
-	      PyList_Append (val, item);
-	  }
-	} else
+	if (attr->num_values > 1)
+	  val = PyList_from_attr_values (attr);
+	else
 	  val = PyObject_from_attr_value (attr, 0);
       }
 
@@ -1656,15 +1640,9 @@ Connection_getJobAttributes (Connection *self, PyObject *args, PyObject *kwds)
     PyObject *obj;
 
     if (attr->num_values > 1 ||
-	!strcmp (attr->name, "job-printer-state-reasons")) {
-      int i;
-      obj = PyList_New (0);
-      for (i = 0; i < attr->num_values; i++) {
-	PyObject *item = PyObject_from_attr_value (attr, i);
-	if (item)
-	  PyList_Append (obj, item);
-      }
-    } else
+	!strcmp (attr->name, "job-printer-state-reasons"))
+      obj = PyList_from_attr_values (attr);
+    else
       obj = PyObject_from_attr_value (attr, 0);
 
     if (!obj)
@@ -3180,12 +3158,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
       }
 
       if (is_list) {
-	PyObject *list = PyList_New (0);
-	int i;
-	for (i = 0; i < attr->num_values; i++) {
-	  PyObject *val = PyObject_from_attr_value (attr, i);
-	  PyList_Append (list, val);
-	}
+	PyObject *list = PyList_from_attr_values (attr);
 	PyDict_SetItemString (ret, attr->name, list);
 	Py_DECREF (list);
       } else {
@@ -3834,7 +3807,6 @@ Connection_getSubscriptions (Connection *self, PyObject *args, PyObject *kwds)
   ipp_t *request, *answer;
   ipp_attribute_t *attr;
   PyObject *result, *subscription;
-  int i;
   static char *kwlist[] = { "uri", "my_subscriptions", "job_id", NULL };
 
   if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|Oi", kwlist,
@@ -3895,14 +3867,8 @@ Connection_getSubscriptions (Connection *self, PyObject *args, PyObject *kwds)
       continue;
     }
 
-    if (attr->num_values > 1 || !strcmp (attr->name, "notify-events")) {
-      obj = PyList_New (0);
-      for (i = 0; i < attr->num_values; i++) {
-	PyObject *item = PyObject_from_attr_value (attr, i);
-	if (item)
-	  PyList_Append (obj, item);
-      }
-    }
+    if (attr->num_values > 1 || !strcmp (attr->name, "notify-events"))
+      obj = PyList_from_attr_values (attr);
     else
       obj = PyObject_from_attr_value (attr, 0);
 
@@ -4176,16 +4142,8 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
     if (attr->num_values > 1 ||
 	!strcmp (attr->name, "notify-events") ||
 	!strcmp (attr->name, "printer-state-reasons") ||
-	!strcmp (attr->name, "job-printer-state-reasons")) {
-      obj = PyList_New (0);
-      for (i = 0; i < attr->num_values; i++) {
-	PyObject *item = PyObject_from_attr_value (attr, i);
-	if (item) {
-	  PyList_Append (obj, item);
-	  Py_DECREF (item);
-	}
-      }
-    }
+	!strcmp (attr->name, "job-printer-state-reasons"))
+      obj = PyList_from_attr_values (attr);
     else
       obj = PyObject_from_attr_value (attr, 0);
 
@@ -4538,6 +4496,40 @@ PyMethodDef Connection_methods[] =
       "postscript; raster; unknown.\n"
       "@return: a dict, indexed by PPD name, of dicts representing\n"
       "PPDs, indexed by attribute.\n"
+      "@raise IPPError: IPP problem" },
+
+    { "getPPDs2",
+      (PyCFunction) Connection_getPPDs2, METH_VARARGS | METH_KEYWORDS,
+      "getPPDs(limit=0, exclude_schemes=None, include_schemes=None, \n"
+      "ppd_natural_language=None, ppd_device_id=None, ppd_make=None, \n"
+      "ppd_make_and_model=None, ppd_model_number=-1, ppd_product=None, \n"
+      "ppd_psversion=None, ppd_type=None) -> dict\n\n"
+      "@type limit: integer\n"
+      "@param limit: maximum number of PPDs to return\n"
+      "@type exclude_schemes: string list\n"
+      "@param exclude_schemes: list of PPD schemes to exclude\n"
+      "@type include_schemes: string list\n"
+      "@param include_schemes: list of PPD schemes to include\n"
+      "@type ppd_natural_language: string\n"
+      "@param ppd_natural_language: required language\n"
+      "@type ppd_device_id: string\n"
+      "@param ppd_device_id: IEEE 1284 Device ID to match against\n"
+      "@type ppd_make: string\n"
+      "@param ppd_make: required printer manufacturer\n"
+      "@type ppd_make_and_model: string\n"
+      "@param ppd_make_and_model: required make and model\n"
+      "@type ppd_model_number: integer\n"
+      "@param ppd_model_number: model number required (from cupsModelNumber \n"
+      "in PPD file)\n"
+      "@type ppd_product: string\n"
+      "@param ppd_product: required PostScript product string (Product)\n"
+      "@type ppd_psversion: string\n"
+      "@param ppd_psversion: required PostScript version (PSVersion)\n"
+      "@type ppd_type: string\n"
+      "@param ppd_type: required type of PPD. Valid values are fax; pdf; \n"
+      "postscript; raster; unknown.\n"
+      "@return: a dict, indexed by PPD name, of dicts representing\n"
+      "PPDs, indexed by attribute.  All attribute values are lists.\n"
       "@raise IPPError: IPP problem" },
 
     { "getServerPPD",
