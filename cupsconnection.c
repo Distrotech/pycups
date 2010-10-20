@@ -5038,7 +5038,9 @@ PyMethodDef Connection_methods[] =
     { "createSubscription",
       (PyCFunction) Connection_createSubscription,
       METH_VARARGS | METH_KEYWORDS,
-      "createSubscription(uri) -> integer\n\n"
+      "createSubscription(uri, events=[], job_id=-1, recipient_uri="",\n"
+      "                   lease_duration=-1, time_interval=-1,\n"
+      "                   user_data="") -> integer\n\n"
       "Create a subscription.\n\n"
       "@type uri: string\n"
       "@param uri: URI for object\n"
