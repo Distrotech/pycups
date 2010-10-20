@@ -1,8 +1,7 @@
 2010-10-18  Tim Waugh  <twaugh@redhat.com>
 
-	* cupsconnection.c (Connection.getPPDs): Allow multi-valued
-	attributes and expose them via {name}-all key.  Based on a
-	patch from Till Kamppeter.
+	* cupsconnection.c (Connection.getPPDs2): New method as
+	getPPDs but with attribute values as lists.
 
 2010-05-11  Tim Waugh  <twaugh@redhat.com>
 
