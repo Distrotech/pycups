@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2006, 2007, 2008, 2009  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010  Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,12 +53,16 @@ extern void debugprintf (const char *fmt, ...) FORMAT ((__printf__, 1, 2));
 #error pycups requires CUPS 1.2.x
 #endif
 
-extern PyObject *cups_password_callback;
-
+struct TLS
+{
+    PyObject *cups_password_callback;
 #ifdef HAVE_CUPS_1_4
-extern PyObject *cups_password_callback_context;
+    PyObject *cups_password_callback_context;
 #else /* !HAVE_CUPS_1_4 */
-extern void *g_current_connection;
+    void *g_current_connection;
 #endif /* !HAVE_CUPS_1_4 */
+};
+
+extern struct TLS *get_TLS (void);
 
 #endif /* HAVE_CUPSMODULE_H */

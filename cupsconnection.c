@@ -291,11 +291,12 @@ Connection_repr (Connection *self)
 void
 Connection_begin_allow_threads (void *connection)
 {
+  struct TLS *tls = get_TLS ();
   Connection *self = (Connection *) connection;
   debugprintf ("begin allow threads\n");
 
 #ifndef HAVE_CUPS_1_4
-  g_current_connection = connection;
+  tls->g_current_connection = connection;
 #endif /* !HAVE_CUPS_1_4 */
 
   self->tstate = PyEval_SaveThread ();
@@ -323,6 +324,7 @@ password_callback (int newstyle,
 		   const char *resource,
 		   void *user_data)
 {
+  struct TLS *tls = get_TLS ();
   PyObject *cb_context = user_data;
   Connection *self = NULL;
   PyObject *args;
@@ -358,7 +360,7 @@ password_callback (int newstyle,
   } else
     args = Py_BuildValue ("(s)", prompt);
 
-  result = PyEval_CallObject (cups_password_callback, args);
+  result = PyEval_CallObject (tls->cups_password_callback, args);
   Py_DECREF (args);
   if (result == NULL)
   {

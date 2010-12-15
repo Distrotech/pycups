@@ -26,6 +26,7 @@
 #include "cupsmodule.h"
 
 #include <locale.h>
+#include <pthread.h>
 #include <wchar.h>
 #include <wctype.h>
 
@@ -33,17 +34,46 @@
 #include "cupsppd.h"
 #include "cupsipp.h"
 
-PyObject *cups_password_callback = NULL;
-
-#ifdef HAVE_CUPS_1_4
-PyObject *cups_password_callback_context = NULL;
-#else /* !HAVE_CUPS_1_4 */
-void *g_current_connection = NULL;
-#endif /* !HAVE_CUPS_1_4 */
+static pthread_key_t tls_key = -1;
+static pthread_once_t tls_key_once = PTHREAD_ONCE_INIT;
 
 //////////////////////
 // Worker functions //
 //////////////////////
+
+static void
+destroy_TLS (void *value)
+{
+  struct TLS *tls = (struct TLS *) value;
+  Py_XDECREF (tls->cups_password_callback);
+
+#if HAVE_CUPS_1_4
+  Py_XDECREF (tls->cups_password_callback_context);
+#endif /* HAVE_CUPS_1_4 */
+
+  free (value);
+}
+
+static void
+init_TLS (void)
+{
+  pthread_key_create (&tls_key, destroy_TLS);
+}
+
+struct TLS *
+get_TLS (void)
+{
+  struct TLS *tls;
+  pthread_once (&tls_key_once, init_TLS);
+  tls = (struct TLS *) pthread_getspecific (tls_key);
+  if (tls == NULL)
+    {
+      tls = calloc (1, sizeof (struct TLS));
+      pthread_setspecific (tls_key, tls);
+    }
+
+  return tls;
+}
 
 static int
 do_model_compare (const wchar_t *a, const wchar_t *b)
@@ -112,6 +142,7 @@ do_model_compare (const wchar_t *a, const wchar_t *b)
 static const char *
 do_password_callback (const char *prompt)
 {
+  struct TLS *tls = get_TLS ();
   static char *password;
 
   PyObject *args;
@@ -119,14 +150,14 @@ do_password_callback (const char *prompt)
   const char *pwval;
 
   debugprintf ("-> do_password_callback\n");
-  Connection_end_allow_threads (g_current_connection);
+  Connection_end_allow_threads (tls->g_current_connection);
   args = Py_BuildValue ("(s)", prompt);
   result = PyEval_CallObject (cups_password_callback, args);
   Py_DECREF (args);
   if (result == NULL)
   {
     debugprintf ("<- do_password_callback (empty string)\n");
-    Connection_begin_allow_threads (g_current_connection);
+    Connection_begin_allow_threads (tls->g_current_connection);
     return "";
   }
 
@@ -141,11 +172,11 @@ do_password_callback (const char *prompt)
   if (!password)
   {
     debugprintf ("<- do_password_callback (empty string)\n");
-    Connection_begin_allow_threads (g_current_connection);
+    Connection_begin_allow_threads (tls->g_current_connection);
     return "";
   }
 
-  Connection_begin_allow_threads (g_current_connection);
+  Connection_begin_allow_threads (tls->g_current_connection);
   debugprintf ("<- do_password_callback\n");
   return password;
 }
@@ -296,7 +327,7 @@ cups_getEncryption (PyObject *self)
 static PyObject *
 cups_setPasswordCB (PyObject *self, PyObject *args)
 {
-  static PyObject *current_cb_context;
+  struct TLS *tls = get_TLS ();
   PyObject *cb;
 
   if (!PyArg_ParseTuple (args, "O:cups_setPasswordCB", &cb))
@@ -308,12 +339,12 @@ cups_setPasswordCB (PyObject *self, PyObject *args)
   }
 
   debugprintf ("-> cups_setPasswordCB\n");
-  Py_XDECREF (current_cb_context);
-  current_cb_context = NULL;
+  Py_XDECREF (tls->cups_password_callback_context);
+  tls->cups_password_callback_context = NULL;
 
   Py_XINCREF (cb);
-  Py_XDECREF (cups_password_callback);
-  cups_password_callback = cb;
+  Py_XDECREF (tls->cups_password_callback);
+  tls->cups_password_callback = cb;
 
 #ifdef HAVE_CUPS_1_4
   cupsSetPasswordCB2 (password_callback_oldstyle, NULL);
@@ -330,7 +361,7 @@ cups_setPasswordCB (PyObject *self, PyObject *args)
 static PyObject *
 cups_setPasswordCB2 (PyObject *self, PyObject *args)
 {
-  static PyObject *current_cb_context;
+  struct TLS *tls = get_TLS ();
   PyObject *cb;
   PyObject *cb_context = NULL;
 
@@ -349,20 +380,20 @@ cups_setPasswordCB2 (PyObject *self, PyObject *args)
   debugprintf ("-> cups_setPasswordCB2\n");
 
   Py_XINCREF (cb_context);
-  Py_XDECREF (current_cb_context);
-  current_cb_context = cb_context;
+  Py_XDECREF (tls->cups_password_callback_context);
+  tls->cups_password_callback_context = cb_context;
 
   if (cb == Py_None)
   {
-    Py_XDECREF (cups_password_callback);
-    cups_password_callback = NULL;
+    Py_XDECREF (tls->cups_password_callback);
+    tls->cups_password_callback = NULL;
     cupsSetPasswordCB2 (NULL, NULL);
   }
   else
   {
     Py_XINCREF (cb);
-    Py_XDECREF (cups_password_callback);
-    cups_password_callback = cb;
+    Py_XDECREF (tls->cups_password_callback);
+    tls->cups_password_callback = cb;
     cupsSetPasswordCB2 (password_callback_newstyle, cb_context);
   }
 
