@@ -1,3 +1,11 @@
+2010-12-15  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsmodule.h: Declare new function get_TLS and its data
+	structure.
+	* cupsmodule.c: Implement it.
+	* cupsmodule.c, cupsconnection.c: Use thread-local storage for
+	CUPS password callback (bug #662805).
+
 2010-11-01  Tim Waugh  <twaugh@redhat.com>
 
 	* setup.py: Version 1.9.52.
