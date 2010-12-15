@@ -1,5 +1,9 @@
 2010-12-15  Tim Waugh  <twaugh@redhat.com>
 
+	* setup.py: Version 1.9.53.
+
+2010-12-15  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsmodule.h: Declare new function get_TLS and its data
 	structure.
 	* cupsmodule.c: Implement it.
