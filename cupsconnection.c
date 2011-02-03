@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010  Red Hat, Inc
+ * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010, 2011  Red Hat, Inc
  * Author: Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -3279,6 +3279,10 @@ Connection_addPrinterToClass (Connection *self, PyObject *args)
 static PyObject *
 Connection_deletePrinterFromClass (Connection *self, PyObject *args)
 {
+  const char *requested_attrs[] = {
+    "member-names",
+    "member-uris"
+  };
   PyObject *printernameobj;
   char *printername;
   PyObject *classnameobj;
@@ -3306,6 +3310,10 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
   free (classname);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
+  ippAddStrings (request, IPP_TAG_OPERATION, IPP_TAG_KEYWORD,
+		 "requested-attributes",
+		 sizeof(requested_attrs) / sizeof(requested_attrs[0]),
+		 NULL, requested_attrs);
   Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/");
   Connection_end_allow_threads (self);
@@ -3327,6 +3335,13 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
     return NULL;
   }
 
+  printers = ippFindAttribute (answer, "member-uris", IPP_TAG_URI);
+  if (!printers || i >= printers->num_values) {
+    ippDelete (answer);
+    PyErr_SetString (PyExc_RuntimeError, "No member URIs returned");
+    return NULL;
+  }
+
   request = ippNewRequest (CUPS_ADD_CLASS);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
@@ -3338,7 +3353,6 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
     // Trim the printer from the list.
     ipp_attribute_t *newlist;
     int j;
-    printers = ippFindAttribute (answer, "member-uris", IPP_TAG_URI);
     newlist = ippAddStrings (request, IPP_TAG_PRINTER, IPP_TAG_URI,
 			     "member-uris", printers->num_values - 1,
 			     NULL, NULL);
