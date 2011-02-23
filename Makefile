@@ -12,7 +12,7 @@ DIST=Makefile test.py \
 
 cups.so: $(SOURCES)
 	python setup.py build
-	mv build/lib*/$@ .
+	ln -sf build/lib*/$@ .
 
 doc:	cups.so
 	rm -rf html
@@ -31,7 +31,7 @@ dist:
 install:	install-rpmhook
 	ROOT= ; \
 	if [ -n "$$DESTDIR" ]; then ROOT="--root $$DESTDIR"; fi; \
-	python setup.py install $$ROOT
+	python setup.py install --skip-build $$ROOT
 
 install-rpmhook:
 	if [ -n "$(RPMCONFIGDIR)" ]; then \
