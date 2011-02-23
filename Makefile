@@ -37,7 +37,7 @@ install-rpmhook:
 		RPMCONFIG="$$DESTDIR$(RPMCONFIGDIR)" ; \
 		mkdir -p "$$RPMCONFIG"/fileattrs ; \
 		install -m0644 psdriver.attr "$$RPMCONFIG"/fileattrs/ ; \
-		install -m0644 postscriptdriver.prov "$$RPMCONFIG"/ ; \
+		install -m0755 postscriptdriver.prov "$$RPMCONFIG"/ ; \
 	fi
 
 .PHONY: doc clean dist install install-rpmhook
