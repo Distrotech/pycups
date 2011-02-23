@@ -4,6 +4,11 @@
 	packages with Device IDs of models supported by drivers.
 	* Makefile: Install RPM hooks if rpm is available.
 
+2011-02-03  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (Connection_deletePrinterFromClass): More
+	defensive coding (bug #673468).
+
 2010-12-15  Tim Waugh  <twaugh@redhat.com>
 
 	* setup.py: Version 1.9.53.
