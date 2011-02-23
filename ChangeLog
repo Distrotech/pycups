@@ -1,3 +1,9 @@
+2011-02-23  Tim Waugh  <twaugh@redhat.com>
+
+	* psdriver.attr, postscriptdriver.prov: RPM hooks for tagging
+	packages with Device IDs of models supported by drivers.
+	* Makefile: Install RPM hooks if rpm is available.
+
 2010-12-15  Tim Waugh  <twaugh@redhat.com>
 
 	* setup.py: Version 1.9.53.
