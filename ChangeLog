@@ -4,6 +4,11 @@
 
 2011-02-23  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_begin_allow_threads): Avoid
+	'unused variable' warning.
+
+2011-02-23  Tim Waugh  <twaugh@redhat.com>
+
 	* psdriver.attr, postscriptdriver.prov: RPM hooks for tagging
 	packages with Device IDs of models supported by drivers.
 	* Makefile: Install RPM hooks if rpm is available.

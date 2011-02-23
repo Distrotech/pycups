@@ -291,7 +291,9 @@ Connection_repr (Connection *self)
 void
 Connection_begin_allow_threads (void *connection)
 {
+#ifndef HAVE_CUPS_1_4
   struct TLS *tls = get_TLS ();
+#endif /* !HAVE_CUPS_1_4 */
   Connection *self = (Connection *) connection;
   debugprintf ("begin allow threads\n");
 
