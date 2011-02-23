@@ -3,7 +3,8 @@ VERSION:=$(shell python setup.py --version)
 RPMCONFIGDIR:=$(shell rpm -E "%{_rpmconfigdir}" 2>/dev/null || :)
 
 SOURCES=cupsmodule.c cupsconnection.c cupsppd.c cupsipp.c setup.py \
-	cupsppd.h cupsipp.h cupsconnection.h cupsmodule.h
+	cupsppd.h cupsipp.h cupsconnection.h cupsmodule.h \
+	psdriver.attr postscriptdriver.prov
 
 DIST=Makefile test.py \
 	examples \
