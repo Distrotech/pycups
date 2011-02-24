@@ -3,6 +3,10 @@ NEWS
 
 New in 1.9.55:
 
+* cups.IPP_QUALITY_DRAFT, cups.IPP_QUALITY_NORMAL,
+  cups.IPP_QUALITY_HIGH
+* cups.IPP_PORTRAIT, cups.IPP_LANDSCAPE, cups.IPP_REVERSE_PORTRAIT,
+  cups.IPP_REVERSE_LANDSCAPE
 * cups.IPP_RES_UNITS_CM, cups.IPP_RES_UNITS_INCH
 * Support for IPP_TAG_RESOLUTION as triplet (xres, yres, units).
 
