@@ -556,6 +556,7 @@ static PyObject *
 PyObject_from_attr_value (ipp_attribute_t *attr, int i)
 {
   PyObject *val = NULL;
+  char unknown[100];
   switch (attr->value_tag) {
   case IPP_TAG_NAME:
   case IPP_TAG_TEXT:
@@ -587,8 +588,16 @@ PyObject_from_attr_value (ipp_attribute_t *attr, int i)
   case IPP_TAG_DATE:
     val = PyString_FromString ("(IPP_TAG_DATE)");
     break;
+  case IPP_TAG_RESOLUTION:
+    val = Py_BuildValue ("(iii)",
+			 attr->values[i].resolution.xres,
+			 attr->values[i].resolution.yres,
+			 attr->values[i].resolution.units);
+    break;
   default:
-    val = PyString_FromString ("(unknown IPP tag)");
+    snprintf (unknown, sizeof (unknown),
+	      "(unknown IPP value tag 0x%x)", attr->value_tag);
+    val = PyString_FromString (unknown);
     break;
   }
 
@@ -3148,6 +3157,7 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 	case IPP_TAG_LANGUAGE:
 	case IPP_TAG_ENUM:
 	case IPP_TAG_INTEGER:
+	case IPP_TAG_RESOLUTION:
 	  is_list = !strcmp (attr->name + namelen - 10, "-supported");
 
 	  if (!is_list) {

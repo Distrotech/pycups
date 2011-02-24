@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.55:
+
+* cups.IPP_RES_UNITS_CM, cups.IPP_RES_UNITS_INCH
+* Support for IPP_TAG_RESOLUTION as triplet (xres, yres, units).
+
 New in 1.9.52:
 
 * cups.Connection.getPPDs2(): New method, identical to getPPDs() but

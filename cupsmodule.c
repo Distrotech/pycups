@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010  Red Hat, Inc
+ * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010, 2011  Red Hat, Inc
  * Author: Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -810,6 +810,9 @@ initcups (void)
   INT_CONSTANT (IPP_TAG_CHARSET);
   INT_CONSTANT (IPP_TAG_LANGUAGE);
   INT_CONSTANT (IPP_TAG_MIMETYPE);
+
+  INT_CONSTANT (IPP_RES_PER_CM);
+  INT_CONSTANT (IPP_RES_PER_INCH);
 
   // Limits
   INT_CONSTANT (IPP_MAX_NAME);
