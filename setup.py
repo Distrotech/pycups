@@ -1,5 +1,5 @@
 from distutils.core import setup, Extension
-VERSION="1.9.54"
+VERSION="1.9.55"
 setup (name="pycups",
        version=VERSION,
        ext_modules=[Extension("cups",
