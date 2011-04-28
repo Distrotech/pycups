@@ -220,8 +220,6 @@ cups_modelSort (PyObject *self, PyObject *args)
     return NULL;
   }
 
-  wca = malloc (size_a);
-
   len_b = 1 + PyUnicode_GetSize (b);
   size_b = len_b * sizeof (wchar_t);
   if ((size_b / sizeof (wchar_t)) != len_b) {
@@ -231,8 +229,8 @@ cups_modelSort (PyObject *self, PyObject *args)
     return NULL;
   }
 
+  wca = malloc (size_a);
   wcb = malloc (size_b);
-  
   if (wca == NULL || wcb == NULL) {
     Py_DECREF (a);
     Py_DECREF (b);
