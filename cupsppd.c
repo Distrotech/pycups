@@ -682,7 +682,7 @@ PPD_writeFd (PPD *self, PyObject *args)
     return NULL;
 
   dfd = dup (fd);
-  if (!dfd) {
+  if (dfd == -1) {
     PyErr_SetFromErrno (PyExc_RuntimeError);
     return NULL;
   }
