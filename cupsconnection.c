@@ -4246,7 +4246,6 @@ Connection_cancelSubscription (Connection *self, PyObject *args)
 {
   int id;
   ipp_t *request, *answer;
-  ipp_attribute_t *attr;
 
   if (!PyArg_ParseTuple (args, "i", &id))
     return NULL;
@@ -4257,8 +4256,8 @@ Connection_cancelSubscription (Connection *self, PyObject *args)
 		"printer-uri", NULL, "/");
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_NAME,
 		"requesting-user-name", NULL, cupsUser ());
-  attr = ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
-			 "notify-subscription-id", id);
+  ippAddInteger (request, IPP_TAG_OPERATION, IPP_TAG_INTEGER,
+		"notify-subscription-id", id);
 
   Connection_begin_allow_threads (self);
   answer = cupsDoRequest (self->http, request, "/");
