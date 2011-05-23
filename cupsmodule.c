@@ -152,7 +152,7 @@ do_password_callback (const char *prompt)
   debugprintf ("-> do_password_callback\n");
   Connection_end_allow_threads (tls->g_current_connection);
   args = Py_BuildValue ("(s)", prompt);
-  result = PyEval_CallObject (cups_password_callback, args);
+  result = PyEval_CallObject (tls->cups_password_callback, args);
   Py_DECREF (args);
   if (result == NULL)
   {

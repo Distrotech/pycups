@@ -1,3 +1,8 @@
+2011-05-23  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsmodule.c (do_password_callback): Fixed typo preventing
+	build against CUPS < 1.4.
+
 2011-03-20  Tim Waugh  <twaugh@redhat.com>
 
 	* setup.py: Version 1.9.55.
