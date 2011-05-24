@@ -1,5 +1,8 @@
 2011-05-24  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsconnection.c (Connection_getPPD3): Only provide this
+	binding for CUPS >= 1.4.
+
 	* cupsmodule.c (cups_setPasswordCB): Fixed build against
 	CUPS < 1.4.
 

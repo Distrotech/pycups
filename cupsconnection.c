@@ -3523,6 +3523,7 @@ Connection_getPPD (Connection *self, PyObject *args)
   return ret;
 }
 
+#ifdef HAVE_CUPS_1_4
 static PyObject *
 Connection_getPPD3 (Connection *self, PyObject *args, PyObject *kwds)
 {
@@ -3602,6 +3603,7 @@ Connection_getPPD3 (Connection *self, PyObject *args, PyObject *kwds)
 	       status, modtime, fname);
   return ret;
 }
+#endif /* HAVE_CUPS_1_4 */
 
 static PyObject *
 Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
@@ -4962,6 +4964,7 @@ PyMethodDef Connection_methods[] =
       "@return: temporary PPD file name\n"
       "@raise IPPError: IPP problem" },
 
+#ifdef HAVE_CUPS_1_4
     { "getPPD3",
       (PyCFunction) Connection_getPPD3, METH_VARARGS | METH_KEYWORDS,
       "getPPD3(name[, modtime, filename]) -> (status,modtime,filename)\n\n"
@@ -4973,6 +4976,7 @@ PyMethodDef Connection_methods[] =
       "@type filename: string\n"
       "@param filename: filename of existing file\n"
       "@return: tuple of HTTP status, modification time, and filename\n" },
+#endif /* HAVE_CUPS_1_4 */
 
     { "enablePrinter",
       (PyCFunction) Connection_enablePrinter, METH_VARARGS | METH_KEYWORDS,
