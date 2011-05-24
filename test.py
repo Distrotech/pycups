@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import cups
 
-# Simple desmontration of cups module
+# Simple demonstration of cups module
 
 def callback (prompt):
 	print "Password is required for this operation"
