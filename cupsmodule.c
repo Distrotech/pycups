@@ -337,8 +337,10 @@ cups_setPasswordCB (PyObject *self, PyObject *args)
   }
 
   debugprintf ("-> cups_setPasswordCB\n");
+#ifdef HAVE_CUPS_1_4
   Py_XDECREF (tls->cups_password_callback_context);
   tls->cups_password_callback_context = NULL;
+#endif /* HAVE_CUPS_1_4 */
 
   Py_XINCREF (cb);
   Py_XDECREF (tls->cups_password_callback);
