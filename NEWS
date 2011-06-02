@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New in 1.9.56:
+
+* Builds against older versions of CUPS again.
+
 New in 1.9.55:
 
 * cups.IPP_QUALITY_DRAFT, cups.IPP_QUALITY_NORMAL,
