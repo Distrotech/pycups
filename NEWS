@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New in 1.9.57:
+
+* Fixed rpm provides script for newer versions of rpm.
+
 New in 1.9.56:
 
 * Builds against older versions of CUPS again.
