@@ -1,3 +1,8 @@
+2011-06-09  Tim Waugh  <twaugh@redhat.com>
+
+	* postscriptdriver.prov: Get RPM_BUILD_ROOT from environment
+	if not provided on command line (bug #712027).
+
 2011-06-02  Tim Waugh  <twaugh@redhat.com>
 
 	* setup.py: Version 1.9.56.

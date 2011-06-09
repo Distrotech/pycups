@@ -39,7 +39,7 @@ import tempfile
 if len (sys.argv) > 1:
     RPM_BUILD_ROOT = sys.argv[1]
 else:
-    RPM_BUILD_ROOT = None
+    RPM_BUILD_ROOT = os.environ.get ("RPM_BUILD_ROOT")
 
 class TimedOut(Exception):
     def __init__ (self):
