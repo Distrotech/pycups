@@ -1,3 +1,8 @@
+2011-06-16  Tim Waugh  <twaugh@redhat.com>
+
+	* postscriptdriver.prov: Increase timeout for dynamic driver
+	listing.
+
 2011-06-09  Tim Waugh  <twaugh@redhat.com>
 
 	* setup.py: Version 1.9.57.

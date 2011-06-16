@@ -142,7 +142,7 @@ class DynamicDriver(Driver):
         raise TimedOut
 
     def list (self):
-        signal.alarm (60)
+        signal.alarm (180)
         env = os.environ.copy ()
         if RPM_BUILD_ROOT:
             buildroot = RPM_BUILD_ROOT
