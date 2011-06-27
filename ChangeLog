@@ -1,5 +1,7 @@
 2001-06-27  Tim Waugh  <twaugh@redhat.com>
 
+	* setup.py: Link against libiconv on darwin (trac #15).
+
 	* cupsppd.c: Fixed feature test for getline() (trac #15).
 
 2011-06-16  Tim Waugh  <twaugh@redhat.com>
