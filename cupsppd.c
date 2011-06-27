@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006, 2007, 2008  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2011  Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -507,7 +507,7 @@ PPD_nondefaultsMarked (PPD *self)
   return PyBool_FromLong (nondefaults_marked);
 }
 
-#ifdef __SVR4
+#if !(_POSIX_C_SOURCE >= 200809L || _XOPEN_SOURCE >= 700)
 /*
  * A rudimentary emulation of getline() for systems that dont support it
  * natively.  Since this is used for PPD file reading, it assumes (possibly
