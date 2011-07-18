@@ -3749,6 +3749,77 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
+Connection_adminExportSamba (Connection *self, PyObject *args)
+{
+  int ret;
+  PyObject *nameobj;
+  char *name;
+  PyObject *serverobj;
+  char *server;
+  PyObject *userobj;
+  char  *user;
+  PyObject *passwordobj;
+  char *password;
+  char ppdfile[1024];
+  FILE *tmpfile(void);
+  FILE *tf;
+  char str[80];
+
+  if (!PyArg_ParseTuple (args, "OOOO", &nameobj, &serverobj, &userobj,
+                         &passwordobj))
+    return NULL;
+
+  if (UTF8_from_PyObj (&name, nameobj) == NULL ||
+      UTF8_from_PyObj (&server, serverobj) == NULL ||
+      UTF8_from_PyObj (&user, userobj) == NULL ||
+      UTF8_from_PyObj (&password, passwordobj) == NULL) {
+    free (name);
+    free (server);
+    free (user);
+    free (password);
+    PyErr_SetString(PyExc_RuntimeError,
+                    "name, samba_server, samba_username, samba_password "
+                    "must be specified");
+    return NULL;
+  }
+
+  if (!cupsAdminCreateWindowsPPD(self->http, name, ppdfile, sizeof(ppdfile))) {
+    PyErr_SetString(PyExc_RuntimeError,
+                    "No PPD file found for the printer");
+    return NULL;
+  }
+
+  debugprintf ("-> Connection_adminExportSamba()\n");
+  tf = tmpfile();
+  Connection_begin_allow_threads (self);
+  ret = cupsAdminExportSamba(name, ppdfile, server, user, password, tf);
+  Connection_end_allow_threads (self);
+
+  free (name);
+  free (server);
+  free (user);
+  free (password);
+  unlink (ppdfile);
+
+  if (!ret) {
+    rewind(tf);
+    // Read logfile line by line to get Exit status message on the last line.
+    while (fgets (str, sizeof(str), tf) != NULL) { }
+    fclose (tf);
+    if (str[strlen(str) -1] == '\n') {
+      str[strlen(str) -1] = '\0';
+    }
+    PyErr_SetString (PyExc_RuntimeError, str);
+    debugprintf ("<- Connection_adminExportSamba() EXCEPTION\n");
+    return NULL;
+  }
+  fclose (tf);
+  Py_INCREF (Py_None);
+  debugprintf ("<- Connection_adminExportSamba()\n");
+  return Py_None;
+}
+
+static PyObject *
 Connection_adminGetServerSettings (Connection *self)
 {
   PyObject *ret = PyDict_New ();
@@ -5030,6 +5101,21 @@ PyMethodDef Connection_methods[] =
       "@keyword format: document format (default 'application/postscript')\n"
       "@type user: string\n"
       "@keyword user: user to submit the job as\n"
+      "@raise IPPError: IPP problem" },
+
+    { "adminExportSamba",
+      (PyCFunction) Connection_adminExportSamba, METH_VARARGS,
+      "adminExportSamba(name, samba_server, samba_username,\n"
+      "                 samba_password) -> None\n\n"
+      "Export a printer to Samba.\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
+      "@type samba_server: string\n"
+      "@param samba_server: samba server\n"
+      "@type samba_username: string\n"
+      "@param samba_username: samba username\n"
+      "@type samba_password: string\n"
+      "@param samba_password: samba password\n"
       "@raise IPPError: IPP problem" },
 
     { "adminGetServerSettings",
