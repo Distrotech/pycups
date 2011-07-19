@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New in 1.9.58:
+
+* cups.Connection.adminExportSamba
+
 New in 1.9.57:
 
 * Fixed rpm provides script for newer versions of rpm.
