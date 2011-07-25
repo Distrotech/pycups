@@ -1,4 +1,9 @@
-2001-06-27  Tim Waugh  <twaugh@redhat.com>
+2011-07-18  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c: Applied patch from Gowtham Narisipalli to
+	add adminExportSamba method.
+
+2011-06-27  Tim Waugh  <twaugh@redhat.com>
 
 	* setup.py: Link against libiconv on darwin (trac #15).
 
