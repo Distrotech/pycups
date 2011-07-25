@@ -1,3 +1,10 @@
+2011-07-25  Tim Waugh  <twaugh@redhat.com>
+
+	* MANIFEST.in: New file.
+	* Makefile: Use sdist for creating tarballs.
+
+	* setup.py: Added more information ready for PyPI.
+
 2011-07-18  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c: Applied patch from Gowtham Narisipalli to

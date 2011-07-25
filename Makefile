@@ -1,5 +1,6 @@
 NAME=pycups
 VERSION:=$(shell python setup.py --version)
+SDIST_ARGS=--formats=bztar -d.
 RPMCONFIGDIR:=$(shell rpm -E "%{_rpmconfigdir}" 2>/dev/null || :)
 
 SOURCES=cupsmodule.c cupsconnection.c cupsppd.c cupsipp.c setup.py \
@@ -10,23 +11,22 @@ DIST=Makefile test.py \
 	examples \
 	COPYING NEWS README TODO ChangeLog
 
-cups.so: $(SOURCES)
+cups.so: force
 	python setup.py build
-	ln -sf build/lib*/$@ .
+	mv build/lib*/$@ .
 
 doc:	cups.so
 	rm -rf html
 	epydoc -o html --html $<
 
+doczip:	doc
+	cd html && zip ../cups-html.zip *
+
 clean:
 	-rm -rf build cups.so *.pyc *~
 
 dist:
-	rm -rf $(NAME)-$(VERSION)
-	mkdir $(NAME)-$(VERSION)
-	cp -a $(SOURCES) $(DIST) $(NAME)-$(VERSION)
-	tar jcf $(NAME)-$(VERSION).tar.bz2 $(NAME)-$(VERSION)
-	rm -rf $(NAME)-$(VERSION)
+	python setup.py sdist $(SDIST_ARGS)
 
 install:	install-rpmhook
 	ROOT= ; \
@@ -41,5 +41,4 @@ install-rpmhook:
 		install -m0755 postscriptdriver.prov "$$RPMCONFIG"/ ; \
 	fi
 
-.PHONY: doc clean dist install install-rpmhook
-
+.PHONY: doc doczip clean dist install install-rpmhook force
