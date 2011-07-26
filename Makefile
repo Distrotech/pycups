@@ -28,6 +28,9 @@ clean:
 dist:
 	python setup.py sdist $(SDIST_ARGS)
 
+upload:
+	python setup.py sdist $(SDIST_ARGS) upload -s
+
 install:	install-rpmhook
 	ROOT= ; \
 	if [ -n "$$DESTDIR" ]; then ROOT="--root $$DESTDIR"; fi; \
