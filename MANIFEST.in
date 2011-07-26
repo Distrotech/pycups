@@ -1,5 +1,6 @@
 include COPYING README NEWS TODO ChangeLog
 
+include Makefile
 include cupsconnection.[ch]
 include cupsipp.[ch]
 include cupsmodule.[ch]
