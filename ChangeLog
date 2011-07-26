@@ -1,3 +1,7 @@
+2011-07-26  Tim Waugh  <twaugh@redhat.com>
+
+	* setup.py: Version 1.9.58.
+
 2011-07-25  Tim Waugh  <twaugh@redhat.com>
 
 	* MANIFEST.in: New file.
