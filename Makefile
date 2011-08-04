@@ -13,7 +13,7 @@ DIST=Makefile test.py \
 
 cups.so: force
 	python setup.py build
-	mv build/lib*/$@ .
+	ln -sf build/lib*/$@ .
 
 doc:	cups.so
 	rm -rf html
