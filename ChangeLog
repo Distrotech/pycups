@@ -1,5 +1,9 @@
 2011-10-03  Tim Waugh  <twaugh@redhat.com>
 
+	* setup.py: Version 1.9.59.
+
+2011-10-03  Tim Waugh  <twaugh@redhat.com>
+
 	* cupsmodule.c (do_password_callback), cupsconnection.c
 	(password_callback): Return NULL instead of the empty string
 	when handling an exception or when the callback returned an

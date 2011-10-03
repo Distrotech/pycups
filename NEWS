@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.59:
+
+* Password callbacks can now return None to indicate they want to
+  abort the current operation.
+
 New in 1.9.58:
 
 * cups.Connection.adminExportSamba
