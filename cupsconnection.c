@@ -366,20 +366,26 @@ password_callback (int newstyle,
   Py_DECREF (args);
   if (result == NULL)
   {
-    debugprintf ("<- password_callback (empty string)\n");
+    debugprintf ("<- password_callback (exception)\n");
     Connection_begin_allow_threads (self);
-    return "";
+    return NULL;
   }
 
-  pwval = PyString_AsString (result);
   free (self->cb_password);
-  self->cb_password = strdup (pwval);
-  Py_DECREF (result);
-  if (!self->cb_password)
+  if (result == Py_None)
+    self->cb_password = NULL;
+  else
   {
-    debugprintf ("<- password_callback (empty string)\n");
+    pwval = PyString_AsString (result);
+    self->cb_password = strdup (pwval);
+  }
+
+  Py_DECREF (result);
+  if (!self->cb_password || !*self->cb_password)
+  {
+    debugprintf ("<- password_callback (empty/null)\n");
     Connection_begin_allow_threads (self);
-    return "";
+    return NULL;
   }
 
   Connection_begin_allow_threads (self);

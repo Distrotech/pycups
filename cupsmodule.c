@@ -156,9 +156,9 @@ do_password_callback (const char *prompt)
   Py_DECREF (args);
   if (result == NULL)
   {
-    debugprintf ("<- do_password_callback (empty string)\n");
+    debugprintf ("<- do_password_callback (exception)\n");
     Connection_begin_allow_threads (tls->g_current_connection);
-    return "";
+    return NULL;
   }
 
   if (password) {
@@ -166,14 +166,20 @@ do_password_callback (const char *prompt)
     password = NULL;
   }
 
-  pwval = PyString_AsString (result);
-  password = strdup (pwval);
-  Py_DECREF (result);
-  if (!password)
+  if (result == Py_None)
+    password = NULL;
+  else
   {
-    debugprintf ("<- do_password_callback (empty string)\n");
+    pwval = PyString_AsString (result);
+    password = strdup (pwval);
+  }
+
+  Py_DECREF (result);
+  if (!password || !*password)
+  {
+    debugprintf ("<- do_password_callback (empty/null)\n");
     Connection_begin_allow_threads (tls->g_current_connection);
-    return "";
+    return NULL;
   }
 
   Connection_begin_allow_threads (tls->g_current_connection);
@@ -513,8 +519,8 @@ static PyMethodDef CupsMethods[] = {
     "setPasswordCB(fn) -> None\n\n"
     "Set password callback function.  This Python function will be called \n"
     "when a password is required.  It must take one string parameter \n"
-    "(the password prompt) and it must return a string (the password).  To \n"
-    "abort the operation it may return the empty string ('').\n\n"
+    "(the password prompt) and it must return a string (the password), or \n"
+    "None to abort the operation.\n\n"
     "@type fn: callable object\n"
     "@param fn: callback function" },
 
@@ -523,10 +529,10 @@ static PyMethodDef CupsMethods[] = {
     "setPasswordCB2(fn, context=None) -> None\n\n"
     "Set password callback function.  This Python function will be called \n"
     "when a password is required.  It must take parameters of type string \n"
-    "(the password prompt), instance (the cups.Connection), string (the HTTP "
-    "method), string (the HTTP resource) and, optionally, the user-supplied "
-    "context.  It must return a string (the password).  To \n"
-    "abort the operation it may return the empty string ('').\n\n"
+    "(the password prompt), instance (the cups.Connection), string (the \n"
+    "HTTP method), string (the HTTP resource) and, optionally, the user-\n"
+    "supplied context.  It must return a string (the password), or None \n"
+    "to abort the operation.\n\n"
     "@type fn: callable object, or None for default handler\n"
     "@param fn: callback function" },
 #endif /* HAVE_CUPS_1_4 */
