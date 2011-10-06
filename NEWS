@@ -1,6 +1,19 @@
 NEWS
 ----
 
+New in 1.9.60:
+
+* New constants from 1.5:
+  - IPP_AUTHENTICATION_CANCELED
+  - IPP_PKI_ERROR
+  - HTTP_NOT_IMPLEMENTED
+  - HTTP_BAD_GATEWAY
+  - HTTP_SERVICE_UNAVAILABLE
+  - HTTP_GATEWAY_TIMEOUT
+  - HTTP_NOT_SUPPORTED
+  - HTTP_AUTHORIZATION_CANCELED
+  - HTTP_PKI_ERROR
+
 New in 1.9.59:
 
 * Password callbacks can now return None to indicate they want to
