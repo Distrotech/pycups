@@ -1658,6 +1658,7 @@ Connection_getJobAttributes (Connection *self, PyObject *args, PyObject *kwds)
   for (attr = answer->attrs; attr; attr = attr->next) {
     PyObject *obj;
 
+    debugprintf ("Attr: %s\n", attr->name);
     if (attr->num_values > 1 ||
 	!strcmp (attr->name, "job-printer-state-reasons"))
       obj = PyList_from_attr_values (attr);
