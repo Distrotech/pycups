@@ -1,5 +1,8 @@
 2011-11-25  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsmodule.c: HTTP_AUTHORIZATION_CANCELED constant requires
+	CUPS 1.4 (trac #16).
+
 	* cupsppd.c: Object lifecycle debugging.
 
 2011-10-11  Tim Waugh  <twaugh@redhat.com>
