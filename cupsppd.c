@@ -220,6 +220,7 @@ PPD_init (PPD *self, PyObject *args, PyObject *kwds)
     return -1;
   }
 
+  debugprintf ("+ PPD %p %s (fd %d)\n", self, filename, fileno (self->file));
   self->ppd = ppdOpenFile (filename);
   if (!self->ppd) {
     fclose (self->file);
@@ -235,6 +236,8 @@ PPD_init (PPD *self, PyObject *args, PyObject *kwds)
 static void
 PPD_dealloc (PPD *self)
 {
+  debugprintf ("- PPD %p (fd %d)\n", self, fileno (self->file));
+
   if (self->file)
     fclose (self->file);
   if (self->ppd)
