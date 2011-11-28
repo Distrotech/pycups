@@ -1,3 +1,7 @@
+2011-11-28  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsmodule.c: Fixed typo in fix for trac #16.
+
 2011-11-25  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsmodule.c: HTTP_AUTHORIZATION_CANCELED constant requires
