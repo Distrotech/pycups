@@ -1,3 +1,8 @@
+2011-12-06  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsmodule.c, cupsppd.c: Fixed reference count issues with
+	Py_None (trac #17).
+
 2011-11-28  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsmodule.c: Fixed typo in fix for trac #16.

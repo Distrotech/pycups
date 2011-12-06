@@ -457,7 +457,7 @@ cups_require (PyObject *self, PyObject *args)
     nreq = strtoul (preq, &end, 0);
   }
 
-  return Py_None;
+  Py_RETURN_NONE;
 fail:
   PyErr_SetString (PyExc_RuntimeError, "I am version " VERSION);
   return NULL;

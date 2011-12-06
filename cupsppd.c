@@ -258,7 +258,7 @@ static PyObject *
 PPD_localize (PPD *self)
 {
   if (!ppdLocalize (self->ppd))
-    return Py_None;
+    Py_RETURN_NONE;
   return PyErr_SetFromErrno (PyExc_RuntimeError);
 }
 
@@ -579,7 +579,7 @@ PPD_emit (PPD *self, PyObject *args)
     return NULL;
 
   if (!ppdEmit(self->ppd, f, section))
-    return Py_None;
+    Py_RETURN_NONE;
   return PyErr_SetFromErrno (PyExc_RuntimeError);
 }
 
@@ -604,7 +604,7 @@ PPD_emitAfterOrder (PPD *self, PyObject *args)
     return NULL;
 
   if (!ppdEmitAfterOrder(self->ppd, f, section, limit, min_order))
-    return Py_None;
+    Py_RETURN_NONE;
   return PyErr_SetFromErrno (PyExc_RuntimeError);
 }
 
@@ -622,7 +622,7 @@ PPD_emitFd (PPD *self, PyObject *args)
     return NULL;
 
   if (!ppdEmitFd(self->ppd, f, section))
-    return Py_None;
+    Py_RETURN_NONE;
   return PyErr_SetFromErrno (PyExc_RuntimeError);
 }
 
@@ -647,7 +647,7 @@ PPD_emitJCL (PPD *self, PyObject *args)
     return NULL;
 
   if (!ppdEmitJCL(self->ppd, f, job_id, user, title))
-    return Py_None;
+    Py_RETURN_NONE;
   return PyErr_SetFromErrno (PyExc_RuntimeError);
 }
 
@@ -669,7 +669,7 @@ PPD_emitJCLEnd (PPD *self, PyObject *args)
     return NULL;
 
   if (!ppdEmitJCLEnd(self->ppd, f))
-    return Py_None;
+    Py_RETURN_NONE;
   return PyErr_SetFromErrno (PyExc_RuntimeError);
 }
 
