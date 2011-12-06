@@ -262,8 +262,7 @@ cups_setUser (PyObject *self, PyObject *args)
     return NULL;
 
   cupsSetUser (user);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -275,8 +274,7 @@ cups_setServer (PyObject *self, PyObject *args)
     return NULL;
 
   cupsSetServer (server);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -288,8 +286,7 @@ cups_setPort (PyObject *self, PyObject *args)
     return NULL;
 
   ippSetPort (port);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -300,8 +297,7 @@ cups_setEncryption (PyObject *self, PyObject *args)
     return NULL;
 
   cupsSetEncryption (e);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -359,8 +355,7 @@ cups_setPasswordCB (PyObject *self, PyObject *args)
 #endif
 
   debugprintf ("<- cups_setPasswordCB\n");
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 #ifdef HAVE_CUPS_1_4
@@ -404,8 +399,7 @@ cups_setPasswordCB2 (PyObject *self, PyObject *args)
   }
 
   debugprintf ("<- cups_setPasswordCB2\n");
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 #endif /* HAVE_CUPS_1_4 */
 
@@ -417,8 +411,7 @@ cups_ppdSetConformance (PyObject *self, PyObject *args)
     return NULL;
 
   ppdSetConformance (level);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *

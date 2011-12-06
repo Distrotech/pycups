@@ -322,8 +322,7 @@ static PyObject *
 PPD_markDefaults (PPD *self)
 {
   ppdMarkDefaults (self->ppd);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -739,8 +738,7 @@ PPD_writeFd (PPD *self, PyObject *args)
   if (line)
     free (line);
 
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 /////////
@@ -1083,8 +1081,7 @@ static PyObject *
 Option_getKeyword (Option *self, void *closure)
 {
   if (!self->option) {
-    Py_INCREF (Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
   }
 
   return make_PyUnicode_from_ppd_string (self->ppd, self->option->keyword);
@@ -1094,8 +1091,7 @@ static PyObject *
 Option_getDefchoice (Option *self, void *closure)
 {
   if (!self->option) {
-    Py_INCREF (Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
   }
 
   return make_PyUnicode_from_ppd_string (self->ppd, self->option->defchoice);
@@ -1105,8 +1101,7 @@ static PyObject *
 Option_getText (Option *self, void *closure)
 {
   if (!self->option) {
-    Py_INCREF (Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
   }
 
   return make_PyUnicode_from_ppd_string (self->ppd, self->option->text);
@@ -1116,8 +1111,7 @@ static PyObject *
 Option_getUI (Option *self, void *closure)
 {
   if (!self->option) {
-    Py_INCREF (Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
   }
 
   return PyInt_FromLong (self->option->ui);
@@ -1315,8 +1309,7 @@ static PyObject *
 Group_getText (Group *self, void *closure)
 {
   if (!self->group) {
-    Py_INCREF (Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
   }
 
   return make_PyUnicode_from_ppd_string (self->ppd, self->group->text);
@@ -1326,8 +1319,7 @@ static PyObject *
 Group_getName (Group *self, void *closure)
 {
   if (!self->group) {
-    Py_INCREF (Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
   }
 
   return make_PyUnicode_from_ppd_string (self->ppd, self->group->name);
@@ -1503,8 +1495,7 @@ static PyObject *
 Constraint_getOption1 (Constraint *self, void *closure)
 {
   if (!self->constraint) {
-    Py_INCREF (Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
   }
 
   return make_PyUnicode_from_ppd_string (self->ppd, self->constraint->option1);
@@ -1514,8 +1505,7 @@ static PyObject *
 Constraint_getChoice1 (Constraint *self, void *closure)
 {
   if (!self->constraint) {
-    Py_INCREF (Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
   }
 
   return make_PyUnicode_from_ppd_string (self->ppd, self->constraint->choice1);
@@ -1525,8 +1515,7 @@ static PyObject *
 Constraint_getOption2 (Constraint *self, void *closure)
 {
   if (!self->constraint) {
-    Py_INCREF (Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
   }
 
   return make_PyUnicode_from_ppd_string (self->ppd, self->constraint->option2);
@@ -1536,8 +1525,7 @@ static PyObject *
 Constraint_getChoice2 (Constraint *self, void *closure)
 {
   if (!self->constraint) {
-    Py_INCREF (Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
   }
 
   return make_PyUnicode_from_ppd_string (self->ppd, self->constraint->choice2);
@@ -1665,8 +1653,7 @@ static PyObject *
 Attribute_getName (Attribute *self, void *closure)
 {
   if (!self->attribute) {
-    Py_INCREF (Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
   }
 
   return make_PyUnicode_from_ppd_string (self->ppd, self->attribute->name);
@@ -1676,8 +1663,7 @@ static PyObject *
 Attribute_getSpec (Attribute *self, void *closure)
 {
   if (!self->attribute) {
-    Py_INCREF (Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
   }
 
   return make_PyUnicode_from_ppd_string (self->ppd, self->attribute->spec);
@@ -1687,8 +1673,7 @@ static PyObject *
 Attribute_getText (Attribute *self, void *closure)
 {
   if (!self->attribute) {
-    Py_INCREF (Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
   }
 
   return make_PyUnicode_from_ppd_string (self->ppd, self->attribute->text);
@@ -1698,8 +1683,7 @@ static PyObject *
 Attribute_getValue (Attribute *self, void *closure)
 {
   if (!self->attribute) {
-    Py_INCREF (Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
   }
 
   return make_PyUnicode_from_ppd_string (self->ppd, self->attribute->value);

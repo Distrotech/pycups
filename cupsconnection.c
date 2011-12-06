@@ -488,9 +488,8 @@ do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
   debugprintf("<- do_printer_request (None)\n");
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -1712,9 +1711,8 @@ Connection_cancelJob (Connection *self, PyObject *args, PyObject *kwds)
     return NULL;
   }
 
-  Py_INCREF (Py_None);
   debugprintf ("<- Connection_cancelJob() = None\n");
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -1803,9 +1801,8 @@ Connection_cancelAllJobs (Connection *self, PyObject *args, PyObject *kwds)
     return NULL;
   }
 
-  Py_INCREF (Py_None);
   debugprintf ("<- Connection_cancelAllJobs() = None\n");
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -1877,8 +1874,7 @@ Connection_moveJob (Connection *self, PyObject *args, PyObject *kwds)
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -1945,9 +1941,8 @@ Connection_authenticateJob (Connection *self, PyObject *args)
     return NULL;
   }
 
-  Py_INCREF (Py_None);
   debugprintf ("<- Connection_authenticateJob() = None\n");
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -1992,9 +1987,8 @@ Connection_setJobHoldUntil (Connection *self, PyObject *args)
     return NULL;
   }
 
-  Py_INCREF (Py_None);
   debugprintf ("<- Connection_setJobHoldUntil() = None\n");
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2033,9 +2027,8 @@ Connection_restartJob (Connection *self, PyObject *args, PyObject *kwds)
     return NULL;
   }
 
-  Py_INCREF (Py_None);
   debugprintf ("<- Connection_restartJob() = None\n");
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2083,9 +2076,8 @@ Connection_getFile (Connection *self, PyObject *args, PyObject *kwds)
     return NULL;
   }
 
-  Py_INCREF (Py_None);
   debugprintf ("<- Connection_getFile() = None\n");
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2133,9 +2125,8 @@ Connection_putFile (Connection *self, PyObject *args, PyObject *kwds)
     return NULL;
   }
 
-  Py_INCREF (Py_None);
   debugprintf ("<- Connection_putFile() = None\n");
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static ipp_t *
@@ -2335,9 +2326,8 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
   debugprintf ("<- Connection_addPrinter() = None\n");
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2384,8 +2374,7 @@ Connection_setPrinterDevice (Connection *self, PyObject *args)
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2441,8 +2430,7 @@ Connection_setPrinterInfo (Connection *self, PyObject *args)
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2498,8 +2486,7 @@ Connection_setPrinterLocation (Connection *self, PyObject *args)
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2547,8 +2534,7 @@ Connection_setPrinterShared (Connection *self, PyObject *args)
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2616,8 +2602,7 @@ Connection_setPrinterJobSheets (Connection *self, PyObject *args)
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2673,8 +2658,7 @@ Connection_setPrinterErrorPolicy (Connection *self, PyObject *args)
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2730,8 +2714,7 @@ Connection_setPrinterOpPolicy (Connection *self, PyObject *args)
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2810,8 +2793,7 @@ do_requesting_user_names (Connection *self, PyObject *args,
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2924,8 +2906,7 @@ Connection_addPrinterOptionDefault (Connection *self, PyObject *args)
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -2988,8 +2969,7 @@ Connection_deletePrinterOptionDefault (Connection *self, PyObject *args)
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -3291,8 +3271,7 @@ Connection_addPrinterToClass (Connection *self, PyObject *args)
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -3403,8 +3382,7 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -3440,8 +3418,7 @@ Connection_deleteClass (Connection *self, PyObject *args)
   }
 
   ippDelete (answer);
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -3821,9 +3798,8 @@ Connection_adminExportSamba (Connection *self, PyObject *args)
     return NULL;
   }
   fclose (tf);
-  Py_INCREF (Py_None);
   debugprintf ("<- Connection_adminExportSamba()\n");
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -3900,9 +3876,8 @@ Connection_adminSetServerSettings (Connection *self, PyObject *args)
   }
 
   cupsFreeOptions (num_settings, settings);
-  Py_INCREF (Py_None);
   debugprintf ("<- Connection_adminSetServerSettings()\n");
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -4317,8 +4292,7 @@ Connection_renewSubscription (Connection *self, PyObject *args, PyObject *kwds)
 
   ippDelete (answer);
   debugprintf ("<- Connection_renewSubscription()\n");
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -4353,8 +4327,7 @@ Connection_cancelSubscription (Connection *self, PyObject *args)
 
   ippDelete (answer);
   debugprintf ("<- Connection_cancelSubscription()\n");
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -5364,8 +5337,7 @@ Dest_getInstance (Dest *self, void *closure)
   if (self->instance)
     return PyString_FromString (self->instance);
 
-  Py_INCREF (Py_None);
-  return Py_None;
+  Py_RETURN_NONE;
 }
 
 static PyObject *
