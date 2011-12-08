@@ -311,6 +311,12 @@ cupsipp_iocb_read (PyObject *callable, ipp_uchar_t *buffer, size_t len)
   char *gotbuffer;
 
   debugprintf ("-> cupsipp_iocb_read\n");
+
+  if (!args) {
+    debugprintf ("Py_BuildValue failed\n");
+    goto out;
+  }
+
   result = PyEval_CallObject (callable, args);
   Py_DECREF (args);
 

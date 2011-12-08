@@ -2,6 +2,8 @@
 
 	* cupsipp.c: Fixed reference count issue with called object
 	result (trac #17).
+	(cupsipp_iocb_read): Prevent NULL dereference when
+	Py_BuildValue fails (trac #17).
 
 2011-12-06  Tim Waugh  <twaugh@redhat.com>
 
