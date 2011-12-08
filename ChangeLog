@@ -1,5 +1,8 @@
 2011-12-08  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsipp.c (IPPRequest_getAttributes): Hardened for Py*
+	failures.
+
 	* cupsppd.c (PPD_emitString): Fixed some more reference count
 	issues (trac #17).
 

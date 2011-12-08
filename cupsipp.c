@@ -372,10 +372,10 @@ IPPRequest_getAttributes (IPPRequest *self, void *closure)
   ipp_attribute_t *attr;
   for (attr = self->ipp->attrs; attr; attr = attr->next)
     {
-      PyObject *largs;
-      PyObject *lkwlist;
-      PyObject *values;
-      IPPAttribute *attribute;
+      PyObject *largs = NULL;
+      PyObject *lkwlist = NULL;
+      PyObject *values = NULL;
+      IPPAttribute *attribute = NULL;
 
       debugprintf ("%s: ", attr->name);
       if (attr->value_tag == IPP_TAG_ZERO ||
@@ -383,12 +383,15 @@ IPPRequest_getAttributes (IPPRequest *self, void *closure)
 	  attr->value_tag == IPP_TAG_NOTSETTABLE ||
 	  attr->value_tag == IPP_TAG_ADMINDEFINE) {
 	debugprintf ("no value\n");
-	values = NULL;
       } else {
 	PyObject *value = NULL;
 	int i;
+	int unknown_value_tag = 0;
 
 	values = PyList_New (0);
+	if (!values)
+	  goto fail_add;
+
 	for (i = 0; i < attr->num_values; i++) {
 	  switch (attr->value_tag) {
 	  case IPP_TAG_INTEGER:
@@ -422,22 +425,33 @@ IPPRequest_getAttributes (IPPRequest *self, void *closure)
 
 	  default:
 	    value = NULL;
+	    unknown_value_tag = 1;
 	    debugprintf ("Unable to encode value tag %d\n", attr->value_tag);
 	  }
 
 	  if (!value)
-	    break;
+	    break; /* out of values loop */
 
 	  debugprintf ("(%p), ", value);
-	  PyList_Append (values, value);
+	  if (PyList_Append (values, value) != 0) {
+	    Py_DECREF (values);
+	    Py_DECREF (value);
+	    goto fail_add;
+	  }
+
 	  Py_DECREF (value);
 	}
 
-	if (!value) {
+	if (unknown_value_tag) {
 	  Py_DECREF (values);
-	  values = NULL;
+
+	  /* Next attribute */
 	  continue;
 	}
+
+	if (!value)
+	  /* Failed to build object */
+	  goto fail_add;
 
 	debugprintf ("\n");
       }
@@ -449,22 +463,56 @@ IPPRequest_getAttributes (IPPRequest *self, void *closure)
 			       attr->name,
 			       values);
 	Py_DECREF (values);
+	values = NULL;
       } else
 	largs = Py_BuildValue ("(iis)", attr->group_tag, attr->value_tag,
 			       attr->name ? attr->name : "");
 
+      if (!largs)
+	goto fail_add;
+
       lkwlist = Py_BuildValue ("{}");
+      if (!lkwlist)
+	goto fail_add;
+
       attribute = (IPPAttribute *) PyType_GenericNew (&cups_IPPAttributeType,
 						      largs, lkwlist);
-      if (IPPAttribute_init (attribute, largs, lkwlist) == 0)
-	PyList_Append (attrs, (PyObject *) attribute);
+      if (!attribute)
+	goto fail_add;
+
+      if (IPPAttribute_init (attribute, largs, lkwlist) != 0)
+	goto fail_add;
+
+      if (PyList_Append (attrs, (PyObject *) attribute) != 0)
+	goto fail_add;
 
       Py_DECREF (largs);
       Py_DECREF (lkwlist);
       Py_DECREF (attribute);
+      continue;
+
+    fail_add:
+      if (values)
+	Py_DECREF (values);
+
+      if (largs)
+	Py_DECREF (largs);
+
+      if (lkwlist)
+	Py_DECREF (lkwlist);
+
+      if (attribute)
+	Py_DECREF (attribute);
+
+      debugprintf ("\nException creating new object\n");
+      goto fail_out;
     }
 
   return attrs;
+
+ fail_out:
+  Py_DECREF (attrs);
+  return NULL;
 }
 
 PyGetSetDef IPPRequest_getseters[] =
