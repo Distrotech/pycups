@@ -551,10 +551,9 @@ PPD_emitString (PPD *self, PyObject *args)
     ret = PyString_FromString(emitted);
     free (emitted);
   } else {
+    Py_INCREF (Py_None);
     ret = Py_None;
   }
-
-  Py_INCREF (ret);
 
   return ret;
 }

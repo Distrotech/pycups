@@ -1,5 +1,8 @@
 2011-12-08  Tim Waugh  <twaugh@redhat.com>
 
+	* cupsppd.c (PPD_emitString): Fixed some more reference count
+	issues (trac #17).
+
 	* cupsipp.c: Fixed reference count issue with called object
 	result (trac #17).
 	(cupsipp_iocb_read): Prevent NULL dereference when
