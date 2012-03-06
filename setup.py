@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-## Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010, 2011  Red Hat, Inc
+## Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012  Red Hat, Inc
 ##  Author: Tim Waugh <twaugh@redhat.com>
 
 ## This program is free software; you can redistribute it and/or modify
@@ -35,7 +35,7 @@ EPSON-Stylus-D78 usb://EPSON/Stylus%20D78
 
 from distutils.core import setup, Extension
 import sys
-VERSION="1.9.60"
+VERSION="1.9.61"
 libraries=["cups"]
 
 if sys.platform == "darwin":
