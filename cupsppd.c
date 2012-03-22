@@ -236,10 +236,12 @@ PPD_init (PPD *self, PyObject *args, PyObject *kwds)
 static void
 PPD_dealloc (PPD *self)
 {
-  debugprintf ("- PPD %p (fd %d)\n", self, fileno (self->file));
-
-  if (self->file)
+  if (self->file) {
+    debugprintf ("- PPD %p (fd %d)\n", self, fileno (self->file));
     fclose (self->file);
+  } else
+    debugprintf ("- PPD %p (no fd)\n", self);
+
   if (self->ppd)
     ppdClose (self->ppd);
   if (self->conv_from)
