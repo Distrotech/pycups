@@ -42,7 +42,7 @@ static pthread_once_t tls_key_once = PTHREAD_ONCE_INIT;
 # define CUPS_SERVER_REMOTE_ANY		"_remote_any"
 #endif /* CUPS < 1.3 */
 
-#if CUPS_VERSION_MAJOR < 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR < 5)
+#if CUPS_VERSION_MAJOR < 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR < 4)
 # define HTTP_AUTHORIZATION_CANCELED	1000
 #endif /* CUPS < 1.4 */
 
