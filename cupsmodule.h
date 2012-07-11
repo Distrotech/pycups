@@ -49,6 +49,10 @@ extern void debugprintf (const char *fmt, ...) FORMAT ((__printf__, 1, 2));
 #define HAVE_CUPS_1_4 1
 #endif
 
+#if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MINOR > 5)
+#define HAVE_CUPS_1_6 1
+#endif
+
 #ifndef HAVE_CUPS_1_2
 #error pycups requires CUPS 1.2.x
 #endif
@@ -64,5 +68,29 @@ struct TLS
 };
 
 extern struct TLS *get_TLS (void);
+
+#ifndef HAVE_CUPS_1_6
+int ippGetBoolean(ipp_attribute_t *attr, int element);
+int ippGetCount(ipp_attribute_t *attr);
+ipp_tag_t ippGetGroupTag(ipp_attribute_t *attr);
+int ippGetInteger(ipp_attribute_t *attr, int element);
+const char * ippGetName(ipp_attribute_t *attr);
+ipp_op_t ippGetOperation(ipp_t *ipp);
+int ippGetRange(ipp_attribute_t *attr, int element, int *uppervalue);
+int ippGetResolution(ipp_attribute_t *attr, int element,
+                     int *yres, ipp_res_t *units);
+ipp_status_t ippGetStatusCode(ipp_t *ipp);
+const char * ippGetString(ipp_attribute_t *attr, int element,
+                          const char **language);
+ipp_tag_t ippGetValueTag(ipp_attribute_t *attr);
+ipp_attribute_t	* ippFirstAttribute(ipp_t *ipp);
+ipp_attribute_t * ippNextAttribute(ipp_t *ipp);
+int ippSetInteger(ipp_t *ipp, ipp_attribute_t **attr,
+                  int element, int intvalue);
+int ippSetOperation(ipp_t *ipp, ipp_op_t op);
+int ippSetString(ipp_t *ipp, ipp_attribute_t **attr,
+                 int element, const char *strvalue);
+#endif
+
 
 #endif /* HAVE_CUPSMODULE_H */

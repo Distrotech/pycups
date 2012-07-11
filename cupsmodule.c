@@ -52,6 +52,10 @@ static pthread_once_t tls_key_once = PTHREAD_ONCE_INIT;
 # define IPP_PKI_ERROR			0x1001
 #endif /* CUPS < 1.5 */
 
+#if (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR > 5)
+# define CUPS_SERVER_REMOTE_PRINTERS	"_remote_printers"
+#endif /* CUPS > 1.5 */
+
 //////////////////////
 // Worker functions //
 //////////////////////
@@ -202,6 +206,138 @@ do_password_callback (const char *prompt)
   return password;
 }
 #endif /* !HAVE_CUPS_1_4 */
+
+#ifndef HAVE_CUPS_1_6
+int
+ippGetBoolean(ipp_attribute_t *attr,
+              int             element)
+{
+  return (attr->values[element].boolean);
+}
+
+int
+ippGetCount(ipp_attribute_t *attr)
+{
+  return (attr->num_values);
+}
+
+ipp_tag_t
+ippGetGroupTag(ipp_attribute_t *attr)
+{
+  return (attr->group_tag);
+}
+
+int
+ippGetInteger(ipp_attribute_t *attr,
+              int             element)
+{
+  return (attr->values[element].integer);
+}
+
+const char *
+ippGetName(ipp_attribute_t *attr)
+{
+  return (attr->name);
+}
+
+ipp_op_t
+ippGetOperation(ipp_t *ipp)
+{
+  return (ipp->request.op.operation_id);
+}
+
+int
+ippGetRange(ipp_attribute_t *attr,
+	    int             element,
+	    int             *uppervalue)
+{
+  if (uppervalue)
+    *uppervalue = attr->values[element].range.upper;
+
+  return (attr->values[element].range.lower);
+}
+
+int
+ippGetResolution(
+    ipp_attribute_t *attr,
+    int             element,
+    int             *yres,
+    ipp_res_t       *units)
+{
+  if (yres)
+    *yres = attr->values[element].resolution.yres;
+
+  if (units)
+    *units = attr->values[element].resolution.units;
+
+  return (attr->values[element].resolution.xres);
+}
+
+ipp_status_t
+ippGetStatusCode(ipp_t *ipp)
+{
+  return (ipp->request.status.status_code);
+}
+
+const char *
+ippGetString(ipp_attribute_t *attr,
+             int             element,
+             const char      **language)
+{
+  return (attr->values[element].string.text);
+}
+
+ipp_tag_t
+ippGetValueTag(ipp_attribute_t *attr)
+{
+  return (attr->value_tag);
+}
+
+ipp_attribute_t	*
+ippFirstAttribute(ipp_t *ipp)
+{
+  if (!ipp)
+    return (NULL);
+  return (ipp->current = ipp->attrs);
+}
+
+ipp_attribute_t *
+ippNextAttribute(ipp_t *ipp)
+{
+  if (!ipp || !ipp->current)
+    return (NULL);
+  return (ipp->current = ipp->current->next);
+}
+
+int
+ippSetInteger(ipp_t           *ipp,
+              ipp_attribute_t **attr,
+              int             element,
+              int             intvalue)
+{
+  (*attr)->values[element].integer = intvalue;
+  return (1);
+}
+
+int
+ippSetOperation(ipp_t    *ipp,
+                ipp_op_t op)
+{
+  ipp->request.op.operation_id = op;
+  return (1);
+}
+
+int
+ippSetString(ipp_t           *ipp,
+             ipp_attribute_t **attr,
+             int             element,
+             const char      *strvalue)
+{
+  (*attr)->values[element].string.text = (char *) strvalue;
+  return (1);
+}
+
+#endif
 
 //////////////////////////
 // Module-level methods //
