@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.62:
+
+* Define all constants regardless of which version of CUPS is built
+  against.
+
 New in 1.9.60:
 
 * New constants from 1.5:
