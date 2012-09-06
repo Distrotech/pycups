@@ -1023,7 +1023,7 @@ initcups (void)
     "Use it like this::\n"
     "  try:\n"
     "    ...\n"
-    "  except cups.IPPError (status, description):\n"
+    "  except cups.IPPError as (status, description):\n"
     "    print 'IPP status is %d' % status\n"
     "    print 'Meaning:', description\n"));
   IPPError = PyErr_NewException ("cups.IPPError", NULL, obj);

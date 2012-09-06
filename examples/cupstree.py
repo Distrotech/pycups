@@ -20,7 +20,7 @@ def getippqueue (dev, queue, depth):
 	except RuntimeError:
 		# Failed to connect.
 		return
-	except cups.IPPError, e:
+	except cups.IPPError as e:
 		if e == cups.IPP_OPERATION_NOT_SUPPORTED:
 			# CUPS-Get-Printers not supported so not a CUPS server.
 			printers = {}
