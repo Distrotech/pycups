@@ -1006,7 +1006,7 @@ initcups (void)
     "Use it like this::\n"
     "  try:\n"
     "    ...\n"
-    "  except cups.HTTPError (status):\n"
+    "  except cups.HTTPError as (status):\n"
     "    print 'HTTP status is %d' % status\n"));
   HTTPError = PyErr_NewException ("cups.HTTPError", NULL, obj);
   Py_DECREF (obj);
