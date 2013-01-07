@@ -38,7 +38,7 @@ import sys
 VERSION="1.9.62"
 libraries=["cups"]
 
-if sys.platform == "darwin":
+if sys.platform == "darwin" or sys.platform.startswith("freebsd"):
 	libraries.append ("iconv")
 
 setup (name="pycups",
