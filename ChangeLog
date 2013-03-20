@@ -1,3 +1,13 @@
+2013-03-20  Tim Waugh  <twaugh@redhat.com>
+
+	* setup.py: Version 1.9.63.
+
+2013-03-20  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c (set_ipp_error): IPPError tuple now
+	contains a string describing the specific error encountered,
+	if available.
+
 2012-08-01  Tim Waugh  <twaugh@redhat.com>
 
 	* setup.py: Version 1.9.62.
