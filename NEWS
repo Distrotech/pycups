@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.63:
+
+* cups.IPPError tuple now contains the specific error string, if one
+  is available.
+
 New in 1.9.62:
 
 * Define all constants regardless of which version of CUPS is built

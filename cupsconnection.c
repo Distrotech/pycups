@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010, 2011  Red Hat, Inc
+ * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2013  Red Hat, Inc
  * Author: Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -76,14 +76,13 @@ set_http_error (http_status_t status)
 }
 
 static void
-set_ipp_error (ipp_status_t status)
+set_ipp_error (ipp_status_t status, const char *message)
 {
-  const char *last_error;
+  if (!message)
+    message = ippErrorString (status);
 
-  last_error = ippErrorString (status);
-
-  debugprintf("set_ipp_error: %d, %s\n", (int) status, last_error);
-  PyObject *v = Py_BuildValue ("(is)", status, last_error);
+  debugprintf("set_ipp_error: %d, %s\n", (int) status, message);
+  PyObject *v = Py_BuildValue ("(is)", status, message);
   if (v != NULL) {
     PyErr_SetObject (IPPError, v);
     Py_DECREF (v);
@@ -478,9 +477,8 @@ do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
   }
 
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		    ippGetStatusCode (answer) :
-                  cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf("<- do_printer_request (error)\n");
@@ -671,9 +669,8 @@ Connection_getPrinters (Connection *self)
       return PyDict_New ();
     }
 
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_getPrinters() (error)\n");
@@ -794,9 +791,8 @@ Connection_getClasses (Connection *self)
       return PyDict_New ();
     }
 
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_getClasses() (error)\n");
@@ -1064,9 +1060,8 @@ do_getPPDs (Connection *self, PyObject *args, PyObject *kwds, int all_lists)
   answer = cupsDoRequest (self->http, request, "/");
   Connection_end_allow_threads (self);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_getPPDs() (error)\n");
@@ -1147,7 +1142,7 @@ Connection_getServerPPD (Connection *self, PyObject *args)
   filename = cupsGetServerPPD (self->http, ppd_name);
   Connection_end_allow_threads (self);
   if (!filename) {
-    set_ipp_error (cupsLastError ());
+    set_ipp_error (cupsLastError (), cupsLastErrorString ());
     debugprintf ("<- Connection_getServerPPD() (error)\n");
     return NULL;
   }
@@ -1209,9 +1204,8 @@ Connection_getDocument (Connection *self, PyObject *args)
   close (fd);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
     unlink (docfilename);
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_getDocument() (error)\n");
@@ -1369,9 +1363,8 @@ Connection_getDevices (Connection *self, PyObject *args, PyObject *kwds)
   answer = cupsDoRequest (self->http, request, "/");
   Connection_end_allow_threads (self);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_getDevices() (error)\n");
@@ -1530,9 +1523,8 @@ Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
   answer = cupsDoRequest (self->http, request, "/");
   Connection_end_allow_threads (self);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_getJobs() (error)\n");
@@ -1650,9 +1642,8 @@ Connection_getJobAttributes (Connection *self, PyObject *args, PyObject *kwds)
   if (requested_attrs)
     free_requested_attrs (n_attrs, attrs);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_getJobAttributes() (error)\n");
@@ -1708,9 +1699,8 @@ Connection_cancelJob (Connection *self, PyObject *args, PyObject *kwds)
   answer = cupsDoRequest (self->http, request, "/jobs/");
   Connection_end_allow_threads (self);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_cancelJob() (error)\n");
@@ -1797,9 +1787,8 @@ Connection_cancelAllJobs (Connection *self, PyObject *args, PyObject *kwds)
     free (uri);
 
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
 
@@ -1871,9 +1860,8 @@ Connection_moveJob (Connection *self, PyObject *args, PyObject *kwds)
   answer = cupsDoRequest (self->http, request, "/jobs");
   Connection_end_allow_threads (self);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     return NULL;
@@ -1938,9 +1926,8 @@ Connection_authenticateJob (Connection *self, PyObject *args)
   answer = cupsDoRequest (self->http, request, "/jobs/");
   Connection_end_allow_threads (self);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_authenticateJob() (error)\n");
@@ -1984,9 +1971,8 @@ Connection_setJobHoldUntil (Connection *self, PyObject *args)
   answer = cupsDoRequest (self->http, request, "/jobs/");
   Connection_end_allow_threads (self);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_setJobHoldUntil() (error)\n");
@@ -2024,9 +2010,8 @@ Connection_restartJob (Connection *self, PyObject *args, PyObject *kwds)
   answer = cupsDoRequest (self->http, request, "/jobs/");
   Connection_end_allow_threads (self);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_restartJob() (error)\n");
@@ -2321,9 +2306,8 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
   }
 
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
 
@@ -2371,9 +2355,8 @@ Connection_setPrinterDevice (Connection *self, PyObject *args)
   }
 
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     return NULL;
@@ -2427,9 +2410,8 @@ Connection_setPrinterInfo (Connection *self, PyObject *args)
   free (name);
   free (info);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     return NULL;
@@ -2483,9 +2465,8 @@ Connection_setPrinterLocation (Connection *self, PyObject *args)
   free (name);
   free (location);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     return NULL;
@@ -2531,9 +2512,8 @@ Connection_setPrinterShared (Connection *self, PyObject *args)
 
   free (name);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     return NULL;
@@ -2599,9 +2579,8 @@ Connection_setPrinterJobSheets (Connection *self, PyObject *args)
   free (start);
   free (end);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     return NULL;
@@ -2655,9 +2634,8 @@ Connection_setPrinterErrorPolicy (Connection *self, PyObject *args)
   free (name);
   free (policy);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     return NULL;
@@ -2711,9 +2689,8 @@ Connection_setPrinterOpPolicy (Connection *self, PyObject *args)
   free (name);
   free (policy);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     return NULL;
@@ -2790,9 +2767,8 @@ do_requesting_user_names (Connection *self, PyObject *args,
 
   free (name);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     return NULL;
@@ -2903,9 +2879,8 @@ Connection_addPrinterOptionDefault (Connection *self, PyObject *args)
   free (name);
   free (option);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     return NULL;
@@ -2966,9 +2941,8 @@ Connection_deletePrinterOptionDefault (Connection *self, PyObject *args)
   free (name);
   free (option);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     return NULL;
@@ -3074,9 +3048,8 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
     free_requested_attrs (n_attrs, attrs);
 
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
 
@@ -3270,9 +3243,8 @@ Connection_addPrinterToClass (Connection *self, PyObject *args)
   }
 
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     return NULL;
@@ -3324,7 +3296,7 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
   answer = cupsDoRequest (self->http, request, "/");
   Connection_end_allow_threads (self);
   if (!answer) {
-    set_ipp_error (cupsLastError ());
+    set_ipp_error (cupsLastError (), cupsLastErrorString ());
     free (printername);
     return NULL;
   }
@@ -3381,9 +3353,8 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
   }
 
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     return NULL;
@@ -3417,9 +3388,8 @@ Connection_deleteClass (Connection *self, PyObject *args)
   answer = cupsDoRequest (self->http, request, "/admin/");
   Connection_end_allow_threads (self);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     return NULL;
@@ -3502,7 +3472,7 @@ Connection_getPPD (Connection *self, PyObject *args)
   if (!ppdfile) {
     ipp_status_t err = cupsLastError ();
     if (err)
-      set_ipp_error (err);
+      set_ipp_error (err, cupsLastErrorString ());
     else
       PyErr_SetString (PyExc_RuntimeError, "cupsGetPPD2 failed");
 
@@ -3724,9 +3694,8 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
     free (user);
 
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ?
-		   ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     return NULL;
@@ -3931,8 +3900,8 @@ Connection_getSubscriptions (Connection *self, PyObject *args, PyObject *kwds)
   answer = cupsDoRequest (self->http, request, "/");
   Connection_end_allow_threads (self);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ? ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_getSubscriptions() EXCEPTION\n");
@@ -4089,8 +4058,8 @@ Connection_createSubscription (Connection *self, PyObject *args,
   answer = cupsDoRequest (self->http, request, "/");
   Connection_end_allow_threads (self);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ? ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_createSubscription() EXCEPTION\n");
@@ -4189,8 +4158,8 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
   answer = cupsDoRequest (self->http, request, "/");
   Connection_end_allow_threads (self);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ? ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_getNotifications() EXCEPTION\n");
@@ -4293,8 +4262,8 @@ Connection_renewSubscription (Connection *self, PyObject *args, PyObject *kwds)
   answer = cupsDoRequest (self->http, request, "/");
   Connection_end_allow_threads (self);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ? ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_renewSubscription() EXCEPTION\n");
@@ -4328,8 +4297,8 @@ Connection_cancelSubscription (Connection *self, PyObject *args)
   answer = cupsDoRequest (self->http, request, "/");
   Connection_end_allow_threads (self);
   if (!answer || ippGetStatusCode (answer) > IPP_OK_CONFLICT) {
-    set_ipp_error (answer ? ippGetStatusCode (answer) :
-		   cupsLastError ());
+    set_ipp_error (answer ? ippGetStatusCode (answer) : cupsLastError (),
+		   answer ? NULL : cupsLastErrorString ());
     if (answer)
       ippDelete (answer);
     debugprintf ("<- Connection_cancelSubscription() EXCEPTION\n");
@@ -4408,7 +4377,7 @@ Connection_printFile (Connection *self, PyObject *args, PyObject *kwds)
     free (title);
     free (filename);
     free (printer);
-    set_ipp_error (cupsLastError ());
+    set_ipp_error (cupsLastError (), cupsLastErrorString ());
     return NULL;
   }
 
@@ -4515,7 +4484,7 @@ Connection_printFiles (Connection *self, PyObject *args, PyObject *kwds)
     free (title);
     free_string_list (num_filenames, filenames);
     free (printer);
-    set_ipp_error (cupsLastError ());
+    set_ipp_error (cupsLastError (), cupsLastErrorString ());
     return NULL;
   }
 
