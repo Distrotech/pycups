@@ -4560,7 +4560,7 @@ PyMethodDef Connection_methods[] =
 
     { "getPPDs2",
       (PyCFunction) Connection_getPPDs2, METH_VARARGS | METH_KEYWORDS,
-      "getPPDs(limit=0, exclude_schemes=None, include_schemes=None, \n"
+      "getPPDs2(limit=0, exclude_schemes=None, include_schemes=None, \n"
       "ppd_natural_language=None, ppd_device_id=None, ppd_make=None, \n"
       "ppd_make_and_model=None, ppd_model_number=-1, ppd_product=None, \n"
       "ppd_psversion=None, ppd_type=None) -> dict\n\n"

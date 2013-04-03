@@ -1,3 +1,8 @@
+2013-04-03  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c: Fixed documentation typo for
+	Connection.getPPDs2.
+
 2013-03-20  Tim Waugh  <twaugh@redhat.com>
 
 	* setup.py: Version 1.9.63.
