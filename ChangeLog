@@ -1,3 +1,8 @@
+2013-04-10  Tim Waugh  <twaugh@redhat.com>
+
+	* cupsconnection.c: Don't just append printer name to base URI
+	to get printer URI. Need to actually encode the name.
+
 2013-04-03  Tim Waugh  <twaugh@redhat.com>
 
 	* cupsconnection.c: Fixed documentation typo for

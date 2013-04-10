@@ -138,6 +138,40 @@ UTF8_from_PyObj (char **const utf8, PyObject *obj)
   return NULL;
 }
 
+static void
+construct_uri (char *buffer, size_t buflen, const char *base, const char *value)
+{
+  char *d = buffer;
+  const unsigned char *s = (const unsigned char *) value;
+  if (strlen (base) < buflen) {
+    strcpy (buffer, base);
+    d += strlen (base);
+  } else {
+    strncpy (buffer, base, buflen);
+    d += buflen;
+  }
+
+  while (*s && d < buffer + buflen) {
+    if (isalpha (*s) || isdigit (*s) || *s == '-')
+      *d++ = *s++;
+    else if (*s == ' ') {
+      *d++ = '+';
+      s++;
+    } else {
+      if (d + 2 < buffer + buflen) {
+	*d++ = '%';
+	*d++ = "0123456789ABCDEF"[((*s) & 0xf0) >> 4];
+	*d++ = "0123456789ABCDEF"[((*s) & 0x0f)];
+	s++;
+      } else
+	break;
+    }
+  }
+
+  if (d < buffer + buflen)
+    *d = '\0';
+}
+
 ////////////////
 // Connection //
 ////////////////
@@ -446,7 +480,7 @@ do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
   debugprintf ("-> do_printer_request(op:%d, name:%s)\n", (int) op, name);
 
   request = ippNewRequest (op);
-  snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
+  construct_uri (uri, sizeof (uri), "ipp://localhost/printers/", name);
   free (name);
 
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
@@ -1749,7 +1783,8 @@ Connection_cancelAllJobs (Connection *self, PyObject *args, PyObject *kwds)
   debugprintf ("-> Connection_cancelAllJobs(%s, my_jobs=%d, purge_jobs=%d)\n",
 	       nameobj ? name : uri, my_jobs, purge_jobs);
   if (nameobj) {
-    snprintf (consuri, sizeof (consuri), "ipp://localhost/printers/%s", name);
+    construct_uri (consuri, sizeof (consuri),
+		   "ipp://localhost/printers/", name);
     uri = consuri;
   }
 
@@ -1776,7 +1811,8 @@ Connection_cancelAllJobs (Connection *self, PyObject *args, PyObject *kwds)
 	break;
 
       // Perhaps it's a class, not a printer.
-      snprintf (consuri, sizeof (consuri), "ipp://localhost/classes/%s", name);
+      construct_uri (consuri, sizeof (consuri),
+		     "ipp://localhost/classes/", name);
     } else break;
   }
 
@@ -2125,7 +2161,7 @@ add_modify_printer_request (const char *name)
 {
   char uri[HTTP_MAX_URI];
   ipp_t *request = ippNewRequest (CUPS_ADD_MODIFY_PRINTER);
-  snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", name);
+  construct_uri (uri, sizeof (uri), "ipp://localhost/printers/", name);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, uri);
   return request;
@@ -2136,7 +2172,7 @@ add_modify_class_request (const char *name)
 {
   char uri[HTTP_MAX_URI];
   ipp_t *request = ippNewRequest (CUPS_ADD_MODIFY_CLASS);
-  snprintf (uri, sizeof (uri), "ipp://localhost/classes/%s", name);
+  construct_uri (uri, sizeof (uri), "ipp://localhost/classes/", name);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, uri);
   return request;
@@ -3012,7 +3048,8 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 	       nameobj ? name : uri);
 
   if (nameobj) {
-    snprintf (consuri, sizeof (consuri), "ipp://localhost/printers/%s", name);
+    construct_uri (consuri, sizeof (consuri),
+		   "ipp://localhost/printers/", name);
     uri = consuri;
   }
 
@@ -3034,7 +3071,8 @@ Connection_getPrinterAttributes (Connection *self, PyObject *args,
 	break;
 
       // Perhaps it's a class, not a printer.
-      snprintf (consuri, sizeof (consuri), "ipp://localhost/classes/%s", name);
+      construct_uri (consuri, sizeof (consuri),
+		     "ipp://localhost/classes/", name);
     } else break;
   }
 
@@ -3179,8 +3217,9 @@ Connection_addPrinterToClass (Connection *self, PyObject *args)
 
   // Does the class exist, and is the printer already in it?
   request = ippNewRequest (IPP_GET_PRINTER_ATTRIBUTES);
-  snprintf (classuri, sizeof (classuri),
-	    "ipp://localhost/classes/%s", classname);
+  construct_uri (classuri, sizeof (classuri),
+		 "ipp://localhost/classes/", classname);
+	    
   free (classname);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
@@ -3206,8 +3245,8 @@ Connection_addPrinterToClass (Connection *self, PyObject *args)
   request = ippNewRequest (CUPS_ADD_CLASS);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
-  snprintf (printeruri, sizeof (printeruri),
-	    "ipp://localhost/printers/%s", printername);
+  construct_uri (printeruri, sizeof (printeruri),
+		 "ipp://localhost/printers/", printername);
   free (printername);
   if (answer) {
     ipp_attribute_t *printers;
@@ -3283,8 +3322,8 @@ Connection_deletePrinterFromClass (Connection *self, PyObject *args)
 
   // Does the class exist, and is the printer in it?
   request = ippNewRequest (IPP_GET_PRINTER_ATTRIBUTES);
-  snprintf (classuri, sizeof (classuri),
-	    "ipp://localhost/classes/%s", classname);
+  construct_uri (classuri, sizeof (classuri),
+		 "ipp://localhost/classes/", classname);
   free (classname);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
@@ -3379,8 +3418,8 @@ Connection_deleteClass (Connection *self, PyObject *args)
     return NULL;
 
   request = ippNewRequest (CUPS_DELETE_CLASS);
-  snprintf (classuri, sizeof (classuri),
-	    "ipp://localhost/classes/%s", classname);
+  construct_uri (classuri, sizeof (classuri),
+		 "ipp://localhost/classes/", classname);
   free (classname);
   ippAddString (request, IPP_TAG_OPERATION, IPP_TAG_URI,
 		"printer-uri", NULL, classuri);
@@ -3659,7 +3698,8 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
   if (!userobj)
 	  user = (char *) cupsUser();
 
-  snprintf (uri, sizeof (uri), "ipp://localhost/printers/%s", printer);
+  construct_uri (uri, sizeof (uri),
+		 "ipp://localhost/printers/", printer);
   resource = uri + strlen ("ipp://localhost");
   for (i = 0; i < 2; i++) {
     request = ippNewRequest (IPP_PRINT_JOB);
@@ -3679,7 +3719,8 @@ Connection_printTestPage (Connection *self, PyObject *args, PyObject *kwds)
     if (answer && ippGetStatusCode (answer) == IPP_NOT_POSSIBLE) {
       ippDelete (answer);
       // Perhaps it's a class, not a printer.
-      snprintf (uri, sizeof (uri), "ipp://localhost/classes/%s", printer);
+      construct_uri (uri, sizeof (uri),
+		     "ipp://localhost/classes/", printer);
     } else break;
   }
 
