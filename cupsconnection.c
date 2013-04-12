@@ -129,6 +129,9 @@ UTF8_from_PyObj (char **const utf8, PyObject *obj)
   else if (PyString_Check (obj)) {
     const char *ret;
     PyObject *unicodeobj = PyUnicode_FromEncodedObject (obj, NULL, NULL);
+    if (unicodeobj == NULL)
+      return NULL;
+
     ret = UTF8_from_PyObj (utf8, unicodeobj);
     Py_DECREF (unicodeobj);
     return ret;
