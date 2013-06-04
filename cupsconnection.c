@@ -37,30 +37,6 @@
 PyObject *HTTPError;
 PyObject *IPPError;
 
-typedef struct
-{
-  PyObject_HEAD
-  http_t *http;
-  char *host; /* for repr */
-#ifdef HAVE_CUPS_1_4
-  char *cb_password;
-#endif /* HAVE_CUPS_1_4 */
-  PyThreadState *tstate;
-} Connection;
-
-typedef struct
-{
-  PyObject_HEAD
-  int is_default;
-  char *destname;
-  char *instance;
-
-  // Options
-  int num_options;
-  char **name;
-  char **value;
-} Dest;
-
 static Connection **Connections = NULL;
 static int NumConnections = 0;
 
@@ -75,7 +51,7 @@ set_http_error (http_status_t status)
   }
 }
 
-static void
+void
 set_ipp_error (ipp_status_t status, const char *message)
 {
   if (!message)
@@ -527,6 +503,23 @@ do_printer_request (Connection *self, PyObject *args, PyObject *kwds,
   Py_RETURN_NONE;
 }
 
+static int
+copy_dest (Dest *dst, cups_dest_t *src)
+{
+  int i;
+  dst->is_default = src->is_default;
+  dst->destname = strdup (src->name);
+  dst->instance = (src->instance ? strdup (src->instance) : NULL );
+  dst->num_options = src->num_options;
+  dst->name = malloc (src->num_options * sizeof (char *));
+  dst->value = malloc (src->num_options * sizeof (char *));
+  for (i = 0; i < src->num_options; i++) {
+    dst->name[i] = strdup (src->options[i].name);
+    dst->value[i] = strdup (src->options[i].value);
+  }
+  return 0;
+}
+
 static PyObject *
 Connection_getDests (Connection *self)
 {
@@ -570,17 +563,7 @@ Connection_getDests (Connection *self)
 	nameinstance = Py_BuildValue ("(ss)", dest->name, dest->instance);
       }
 
-    destobj->is_default = dest->is_default;
-    destobj->destname = strdup (dest->name);
-    destobj->instance = (dest->instance ? strdup (dest->instance) : NULL );
-    destobj->num_options = dest->num_options;
-    destobj->name = malloc (dest->num_options * sizeof (char *));
-    destobj->value = malloc (dest->num_options * sizeof (char *));
-    int j;
-    for (j = 0; j < dest->num_options; j++) {
-      destobj->name[j] = strdup (dest->options[j].name);
-      destobj->value[j] = strdup (dest->options[j].value);
-    }
+    copy_dest (destobj, dest);
 
     PyDict_SetItem (pydests, nameinstance, (PyObject *) destobj);
     Py_DECREF ((PyObject *) destobj);
@@ -591,6 +574,48 @@ Connection_getDests (Connection *self)
   debugprintf ("<- Connection_getDests()\n");
   return pydests;
 }
+
+#ifdef HAVE_CUPS_1_6
+int
+cups_dest_cb (void *user_data, unsigned flags, cups_dest_t *dest)
+{
+  CallbackContext *context = user_data;
+  PyObject *largs = Py_BuildValue ("()");
+  PyObject *lkwlist = Py_BuildValue ("{}");
+  Dest *destobj;
+  PyObject *args;
+  PyObject *result;
+  int ret = 0;
+
+  debugprintf ("-> cups_dest_cb\n");
+  destobj = (Dest *) PyType_GenericNew (&cups_DestType,
+					largs, lkwlist);
+  Py_DECREF (largs);
+  Py_DECREF (lkwlist);
+  copy_dest (destobj, dest);
+  args = Py_BuildValue ("(OiO)",
+			context->user_data,
+			flags,
+			destobj);
+  Py_DECREF ((PyObject *) destobj);
+
+  result = PyEval_CallObject (context->cb, args);
+  Py_DECREF (args);
+  if (result == NULL) {
+    debugprintf ("<- cups_dest_cb (exception from cb func)\n");
+    ret = 0;
+  }
+
+  if (result && PyInt_Check (result)) {
+    ret = PyInt_AsLong (result);
+    debugprintf ("   cups_dest_cb: cb func returned %d\n", ret);
+  }
+
+  debugprintf ("<- cups_dest_cb (%d)\n", ret);
+
+  return ret;
+}
+#endif /* HAVE_CUPS_1_6 */
 
 static PyObject *
 PyObject_from_attr_value (ipp_attribute_t *attr, int i)

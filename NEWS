@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.64:
+
+* cups.enumDests(), cups.connectDest(), and cups.CUPS_DEST_FLAGS_*
+  constants (requires CUPS 1.6).
+
 New in 1.9.63:
 
 * cups.IPPError tuple now contains the specific error string, if one

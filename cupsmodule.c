@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012  Red Hat, Inc
+ * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013  Red Hat, Inc
  * Author: Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -565,6 +565,156 @@ cups_ppdSetConformance (PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
+#ifdef HAVE_CUPS_1_6
+static PyObject *
+cups_enumDests (PyObject *self, PyObject *args, PyObject *kwds)
+{
+  PyObject *cb;
+  int flags = 0;
+  int msec = -1;
+  int type = 0;
+  int mask = 0;
+  PyObject *user_data = NULL;
+  CallbackContext context;
+  int ret;
+  static char *kwlist[] = { "cb",
+			    "flags",
+			    "msec",
+			    "type",
+			    "mask",
+			    "user_data",
+			    NULL };
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|iiiiO", kwlist,
+				    &cb,
+				    &flags,
+				    &msec,
+				    &type,
+				    &mask,
+				    &user_data))
+    return NULL;
+
+  if (!PyCallable_Check (cb)) {
+    PyErr_SetString (PyExc_TypeError, "cb must be callable");
+    return NULL;
+  }
+
+  if (!user_data)
+    user_data = Py_None;
+
+  Py_XINCREF (cb);
+  Py_XINCREF (user_data);
+  context.cb = cb;
+  context.user_data = user_data;
+  ret = cupsEnumDests (flags,
+		       msec,
+		       NULL,
+		       type,
+		       mask,
+		       cups_dest_cb,
+		       &context);
+  Py_XDECREF (cb);
+  Py_XDECREF (user_data);
+
+  if (!ret) {
+    PyErr_SetString (PyExc_RuntimeError, "cupsEnumDests failed");
+    return NULL;
+  }
+
+  Py_RETURN_NONE;
+}
+#endif /* HAVE_CUPS_1_6 */
+
+#ifdef HAVE_CUPS_1_6
+static PyObject *
+cups_connectDest (PyObject *self, PyObject *args, PyObject *kwds)
+{
+  PyObject *destobj;
+  PyObject *cb;
+  int flags = 0;
+  int msec = -1;
+  PyObject *user_data = NULL;
+  CallbackContext context;
+  char resource[HTTP_MAX_URI];
+  http_t *conn;
+  Connection *connobj;
+  Dest *dest_o;
+  cups_dest_t dest;
+  static char *kwlist[] = { "dest",
+			    "cb",
+			    "flags",
+			    "msec",
+			    "user_data",
+			    NULL };
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "OO|iiO", kwlist,
+				    &destobj,
+				    &cb,
+				    &flags,
+				    &msec,
+				    &user_data))
+    return NULL;
+
+  if (Py_TYPE(destobj) != &cups_DestType) {
+    PyErr_SetString (PyExc_TypeError, "dest must be Dest object");
+    return NULL;
+  }
+
+  if (!PyCallable_Check (cb)) {
+    PyErr_SetString (PyExc_TypeError, "cb must be callable");
+    return NULL;
+  }
+
+  if (!user_data)
+    user_data = Py_None;
+
+  Py_XINCREF (cb);
+  Py_XINCREF (user_data);
+  context.cb = cb;
+  context.user_data = user_data;
+  resource[0] = '\0';
+
+  dest_o = (Dest *) destobj;
+  dest.is_default = dest_o->is_default;
+  dest.name = dest_o->destname;
+  dest.instance = dest_o->instance;
+  dest.num_options = dest_o->num_options;
+  dest.options = malloc (dest_o->num_options * sizeof (dest.options[0]));
+  int i;
+  for (i = 0; i < dest_o->num_options; i++) {
+    dest.options[i].name = dest_o->name[i];
+    dest.options[i].value = dest_o->value[i];
+  }
+
+  conn = cupsConnectDest (&dest,
+			  flags,
+			  msec,
+			  NULL,
+			  resource,
+			  sizeof (resource),
+			  cups_dest_cb,
+			  &context);
+  Py_XDECREF (cb);
+  Py_XDECREF (user_data);
+  free (dest.options);
+
+  if (!conn) {
+    set_ipp_error (cupsLastError (), cupsLastErrorString ());
+    return NULL;
+  }
+
+  PyObject *largs = Py_BuildValue ("()");
+  PyObject *lkwlist = Py_BuildValue ("{}");
+  connobj = (Connection *) PyType_GenericNew (&cups_ConnectionType,
+					      largs, lkwlist);
+  Py_DECREF (largs);
+  Py_DECREF (lkwlist);
+  connobj->host = strdup ("");
+  connobj->http = conn;
+  return (PyObject *) connobj;
+}
+#endif /* HAVE_CUPS_1_6 */
+
 static PyObject *
 cups_require (PyObject *self, PyObject *args)
 {
@@ -686,6 +836,42 @@ static PyMethodDef CupsMethods[] = {
     "Set PPD conformance level.\n\n"
     "@type level: integer\n"
     "@param level: PPD_CONFORM_RELAXED or PPD_CONFORM_STRICT" },
+
+#ifdef HAVE_CUPS_1_6
+  { "enumDests",
+    (PyCFunction) cups_enumDests, METH_VARARGS | METH_KEYWORDS,
+    "enumDests(cb,flags=0,msec=-1,type=0,mask=0,user_data=None) -> None\n\n"
+    "@type cb: callable\n"
+    "@param cb: callback function, given user_data, dest flags, and dest.\n"
+    "Should return 1 to continue enumeration and 0 to cancel.\n"
+    "@type flags: integer\n"
+    "@param flags: enumeration flags\n"
+    "@type msec: integer\n"
+    "@param msec: timeout, or -1 for no timeout\n"
+    "@type type: integer\n"
+    "@param type: bitmask of printer types to return\n"
+    "@type mask: integer\n"
+    "@param mask: bitmask of type bits to examine\n"
+    "@type user_data: object\n"
+    "@param user_data: user data to pass to callback function\n"},
+#endif /* HAVE_CUPS_1_6 */
+
+#ifdef HAVE_CUPS_1_6
+  { "connectDest",
+    (PyCFunction) cups_connectDest, METH_VARARGS | METH_KEYWORDS,
+    "connectDest(dest,cb,flags=0,msec=-1,user_data=None\n\n"
+    "@type dest: Dest object\n"
+    "@param dest: destination to connect to\n"
+    "@type cb: callable\n"
+    "@param cb: callback function, given user_data, dest flags, and dest.\n"
+    "Should return 1 to continue enumeration and 0 to cancel.\n"
+    "@type flags: integer\n"
+    "@param flags: enumeration flags\n"
+    "@type msec: integer\n"
+    "@param msec: timeout, or -1 for no timeout\n"
+    "@type user_data: object\n"
+    "@param user_data: user data to pass to callback function\n"},
+#endif /* HAVE_CUPS_1_6 */
 
   { "require", cups_require, METH_VARARGS,
     "require(version) -> None\n\n"
@@ -997,6 +1183,18 @@ initcups (void)
   STR_CONSTANT (CUPS_SERVER_SHARE_PRINTERS);
   STR_CONSTANT (CUPS_SERVER_USER_CANCEL_ANY);
   STR_CONSTANT (CUPS_SERVER_REMOTE_ANY);
+
+#ifdef HAVE_CUPS_1_6
+  // Dest enumeration flags
+  INT_CONSTANT (CUPS_DEST_FLAGS_NONE);
+  INT_CONSTANT (CUPS_DEST_FLAGS_UNCONNECTED);
+  INT_CONSTANT (CUPS_DEST_FLAGS_MORE);
+  INT_CONSTANT (CUPS_DEST_FLAGS_REMOVED);
+  INT_CONSTANT (CUPS_DEST_FLAGS_ERROR);
+  INT_CONSTANT (CUPS_DEST_FLAGS_RESOLVING);
+  INT_CONSTANT (CUPS_DEST_FLAGS_CONNECTING);
+  INT_CONSTANT (CUPS_DEST_FLAGS_CANCELED);
+#endif /* HAVE_CUPS_1_6 */
 
   // Exceptions
   obj = PyDict_New ();

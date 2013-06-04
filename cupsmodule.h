@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2006, 2007, 2008, 2009, 2010  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010, 2013  Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,6 +68,14 @@ struct TLS
 };
 
 extern struct TLS *get_TLS (void);
+
+#ifdef HAVE_CUPS_1_6
+typedef struct
+{
+  PyObject *cb;
+  PyObject *user_data;
+} CallbackContext;
+#endif /* HAVE_CUPS_1_6 */
 
 #ifndef HAVE_CUPS_1_6
 int ippGetBoolean(ipp_attribute_t *attr, int element);
