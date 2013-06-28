@@ -640,6 +640,7 @@ cups_connectDest (PyObject *self, PyObject *args, PyObject *kwds)
   Connection *connobj;
   Dest *dest_o;
   cups_dest_t dest;
+  PyObject *ret;
   static char *kwlist[] = { "dest",
 			    "cb",
 			    "flags",
@@ -711,7 +712,9 @@ cups_connectDest (PyObject *self, PyObject *args, PyObject *kwds)
   Py_DECREF (lkwlist);
   connobj->host = strdup ("");
   connobj->http = conn;
-  return (PyObject *) connobj;
+
+  ret = Py_BuildValue ("(Os)", (PyObject *) connobj, resource);
+  return ret;
 }
 #endif /* HAVE_CUPS_1_6 */
 
@@ -859,7 +862,7 @@ static PyMethodDef CupsMethods[] = {
 #ifdef HAVE_CUPS_1_6
   { "connectDest",
     (PyCFunction) cups_connectDest, METH_VARARGS | METH_KEYWORDS,
-    "connectDest(dest,cb,flags=0,msec=-1,user_data=None\n\n"
+    "connectDest(dest,cb,flags=0,msec=-1,user_data=None) -> (conn, resource)\n\n"
     "@type dest: Dest object\n"
     "@param dest: destination to connect to\n"
     "@type cb: callable\n"
@@ -870,7 +873,8 @@ static PyMethodDef CupsMethods[] = {
     "@type msec: integer\n"
     "@param msec: timeout, or -1 for no timeout\n"
     "@type user_data: object\n"
-    "@param user_data: user data to pass to callback function\n"},
+    "@param user_data: user data to pass to callback function\n"
+    "@return: a 2-tuple of the Connection object and the HTTP resource.\n"},
 #endif /* HAVE_CUPS_1_6 */
 
   { "require", cups_require, METH_VARARGS,
