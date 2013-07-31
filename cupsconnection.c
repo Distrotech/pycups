@@ -641,7 +641,7 @@ PyObject_from_attr_value (ipp_attribute_t *attr, int i)
     val = PyInt_FromLong (ippGetInteger (attr, i));
     break;
   case IPP_TAG_BOOLEAN:
-    val = PyBool_FromLong (ippGetInteger (attr, i));
+    val = PyBool_FromLong (ippGetBoolean (attr, i));
     break;
   case IPP_TAG_RANGE:
     lower = ippGetRange (attr, i, &upper);
