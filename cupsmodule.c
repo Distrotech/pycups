@@ -407,24 +407,34 @@ cups_modelSort (PyObject *self, PyObject *args)
 static PyObject *
 cups_setUser (PyObject *self, PyObject *args)
 {
-  const char *user;
+  PyObject *userobj;
+  char *user;
 
-  if (!PyArg_ParseTuple (args, "s", &user))
+  if (!PyArg_ParseTuple (args, "O", &userobj))
+    return NULL;
+
+  if (UTF8_from_PyObj (&user, userobj) == NULL)
     return NULL;
 
   cupsSetUser (user);
+  free (user);
   Py_RETURN_NONE;
 }
 
 static PyObject *
 cups_setServer (PyObject *self, PyObject *args)
 {
-  const char *server;
+  PyObject *serverobj;
+  char *server;
 
-  if (!PyArg_ParseTuple (args, "s", &server))
+  if (!PyArg_ParseTuple (args, "O", &serverobj))
+    return NULL;
+
+  if (UTF8_from_PyObj (&server, serverobj) == NULL)
     return NULL;
 
   cupsSetServer (server);
+  free (server);
   Py_RETURN_NONE;
 }
 

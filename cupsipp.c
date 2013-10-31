@@ -51,12 +51,16 @@ static int
 IPPAttribute_init (IPPAttribute *self, PyObject *args, PyObject *kwds)
 {
   ipp_tag_t group_tag, value_tag;
-  const char *name;
+  PyObject *nameobj;
+  char *name;
   PyObject *value = NULL;
   PyObject *list = NULL;
 
-  if (!PyArg_ParseTuple (args, "iis|O", &group_tag, &value_tag, &name,
+  if (!PyArg_ParseTuple (args, "iiO|O", &group_tag, &value_tag, &nameobj,
 			 &value))
+    return -1;
+
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
     return -1;
 
   if (value == NULL) {
@@ -126,7 +130,7 @@ IPPAttribute_init (IPPAttribute *self, PyObject *args, PyObject *kwds)
   self->group_tag = group_tag;
   self->value_tag = value_tag;
   self->values = list;
-  self->name = strdup (name);
+  self->name = name;
   return 0;
 }
 

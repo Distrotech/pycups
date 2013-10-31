@@ -90,7 +90,7 @@ PyObj_from_UTF8 (const char *utf8)
   return val;
 }
 
-static const char *
+const char *
 UTF8_from_PyObj (char **const utf8, PyObject *obj)
 {
   if (PyUnicode_Check (obj)) {
@@ -3561,36 +3561,45 @@ Connection_getPPD3 (Connection *self, PyObject *args, PyObject *kwds)
   PyObject *fmodtime = NULL;
   char *printer;
   time_t modtime;
-  const char *filename = NULL;
+  PyObject *filenameobj = NULL;
+  char *filename = NULL;
   char fname[PATH_MAX];
   http_status_t status;
   static char *kwlist[] = { "name", "modtime", "filename", NULL };
 
-  if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|Os", kwlist,
-				    &printerobj, &fmodtime, &filename))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|OO", kwlist,
+				    &printerobj, &fmodtime, &filenameobj))
+    return NULL;
+
+  if (UTF8_from_PyObj (&printer, printerobj) == NULL)
     return NULL;
 
   if (fmodtime) {
     double d = PyFloat_AsDouble (fmodtime);
-    if (PyErr_Occurred())
+    if (PyErr_Occurred()) {
+      free (printer);
       return NULL;
+    }
 
     modtime = (time_t) d;
   } else
     modtime = 0;
 
+  if (filenameobj)
+    if (UTF8_from_PyObj (&filename, filenameobj) == NULL) {
+      free (printer);
+      return NULL;
+    }
   if (filename) {
     if (strlen (filename) > sizeof (fname)) {
       PyErr_SetString (PyExc_TypeError, "overlength filename");
+      free (printer);
+      free (filename);
       return NULL;
     }
-
     strcpy (fname, filename);
   } else
     fname[0] = '\0';
-
-  if (UTF8_from_PyObj (&printer, printerobj) == NULL)
-    return NULL;
 
   debugprintf ("-> Connection_getPPD3()\n");
   Connection_begin_allow_threads (self);
@@ -3599,6 +3608,7 @@ Connection_getPPD3 (Connection *self, PyObject *args, PyObject *kwds)
   Connection_end_allow_threads (self);
 
   free (printer);
+  free (filename);
 
   ret = PyTuple_New (3);
   if (!ret)

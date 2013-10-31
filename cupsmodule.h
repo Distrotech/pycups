@@ -100,5 +100,6 @@ int ippSetString(ipp_t *ipp, ipp_attribute_t **attr,
                  int element, const char *strvalue);
 #endif
 
+extern const char * UTF8_from_PyObj (char **const utf8, PyObject *obj);
 
 #endif /* HAVE_CUPSMODULE_H */

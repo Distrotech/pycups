@@ -209,19 +209,25 @@ PPD_new (PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 PPD_init (PPD *self, PyObject *args, PyObject *kwds)
 {
-  const char *filename;
+  PyObject *filenameobj;
+  char *filename;
 
-  if (!PyArg_ParseTuple (args, "s", &filename))
+  if (!PyArg_ParseTuple (args, "O", &filenameobj))
+    return -1;
+
+  if (UTF8_from_PyObj (&filename, filenameobj) == NULL)
     return -1;
 
   self->file = fopen (filename, "r");
   if (!self->file) {
     PyErr_SetString (PyExc_RuntimeError, "fopen failed");
+    free (filename);
     return -1;
   }
 
   debugprintf ("+ PPD %p %s (fd %d)\n", self, filename, fileno (self->file));
   self->ppd = ppdOpenFile (filename);
+  free (filename);
   if (!self->ppd) {
     fclose (self->file);
     self->file = NULL;
@@ -268,15 +274,26 @@ static PyObject *
 PPD_localizeIPPReason (PPD *self, PyObject *args, PyObject *kwds)
 {
   PyObject *ret;
-  const char *reason;
-  const char *scheme = NULL;
+  PyObject *reasonobj;
+  PyObject *schemeobj = NULL;
+  char *reason;
+  char *scheme = NULL;
   char *buffer;
   const size_t bufsize = 1024;
   static char *kwlist[] = { "reason", "scheme", NULL };
 
-  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|s", kwlist,
-				    &reason, &scheme))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|O", kwlist,
+				    &reasonobj, &schemeobj))
     return NULL;
+
+  if (UTF8_from_PyObj (&reason, reasonobj) == NULL)
+    return NULL;
+
+  if (schemeobj)
+    if (UTF8_from_PyObj (&scheme, schemeobj) == NULL) {
+      free (reason);
+      return NULL;
+    }
 
   buffer = malloc (bufsize);
   if (ppdLocalizeIPPReason (self->ppd, reason, scheme, buffer, bufsize))
@@ -287,6 +304,9 @@ PPD_localizeIPPReason (PPD *self, PyObject *args, PyObject *kwds)
     Py_INCREF (Py_None);
   }
 
+  free (reason);
+  if (scheme)
+    free (scheme);
   free (buffer);
   return ret;
 }
@@ -296,13 +316,18 @@ PPD_localizeMarkerName (PPD *self, PyObject *args)
 {
 #if CUPS_VERSION_MAJOR > 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 4)
   PyObject *ret;
-  const char *name;
+  PyObject *nameobj;
+  char *name;
   const char *lname;
 
-  if (!PyArg_ParseTuple (args, "s", &name))
+  if (!PyArg_ParseTuple (args, "O", &nameobj))
+    return NULL;
+
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
     return NULL;
 
   lname = ppdLocalizeMarkerName (self->ppd, name);
+  free (name);
 
   if (lname != NULL)
   {
@@ -366,13 +391,18 @@ static PyObject *
 PPD_findOption (PPD *self, PyObject *args)
 {
   PyObject *ret;
-  const char *option;
+  PyObject *optionobj;
+  char *option;
   ppd_option_t *opt;
 
-  if (!PyArg_ParseTuple (args, "s", &option))
+  if (!PyArg_ParseTuple (args, "O", &optionobj))
+    return NULL;
+
+  if (UTF8_from_PyObj (&option, optionobj) == NULL)
     return NULL;
 
   opt = ppdFindOption (self->ppd, option);
+  free (option);
   if (opt) {
     PyObject *args = Py_BuildValue ("()");
     PyObject *kwlist = Py_BuildValue ("{}");
@@ -396,16 +426,30 @@ static PyObject *
 PPD_findAttr (PPD *self, PyObject *args, PyObject *kwds)
 {
   PyObject *ret;
-  const char *name;
-  const char *spec = NULL;
+  PyObject *nameobj;
+  PyObject *specobj = NULL;
+  char *name;
+  char *spec = NULL;
   ppd_attr_t *attr;
   static char *kwlist[] = { "name", "spec", NULL };
 
-  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|s", kwlist,
-				    &name, &spec))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|O", kwlist,
+				    &nameobj, &specobj))
     return NULL;
 
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
+    return NULL;
+
+  if (specobj)
+    if (UTF8_from_PyObj (&spec, specobj) == NULL) {
+      free (name);
+      return NULL;
+    }
+
   attr = ppdFindAttr (self->ppd, name, spec);
+  free (name);
+  if (spec)
+    free (spec);
   if (attr) {
     PyObject *largs = Py_BuildValue ("()");
     PyObject *lkwlist = Py_BuildValue ("{}");
@@ -429,16 +473,30 @@ static PyObject *
 PPD_findNextAttr (PPD *self, PyObject *args, PyObject *kwds)
 {
   PyObject *ret;
-  const char *name;
-  const char *spec = NULL;
+  PyObject *nameobj;
+  PyObject *specobj = NULL;
+  char *name;
+  char *spec = NULL;
   ppd_attr_t *attr;
   static char *kwlist[] = { "name", "spec", NULL };
 
-  if (!PyArg_ParseTupleAndKeywords (args, kwds, "s|s", kwlist,
-				    &name, &spec))
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|O", kwlist,
+				    &nameobj, &specobj))
     return NULL;
 
+  if (UTF8_from_PyObj (&name, nameobj) == NULL)
+    return NULL;
+
+  if (specobj)
+    if (UTF8_from_PyObj (&spec, specobj) == NULL) {
+      free (name);
+      return NULL;
+    }
+
   attr = ppdFindNextAttr (self->ppd, name, spec);
+  free (name);
+  if (spec)
+    free (spec);
   if (attr) {
     PyObject *largs = Py_BuildValue ("()");
     PyObject *lkwlist = Py_BuildValue ("{}");
@@ -635,12 +693,22 @@ PPD_emitJCL (PPD *self, PyObject *args)
 {
   PyObject *pyFile;
   int job_id;
-  const char *user;
-  const char *title;
+  PyObject *userobj;
+  PyObject *titleobj;
+  char *user;
+  char *title;
   FILE *f;
 
-  if (!PyArg_ParseTuple (args, "Oiss", &pyFile, &job_id, &user, &title))
+  if (!PyArg_ParseTuple (args, "OiOO", &pyFile, &job_id, &userobj, &titleobj))
     return NULL;
+
+  if (UTF8_from_PyObj (&user, userobj) == NULL)
+    return NULL;
+
+  if (UTF8_from_PyObj (&title, titleobj) == NULL) {
+    free (user);
+    return NULL;
+  }
 
   f = PyFile_AsFile(pyFile);
   if (!f)
@@ -648,6 +716,9 @@ PPD_emitJCL (PPD *self, PyObject *args)
 
   if (!ppdEmitJCL(self->ppd, f, job_id, user, title))
     Py_RETURN_NONE;
+
+  free (user);
+  free (title);
   return PyErr_SetFromErrno (PyExc_RuntimeError);
 }
 
