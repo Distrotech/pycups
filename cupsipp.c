@@ -112,7 +112,7 @@ IPPAttribute_init (IPPAttribute *self, PyObject *args, PyObject *kwds)
       case IPP_TAG_MIMETYPE:
       case IPP_TAG_CHARSET:
       case IPP_TAG_LANGUAGE:
-	valid = PyString_Check (v);
+	valid = (PyUnicode_Check (v) || PyBytes_Check (v));
 	break;
 
       default:
@@ -150,14 +150,23 @@ IPPAttribute_repr (IPPAttribute *self)
   PyObject *ret;
   PyObject *values_repr = NULL;
   char *values = NULL;
+  char buffer[256];
   if (self->values) {
     values_repr = PyList_Type.tp_repr (self->values);
-    values = PyString_AsString (values_repr);
+    UTF8_from_PyObj (&values, values_repr);
   }
-  ret = PyString_FromFormat ("<cups.IPPAttribute %s (%d:%d)%s%s>",
-			     self->name, self->group_tag, self->value_tag,
-			     values ? ": " : "",
-			     values ? values : "");
+
+  snprintf (buffer, 256, "<cups.IPPAttribute %s (%d:%d)%s%s>",
+			  self->name, self->group_tag, self->value_tag,
+			  values ? ": " : "",
+			  values ? values : "");
+#if PY_MAJOR_VERSION >= 3
+  ret = PyUnicode_FromFormat (buffer);
+#else
+  ret = PyBytes_FromFormat (buffer);
+#endif
+
+  free (values);
   Py_XDECREF (values_repr);
   return ret;
 }
@@ -181,7 +190,7 @@ IPPAttribute_getValueTag (IPPAttribute *self, void *closure)
 static PyObject *
 IPPAttribute_getName (IPPAttribute *self, void *closure)
 {
-  return PyString_FromString (self->name);
+  return PyUnicode_FromString (self->name);
 }
 
 static PyObject *
@@ -329,13 +338,22 @@ cupsipp_iocb_read (PyObject *callable, ipp_uchar_t *buffer, size_t len)
     goto out;
   }
 
-  if (PyString_Check (result)) {
-    PyString_AsStringAndSize (result, &gotbuffer, &got);
+  if (PyUnicode_Check (result) || PyBytes_Check (result)) {
+    if (PyUnicode_Check (result)) {
+#if (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 3)
+      gotbuffer = PyUnicode_AsUTF8AndSize(result, &got);
+#else
+      PyObject *stringobj = PyUnicode_AsUTF8String (result);
+      PyBytes_AsStringAndSize (stringobj, &gotbuffer, &got);
+#endif
+    } else {
+      PyBytes_AsStringAndSize (result, &gotbuffer, &got);
+    }
+
     if (got > len) {
       debugprintf ("More data returned than requested!  Truncated...\n");
       got = len;
     }
-
     memcpy (buffer, gotbuffer, got);
   } else {
     debugprintf ("Unknown result object type!\n");
@@ -423,7 +441,7 @@ IPPRequest_getAttributes (IPPRequest *self, void *closure)
 	  case IPP_TAG_MIMETYPE:
 	  case IPP_TAG_CHARSET:
 	  case IPP_TAG_LANGUAGE:
-	    value = PyString_FromString (ippGetString (attr, i, NULL));
+	    value = PyUnicode_FromString (ippGetString (attr, i, NULL));
 	    debugprintf ("s%s", ippGetString (attr, i, NULL));
 	    break;
 

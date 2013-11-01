@@ -189,7 +189,7 @@ do_password_callback (const char *prompt)
     password = NULL;
   else
   {
-    pwval = PyString_AsString (result);
+    pwval = PyBytes_AsString (result);
     password = strdup (pwval);
   }
 
@@ -464,13 +464,13 @@ cups_setEncryption (PyObject *self, PyObject *args)
 static PyObject *
 cups_getUser (PyObject *self)
 {
-  return PyString_FromString (cupsUser ());
+  return PyUnicode_FromString (cupsUser ());
 }
 
 static PyObject *
 cups_getServer (PyObject *self)
 {
-  return PyString_FromString (cupsServer ());
+  return PyUnicode_FromString (cupsServer ());
 }
 
 static PyObject *
@@ -981,7 +981,7 @@ initcups (void)
 #define INT_CONSTANT(name)					\
   PyDict_SetItemString (d, #name, PyInt_FromLong (name))
 #define STR_CONSTANT(name)					\
-  PyDict_SetItemString (d, #name, PyString_FromString (name))
+  PyDict_SetItemString (d, #name, PyUnicode_FromString (name))
 
   // CUPS printer types
   INT_CONSTANT (CUPS_PRINTER_LOCAL);
@@ -1212,7 +1212,7 @@ initcups (void)
 
   // Exceptions
   obj = PyDict_New ();
-  PyDict_SetItemString (obj, "__doc__", PyString_FromString(
+  PyDict_SetItemString (obj, "__doc__", PyUnicode_FromString(
     "This exception is raised when an HTTP problem has occurred.  It \n"
     "provides an integer HTTP status code.\n\n"
     "Use it like this::\n"
@@ -1228,7 +1228,7 @@ initcups (void)
   PyModule_AddObject (m, "HTTPError", HTTPError);
 
   obj = PyDict_New ();
-  PyDict_SetItemString (obj, "__doc__", PyString_FromString(
+  PyDict_SetItemString (obj, "__doc__", PyUnicode_FromString(
     "This exception is raised when an IPP error has occurred.  It \n"
     "provides an integer IPP status code, and a human-readable string \n"
     "describing the error.\n\n"

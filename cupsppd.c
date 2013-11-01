@@ -300,8 +300,7 @@ PPD_localizeIPPReason (PPD *self, PyObject *args, PyObject *kwds)
   {
     ret = make_PyUnicode_from_ppd_string (self, buffer);
   } else {
-    ret = Py_None;
-    Py_INCREF (Py_None);
+    Py_RETURN_NONE;
   }
 
   free (reason);
@@ -333,8 +332,7 @@ PPD_localizeMarkerName (PPD *self, PyObject *args)
   {
     ret = make_PyUnicode_from_ppd_string (self, lname);
   } else {
-    ret = Py_None;
-    Py_INCREF (Py_None);
+    Py_RETURN_NONE;
   }
 
   return ret;
@@ -415,8 +413,7 @@ PPD_findOption (PPD *self, PyObject *args)
     Py_INCREF (self);
     ret = (PyObject *) optobj;
   } else {
-    ret = Py_None;
-    Py_INCREF (ret);
+    Py_RETURN_NONE;
   }
 
   return ret;
@@ -462,8 +459,7 @@ PPD_findAttr (PPD *self, PyObject *args, PyObject *kwds)
     Py_INCREF (self);
     ret = (PyObject *) attrobj;
   } else {
-    ret = Py_None;
-    Py_INCREF (ret);
+    Py_RETURN_NONE;
   }
 
   return ret;
@@ -509,8 +505,7 @@ PPD_findNextAttr (PPD *self, PyObject *args, PyObject *kwds)
     Py_INCREF (self);
     ret = (PyObject *) attrobj;
   } else {
-    ret = Py_None;
-    Py_INCREF (ret);
+    Py_RETURN_NONE;
   }
 
   return ret;
@@ -608,11 +603,10 @@ PPD_emitString (PPD *self, PyObject *args)
   emitted = ppdEmitString(self->ppd, section, min_order);
 
   if (emitted) {
-    ret = PyString_FromString(emitted);
+    ret = PyUnicode_FromString (emitted);
     free (emitted);
   } else {
-    Py_INCREF (Py_None);
-    ret = Py_None;
+    Py_RETURN_NONE;
   }
 
   return ret;
@@ -1130,10 +1124,16 @@ Option_repr (Option *self)
 {
   ppd_option_t *option = self->option;
   if (!option)
-    return PyString_FromString ("<cups.Option>");
+    return PyUnicode_FromString ("<cups.Option>");
 
-  return PyString_FromFormat ("<cups.Option %s=%s>",
-			      option->keyword, option->defchoice);
+  char buffer[256];
+  snprintf (buffer, 256, "<cups.Option %s=%s>",
+			  option->keyword, option->defchoice);
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_FromFormat (buffer);
+#else
+    return PyBytes_FromFormat (buffer);
+#endif
 }
 
 ////////////
@@ -1368,9 +1368,15 @@ Group_repr (Group *self)
 {
   ppd_group_t *group = self->group;
   if (!group)
-    return PyString_FromString ("<cups.Group>");
+    return PyUnicode_FromString ("<cups.Group>");
 
-  return PyString_FromFormat ("<cups.Group %s>", group->name);
+  char buffer[256];
+  snprintf (buffer, 256, "<cups.Group %s>", group->name);
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_FromFormat (buffer);
+#else
+    return PyBytes_FromFormat (buffer);
+#endif
 }
 
 ///////////
@@ -1709,12 +1715,18 @@ Attribute_repr (Attribute *self)
 {
   ppd_attr_t *attribute = self->attribute;
   if (!attribute)
-    return PyString_FromString ("<cups.Attribute>");
+    return PyUnicode_FromString ("<cups.Attribute>");
 
-  return PyString_FromFormat ("<cups.Attribute *%s%s%s>",
-			      attribute->name,
-			      attribute->spec[0] != '\0' ? " ": "",
-			      attribute->spec);
+  char buffer[256];
+  snprintf (buffer, 256, "<cups.Attribute *%s%s%s>",
+			  attribute->name,
+			  attribute->spec[0] != '\0' ? " ": "",
+			  attribute->spec);
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_FromFormat (buffer);
+#else
+    return PyBytes_FromFormat (buffer);
+#endif
 }
 
 ///////////////
