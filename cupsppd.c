@@ -630,7 +630,12 @@ PPD_emit (PPD *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "Oi", &pyFile, &section))
     return NULL;
 
+#if PY_MAJOR_VERSION >= 3
+  int fd = PyObject_AsFileDescriptor(pyFile);
+  f = fdopen(fd, "a+");
+#else
   f = PyFile_AsFile(pyFile);
+#endif
   if (!f)
     return NULL;
 
@@ -655,7 +660,12 @@ PPD_emitAfterOrder (PPD *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "Oiif", &pyFile, &section, &limit, &min_order))
     return NULL;
 
+#if PY_MAJOR_VERSION >= 3
+  int fd = PyObject_AsFileDescriptor(pyFile);
+  f = fdopen(fd, "a+");
+#else
   f = PyFile_AsFile(pyFile);
+#endif
   if (!f)
     return NULL;
 
@@ -708,7 +718,12 @@ PPD_emitJCL (PPD *self, PyObject *args)
     return NULL;
   }
 
+#if PY_MAJOR_VERSION >= 3
+  int fd = PyObject_AsFileDescriptor(pyFile);
+  f = fdopen(fd, "a+");
+#else
   f = PyFile_AsFile(pyFile);
+#endif
   if (!f)
     return NULL;
 
@@ -733,7 +748,12 @@ PPD_emitJCLEnd (PPD *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "O", &pyFile))
     return NULL;
 
+#if PY_MAJOR_VERSION >= 3
+  int fd = PyObject_AsFileDescriptor(pyFile);
+  f = fdopen(fd, "a+");
+#else
   f = PyFile_AsFile(pyFile);
+#endif
   if (!f)
     return NULL;
 
