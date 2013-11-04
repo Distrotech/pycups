@@ -165,9 +165,9 @@ IPPAttribute_repr (IPPAttribute *self)
 			  values ? ": " : "",
 			  values ? values : "");
 #if PY_MAJOR_VERSION >= 3
-  ret = PyUnicode_FromFormat (buffer);
+  ret = PyUnicode_FromString (buffer);
 #else
-  ret = PyBytes_FromFormat (buffer);
+  ret = PyBytes_FromString (buffer);
 #endif
 
   free (values);

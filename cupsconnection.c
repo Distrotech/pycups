@@ -314,9 +314,9 @@ Connection_repr (Connection *self)
   snprintf (buffer, 256, "<cups.Connection object for %s at %p>",
 			  self->host, self);
 #if PY_MAJOR_VERSION >= 3
-  return PyUnicode_FromFormat (buffer);
+  return PyUnicode_FromString (buffer);
 #else
-  return PyBytes_FromFormat (buffer);
+  return PyBytes_FromString (buffer);
 #endif
 }
 
@@ -5491,9 +5491,9 @@ Dest_repr (Dest *self)
 			  self->instance ? self->instance : "",
 			  self->is_default ? " (default)" : "");
 #if PY_MAJOR_VERSION >= 3
-  return PyUnicode_FromFormat (buffer);
+  return PyUnicode_FromString (buffer);
 #else
-  return PyBytes_FromFormat (buffer);
+  return PyBytes_FromString (buffer);
 #endif
 }
 

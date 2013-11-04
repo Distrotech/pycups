@@ -1153,9 +1153,9 @@ Option_repr (Option *self)
   snprintf (buffer, 256, "<cups.Option %s=%s>",
 			  option->keyword, option->defchoice);
 #if PY_MAJOR_VERSION >= 3
-    return PyUnicode_FromFormat (buffer);
+    return PyUnicode_FromString (buffer);
 #else
-    return PyBytes_FromFormat (buffer);
+    return PyBytes_FromString (buffer);
 #endif
 }
 
@@ -1399,9 +1399,9 @@ Group_repr (Group *self)
   char buffer[256];
   snprintf (buffer, 256, "<cups.Group %s>", group->name);
 #if PY_MAJOR_VERSION >= 3
-    return PyUnicode_FromFormat (buffer);
+    return PyUnicode_FromString (buffer);
 #else
-    return PyBytes_FromFormat (buffer);
+    return PyBytes_FromString (buffer);
 #endif
 }
 
@@ -1747,9 +1747,9 @@ Attribute_repr (Attribute *self)
 			  attribute->spec[0] != '\0' ? " ": "",
 			  attribute->spec);
 #if PY_MAJOR_VERSION >= 3
-    return PyUnicode_FromFormat (buffer);
+    return PyUnicode_FromString (buffer);
 #else
-    return PyBytes_FromFormat (buffer);
+    return PyBytes_FromString (buffer);
 #endif
 }
 
