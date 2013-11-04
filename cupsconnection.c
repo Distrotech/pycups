@@ -304,7 +304,7 @@ Connection_dealloc (Connection *self)
 #endif /* HAVE_CUPS_1_4 */
   }
 
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 static PyObject *
@@ -5395,7 +5395,7 @@ Dest_dealloc (Dest *self)
     free (self->destname);
     free (self->instance);
   }
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 static PyObject *

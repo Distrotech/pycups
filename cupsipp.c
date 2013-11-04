@@ -141,7 +141,7 @@ IPPAttribute_dealloc (IPPAttribute *self)
   if (self->name)
     free (self->name);
 
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 static PyObject *
@@ -312,7 +312,7 @@ static void
 IPPRequest_dealloc (IPPRequest *self)
 {
   ippDelete (self->ipp);
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 static ssize_t

@@ -255,7 +255,7 @@ PPD_dealloc (PPD *self)
   if (self->conv_to)
     iconv_close (*self->conv_to);
 
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 /////////
@@ -1116,7 +1116,7 @@ static void
 Option_dealloc (Option *self)
 {
   Py_XDECREF (self->ppd);
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 static PyObject *
@@ -1360,7 +1360,7 @@ static void
 Group_dealloc (Group *self)
 {
   Py_XDECREF (self->ppd);
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 static PyObject *
@@ -1562,7 +1562,7 @@ static void
 Constraint_dealloc (Constraint *self)
 {
   Py_XDECREF (self->ppd);
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 ////////////////
@@ -1707,7 +1707,7 @@ static void
 Attribute_dealloc (Attribute *self)
 {
   Py_XDECREF (self->ppd);
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 static PyObject *
