@@ -35,7 +35,7 @@ def getippqueue (dev, queue, depth):
 def getqueue (name, queue, host, depth, printers, classes):
 	indent = do_indent(depth)
 	if queue['printer-type'] & cups.CUPS_PRINTER_CLASS:
-		print "%s* Name:\t%s[@%s] (class)" % (indent, name, host)
+		print ("%s* Name:\t%s[@%s] (class)" % (indent, name, host))
 		dev = queue['device-uri']
 		if dev.startswith ('ipp:'):
 			getippqueue (dev, queue, depth)
@@ -47,11 +47,11 @@ def getqueue (name, queue, host, depth, printers, classes):
 				getqueue (member, printers[member], host,
 					  depth, printers, classes)
 	else:
-		print "%s* Name:\t%s[@%s]" % (indent, name, host)
+		print ("%s* Name:\t%s[@%s]" % (indent, name, host))
 		dev = queue['device-uri']
 		info = queue['printer-info']
-		print "%sURI:\t%s" % (indent, dev)
-		print "%sInfo:\t%s" % (indent, info)
+		print ("%sURI:\t%s" % (indent, dev))
+		print ("%sInfo:\t%s" % (indent, info))
 		if dev.startswith ('ipp:'):
 			getippqueue (dev, name, depth)
 
@@ -67,7 +67,7 @@ def gethost (host=None, depth=0):
 	printers = c.getPrinters ()
 	classes = c.getClasses ()
 	indent = do_indent(depth)
-	for name, queue in printers.iteritems ():
+	for name, queue in printers.items ():
 		getqueue (name, queue, host, depth, printers, classes)
 
 gethost()

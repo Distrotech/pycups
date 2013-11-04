@@ -3,7 +3,7 @@ import cups, os
 
 def f(user_data, flags, dest):
     user_data.append (dest)
-    print flags, dest
+    print (flags, dest)
     return 1
 
 l=[]
@@ -13,6 +13,6 @@ for i in l:
     uri = i.options['printer-uri-supported']
     c, resource = cups.connectDest (i, lambda x, y, z: 1)
     name = resource.split ('/')[-1]
-    print name
+    print (name)
     n = c.getPPD(name)
     os.unlink (n)
