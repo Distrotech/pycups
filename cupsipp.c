@@ -95,7 +95,11 @@ IPPAttribute_init (IPPAttribute *self, PyObject *args, PyObject *kwds)
       case IPP_TAG_INTEGER:
       case IPP_TAG_ENUM:
       case IPP_TAG_RANGE:
+#if PY_MAJOR_VERSION >= 3
+	valid = PyLong_Check (v);
+#else
 	valid = PyInt_Check (v);
+#endif
 	break;
 
       case IPP_TAG_BOOLEAN:
@@ -178,13 +182,21 @@ IPPAttribute_repr (IPPAttribute *self)
 static PyObject *
 IPPAttribute_getGroupTag (IPPAttribute *self, void *closure)
 {
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (self->group_tag);
+#else
   return PyInt_FromLong (self->group_tag);
+#endif
 }
 
 static PyObject *
 IPPAttribute_getValueTag (IPPAttribute *self, void *closure)
 {
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (self->value_tag);
+#else
   return PyInt_FromLong (self->value_tag);
+#endif
 }
 
 static PyObject *
@@ -371,6 +383,7 @@ IPPRequest_readIO (IPPRequest *self, PyObject *args, PyObject *kwds)
 {
   PyObject *cb;
   char blocking = 1;
+  ipp_state_t state;
   static char *kwlist[] = { "read_fn", "blocking", NULL };
 
   if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|b", kwlist,
@@ -382,9 +395,13 @@ IPPRequest_readIO (IPPRequest *self, PyObject *args, PyObject *kwds)
     return NULL;
   }
 
-  return PyInt_FromLong (ippReadIO (cb,
-				    (ipp_iocb_t) cupsipp_iocb_read,
-				    blocking, NULL, self->ipp));
+  state = ippReadIO (cb, (ipp_iocb_t) cupsipp_iocb_read,
+		     blocking, NULL, self->ipp);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (state);
+#else
+  return PyInt_FromLong (state);
+#endif
 }
 
 static PyObject *
@@ -419,7 +436,11 @@ IPPRequest_getAttributes (IPPRequest *self, void *closure)
 	  case IPP_TAG_INTEGER:
 	  case IPP_TAG_ENUM:
 	  case IPP_TAG_RANGE:
+#if PY_MAJOR_VERSION >= 3
+	    value = PyLong_FromLong (ippGetInteger (attr, i));
+#else
 	    value = PyInt_FromLong (ippGetInteger (attr, i));
+#endif
 	    debugprintf ("i%d", ippGetInteger (attr, i));
 	    break;
 

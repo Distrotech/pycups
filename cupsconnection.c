@@ -626,10 +626,17 @@ cups_dest_cb (void *user_data, unsigned flags, cups_dest_t *dest)
     ret = 0;
   }
 
-  if (result && PyInt_Check (result)) {
+
+  if (result && PyLong_Check (result)) {
+    ret = PyLong_AsLong (result);
+    debugprintf ("   cups_dest_cb: cb func returned %d\n", ret);
+  }
+#if PY_MAJOR_VERSION < 3
+  else if (result && PyInt_Check (result)) {
     ret = PyInt_AsLong (result);
     debugprintf ("   cups_dest_cb: cb func returned %d\n", ret);
   }
+#endif
 
   debugprintf ("<- cups_dest_cb (%d)\n", ret);
 
@@ -658,7 +665,11 @@ PyObject_from_attr_value (ipp_attribute_t *attr, int i)
     break;
   case IPP_TAG_INTEGER:
   case IPP_TAG_ENUM:
+#if PY_MAJOR_VERSION >= 3
+    val = PyLong_FromLong (ippGetInteger (attr, i));
+#else
     val = PyInt_FromLong (ippGetInteger (attr, i));
+#endif
     break;
   case IPP_TAG_BOOLEAN:
     val = PyBool_FromLong (ippGetBoolean (attr, i));
@@ -782,7 +793,11 @@ Connection_getPrinters (Connection *self)
 		!strcmp (ippGetName (attr), "printer-state")) &&
 	       ippGetValueTag (attr) == IPP_TAG_ENUM) {
 	int ptype = ippGetInteger (attr, 0);
+#if PY_MAJOR_VERSION >= 3
+	val = PyLong_FromLong (ptype);
+#else
 	val = PyInt_FromLong (ptype);
+#endif
       }
       else if ((!strcmp (ippGetName (attr),
 			 "printer-make-and-model") ||
@@ -801,7 +816,11 @@ Connection_getPrinters (Connection *self)
 			"printer-is-accepting-jobs") &&
 	       ippGetValueTag (attr) == IPP_TAG_BOOLEAN) {
 	int b = ippGetBoolean (attr, 0);
+#if PY_MAJOR_VERSION >= 3
+	val = PyLong_FromLong (b);
+#else
 	val = PyInt_FromLong (b);
+#endif
       }
       else if ((!strcmp (ippGetName (attr),
 			 "printer-up-time") ||
@@ -809,7 +828,11 @@ Connection_getPrinters (Connection *self)
 			 "queued-job-count")) &&
 	       ippGetValueTag (attr) == IPP_TAG_INTEGER) {
 	int u = ippGetInteger (attr, 0);
+#if PY_MAJOR_VERSION >= 3
+	val = PyLong_FromLong (u);
+#else
 	val = PyInt_FromLong (u);
+#endif
       }
       else if ((!strcmp (ippGetName (attr), "device-uri") ||
 		!strcmp (ippGetName (attr), "printer-uri-supported")) &&
@@ -1642,7 +1665,11 @@ Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
 		ippGetValueTag (attr) == IPP_TAG_INTEGER) ||
 	       (!strcmp (ippGetName (attr), "job-state") &&
 		ippGetValueTag (attr) == IPP_TAG_ENUM))
+#if PY_MAJOR_VERSION >= 3
+	val = PyLong_FromLong (ippGetInteger (attr, 0));
+#else
 	val = PyInt_FromLong (ippGetInteger (attr, 0));
+#endif
       else if ((!strcmp (ippGetName (attr), "job-name") &&
 		ippGetValueTag (attr) == IPP_TAG_NAME) ||
 	       (!strcmp (ippGetName (attr), "job-originating-user-name") &&
@@ -1669,7 +1696,11 @@ Connection_getJobs (Connection *self, PyObject *args, PyObject *kwds)
 
     if (job_id != -1) {
       debugprintf ("Adding %d to result dict\n", job_id);
+#if PY_MAJOR_VERSION >= 3
+      PyObject *job_obj = PyLong_FromLong (job_id);
+#else
       PyObject *job_obj = PyInt_FromLong (job_id);
+#endif
       PyDict_SetItem (result, job_obj, dict);
       Py_DECREF (job_obj);
     }
@@ -2885,10 +2916,16 @@ PyObject_to_string (PyObject *pyvalue)
     UTF8_from_PyObj (&value, pyvalue);
   } else if (PyBool_Check (pyvalue)) {
     value = (pyvalue == Py_True) ? "true" : "false";
+  } else if (PyLong_Check (pyvalue)) {
+    long v = PyLong_AsLong (pyvalue);
+    snprintf (string, sizeof (string), "%ld", v);
+    value = string;
+#if PY_MAJOR_VERSION < 3
   } else if (PyInt_Check (pyvalue)) {
     long v = PyInt_AsLong (pyvalue);
     snprintf (string, sizeof (string), "%ld", v);
     value = string;
+#endif
   } else if (PyFloat_Check (pyvalue)) {
     double v = PyFloat_AsDouble (pyvalue);
     snprintf (string, sizeof (string), "%f", v);
@@ -3633,7 +3670,12 @@ Connection_getPPD3 (Connection *self, PyObject *args, PyObject *kwds)
   if (!ret)
     return NULL;
 
+#if PY_MAJOR_VERSION >= 3
+  obj = PyLong_FromLong ((long) status);
+#else
   obj = PyInt_FromLong ((long) status);
+#endif
+
   if (!obj) {
     Py_DECREF (ret);
     return NULL;
@@ -4181,7 +4223,11 @@ Connection_createSubscription (Connection *self, PyObject *args,
 
   ippDelete (answer);
   debugprintf ("<- Connection_createSubscription() = %d\n", i);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (i);
+#else
   return PyInt_FromLong (i);
+#endif
 }
 
 static PyObject *
@@ -4206,7 +4252,11 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
   num_ids = PyList_Size (subscription_ids);
   for (i = 0; i < num_ids; i++) {
     PyObject *id = PyList_GetItem (subscription_ids, i);
+#if PY_MAJOR_VERSION >= 3
+    if (!PyLong_Check (id)) {
+#else
     if (!PyInt_Check (id)) {
+#endif
       PyErr_SetString (PyExc_TypeError, "subscription_ids must be a list "
 		       "of integers");
       return NULL;
@@ -4222,7 +4272,11 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
     num_seqs = PyList_Size (sequence_numbers);
     for (i = 0; i < num_seqs; i++) {
       PyObject *id = PyList_GetItem (sequence_numbers, i);
+#if PY_MAJOR_VERSION >= 3
+      if (!PyLong_Check (id)) {
+#else
       if (!PyInt_Check (id)) {
+#endif
 	PyErr_SetString (PyExc_TypeError, "sequence_numbers must be a list "
 			 "of integers");
 	return NULL;
@@ -4241,8 +4295,11 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
 			 "notify-subscription-ids", num_ids, NULL);
   for (i = 0; i < num_ids; i++) {
     PyObject *id = PyList_GetItem (subscription_ids, i);
-    //attr->values[i].integer = PyInt_AsLong (id);
+#if PY_MAJOR_VERSION >= 3
+    ippSetInteger (request, &attr, i, PyLong_AsLong (id));
+#else
     ippSetInteger (request, &attr, i, PyInt_AsLong (id));
+#endif
   }
 
   if (sequence_numbers) {
@@ -4250,8 +4307,11 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
 			   "notify-sequence-numbers", num_seqs, NULL);
     for (i = 0; i < num_seqs; i++) {
       PyObject *num = PyList_GetItem (sequence_numbers, i);
-      //attr->values[i].integer = PyInt_AsLong (num);
+#if PY_MAJOR_VERSION >= 3
+      ippSetInteger (request, &attr, i, PyLong_AsLong (num));
+#else
       ippSetInteger (request, &attr, i, PyInt_AsLong (num));
+#endif
     }
   }
   
@@ -4272,14 +4332,22 @@ Connection_getNotifications (Connection *self, PyObject *args, PyObject *kwds)
   // Result-wide attributes.
   attr = ippFindAttribute (answer, "notify-get-interval", IPP_TAG_INTEGER);
   if (attr) {
+#if PY_MAJOR_VERSION >= 3
+    PyObject *val = PyLong_FromLong (ippGetInteger (attr, 0));
+#else
     PyObject *val = PyInt_FromLong (ippGetInteger (attr, 0));
+#endif
     PyDict_SetItemString (result, ippGetName (attr), val);
     Py_DECREF (val);
   }
 
   attr = ippFindAttribute (answer, "printer-up-time", IPP_TAG_INTEGER);
   if (attr) {
+#if PY_MAJOR_VERSION >= 3
+    PyObject *val = PyLong_FromLong (ippGetInteger (attr, 0));
+#else
     PyObject *val = PyInt_FromLong (ippGetInteger (attr, 0));
+#endif
     PyDict_SetItemString (result, ippGetName (attr), val);
     Py_DECREF (val);
   }
@@ -4489,7 +4557,11 @@ Connection_printFile (Connection *self, PyObject *args, PyObject *kwds)
   free (title);
   free (filename);
   free (printer);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (jobid);
+#else
   return PyInt_FromLong (jobid);
+#endif
 }
 
 static void
@@ -4599,7 +4671,11 @@ Connection_printFiles (Connection *self, PyObject *args, PyObject *kwds)
   free (title);
   free_string_list (num_filenames, filenames);
   free (printer);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (jobid);
+#else
   return PyInt_FromLong (jobid);
+#endif
 }
 
 PyMethodDef Connection_methods[] =

@@ -382,7 +382,11 @@ PPD_markOption (PPD *self, PyObject *args)
 static PyObject *
 PPD_conflicts (PPD *self)
 {
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (ppdConflicts (self->ppd));
+#else
   return PyInt_FromLong (ppdConflicts (self->ppd));
+#endif
 }
 
 static PyObject *
@@ -1186,7 +1190,11 @@ Option_getUI (Option *self, void *closure)
     Py_RETURN_NONE;
   }
 
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (self->option->ui);
+#else
   return PyInt_FromLong (self->option->ui);
+#endif
 }
 
 static PyObject *

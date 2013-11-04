@@ -1041,9 +1041,13 @@ initcups (void)
 		      (PyObject *)&cups_IPPAttributeType);
 
   // Constants
-
+#if PY_MAJOR_VERSION >= 3
+  #define INT_CONSTANT(name)					\
+    PyDict_SetItemString (d, #name, PyLong_FromLong (name))
+#else
 #define INT_CONSTANT(name)					\
   PyDict_SetItemString (d, #name, PyInt_FromLong (name))
+#endif
 #define STR_CONSTANT(name)					\
   PyDict_SetItemString (d, #name, PyUnicode_FromString (name))
 
