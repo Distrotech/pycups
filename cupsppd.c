@@ -1067,8 +1067,7 @@ PyMethodDef PPD_methods[] =
 
 PyTypeObject cups_PPDType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.PPD",                /*tp_name*/
     sizeof(PPD),               /*tp_basicsize*/
     0,                         /*tp_itemsize*/
@@ -1308,8 +1307,7 @@ PyMethodDef Option_methods[] =
 
 PyTypeObject cups_OptionType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.Option",             /*tp_name*/
     sizeof(Option),            /*tp_basicsize*/
     0,                         /*tp_itemsize*/
@@ -1515,8 +1513,7 @@ PyMethodDef Group_methods[] =
 
 PyTypeObject cups_GroupType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.Group",              /*tp_name*/
     sizeof(Group),             /*tp_basicsize*/
     0,                         /*tp_itemsize*/
@@ -1660,8 +1657,7 @@ PyGetSetDef Constraint_getseters[] =
 
 PyTypeObject cups_ConstraintType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.Constraint",         /*tp_name*/
     sizeof(Constraint),        /*tp_basicsize*/
     0,                         /*tp_itemsize*/
@@ -1824,8 +1820,7 @@ PyGetSetDef Attribute_getseters[] =
 
 PyTypeObject cups_AttributeType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.Attribute",          /*tp_name*/
     sizeof(Attribute),         /*tp_basicsize*/
     0,                         /*tp_itemsize*/

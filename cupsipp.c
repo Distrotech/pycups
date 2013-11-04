@@ -240,8 +240,7 @@ PyMethodDef IPPAttribute_methods[] =
 
 PyTypeObject cups_IPPAttributeType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.IPPAttribute",       /*tp_name*/
     sizeof(IPPAttribute),      /*tp_basicsize*/
     0,                         /*tp_itemsize*/
@@ -585,8 +584,7 @@ PyMethodDef IPPRequest_methods[] =
 
 PyTypeObject cups_IPPRequestType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.IPPRequest",         /*tp_name*/
     sizeof(IPPRequest),        /*tp_basicsize*/
     0,                         /*tp_itemsize*/

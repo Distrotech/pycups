@@ -5390,8 +5390,7 @@ PyMethodDef Connection_methods[] =
 
 PyTypeObject cups_ConnectionType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.Connection",         /*tp_name*/
     sizeof(Connection),        /*tp_basicsize*/
     0,                         /*tp_itemsize*/
@@ -5560,8 +5559,7 @@ PyGetSetDef Dest_getseters[] =
 
 PyTypeObject cups_DestType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.Dest",               /*tp_name*/
     sizeof(Dest),              /*tp_basicsize*/
     0,                         /*tp_itemsize*/
