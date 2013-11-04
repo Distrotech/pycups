@@ -58,7 +58,13 @@ set_ipp_error (ipp_status_t status, const char *message)
     message = ippErrorString (status);
 
   debugprintf("set_ipp_error: %d, %s\n", (int) status, message);
+#if PY_MAJOR_VERSION >= 3
   PyObject *v = Py_BuildValue ("(is)", status, message);
+#else
+  PyObject *v = Py_BuildValue ("(iu)", status,
+				       PyUnicode_AS_UNICODE (
+					    PyUnicode_FromString (message)));
+#endif
   if (v != NULL) {
     PyErr_SetObject (IPPError, v);
     Py_DECREF (v);
@@ -112,7 +118,7 @@ UTF8_from_PyObj (char **const utf8, PyObject *obj)
   }
   else if (PyBytes_Check (obj)) {
     const char *ret;
-    PyObject *unicodeobj = PyUnicode_FromEncodedObject (obj, NULL, NULL);
+    PyObject *unicodeobj = PyUnicode_FromEncodedObject (obj, "utf-8", NULL);
     if (unicodeobj == NULL)
       return NULL;
 
