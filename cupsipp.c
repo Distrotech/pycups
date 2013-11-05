@@ -351,12 +351,8 @@ cupsipp_iocb_read (PyObject *callable, ipp_uchar_t *buffer, size_t len)
 
   if (PyUnicode_Check (result) || PyBytes_Check (result)) {
     if (PyUnicode_Check (result)) {
-#if (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION >= 3)
-      gotbuffer = PyUnicode_AsUTF8AndSize(result, &got);
-#else
       PyObject *stringobj = PyUnicode_AsUTF8String (result);
       PyBytes_AsStringAndSize (stringobj, &gotbuffer, &got);
-#endif
     } else {
       PyBytes_AsStringAndSize (result, &gotbuffer, &got);
     }
