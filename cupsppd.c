@@ -632,12 +632,12 @@ PPD_emit (PPD *self, PyObject *args)
 
 #if PY_MAJOR_VERSION >= 3
   int fd = PyObject_AsFileDescriptor(pyFile);
-  f = fdopen(fd, "a+");
+  f = fdopen(fd, "w");
 #else
   f = PyFile_AsFile(pyFile);
 #endif
   if (!f)
-    return NULL;
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
 
   if (!ppdEmit(self->ppd, f, section))
     Py_RETURN_NONE;
@@ -662,12 +662,12 @@ PPD_emitAfterOrder (PPD *self, PyObject *args)
 
 #if PY_MAJOR_VERSION >= 3
   int fd = PyObject_AsFileDescriptor(pyFile);
-  f = fdopen(fd, "a+");
+  f = fdopen(fd, "w");
 #else
   f = PyFile_AsFile(pyFile);
 #endif
   if (!f)
-    return NULL;
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
 
   if (!ppdEmitAfterOrder(self->ppd, f, section, limit, min_order))
     Py_RETURN_NONE;
@@ -720,12 +720,12 @@ PPD_emitJCL (PPD *self, PyObject *args)
 
 #if PY_MAJOR_VERSION >= 3
   int fd = PyObject_AsFileDescriptor(pyFile);
-  f = fdopen(fd, "a+");
+  f = fdopen(fd, "w");
 #else
   f = PyFile_AsFile(pyFile);
 #endif
   if (!f)
-    return NULL;
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
 
   if (!ppdEmitJCL(self->ppd, f, job_id, user, title))
     Py_RETURN_NONE;
@@ -750,12 +750,12 @@ PPD_emitJCLEnd (PPD *self, PyObject *args)
 
 #if PY_MAJOR_VERSION >= 3
   int fd = PyObject_AsFileDescriptor(pyFile);
-  f = fdopen(fd, "a+");
+  f = fdopen(fd, "w");
 #else
   f = PyFile_AsFile(pyFile);
 #endif
   if (!f)
-    return NULL;
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
 
   if (!ppdEmitJCLEnd(self->ppd, f))
     Py_RETURN_NONE;
@@ -774,16 +774,12 @@ PPD_writeFd (PPD *self, PyObject *args)
     return NULL;
 
   dfd = dup (fd);
-  if (dfd == -1) {
-    PyErr_SetFromErrno (PyExc_RuntimeError);
-    return NULL;
-  }
+  if (dfd == -1)
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
 
   out = fdopen (dfd, "w");
-  if (!out) {
-    PyErr_SetFromErrno (PyExc_RuntimeError);
-    return NULL;
-  }
+  if (!out)
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
 
   rewind (self->file);
   while (!feof (self->file)) {

@@ -1288,10 +1288,9 @@ Connection_getDocument (Connection *self, PyObject *args)
   snprintf(docfilename, sizeof (docfilename), "%s/jobdoc-XXXXXX", _PATH_TMP);
   fd = mkstemp (docfilename);
   if (fd < 0) {
-    PyErr_SetFromErrno (PyExc_RuntimeError);
     debugprintf ("<- Connection_getDocument() EXCEPTION\n");
     ippDelete (request);
-    return NULL;
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
   }
 
   Connection_begin_allow_threads (self);
@@ -2345,7 +2344,6 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
     ppdfile = strdup(template);
     fd = mkstemp (ppdfile);
     if (fd < 0) {
-      PyErr_SetFromErrno (PyExc_RuntimeError);
       debugprintf ("<- Connection_addPrinter() EXCEPTION\n");
       free (name);
       free (ppdfile);
@@ -2353,7 +2351,7 @@ Connection_addPrinter (Connection *self, PyObject *args, PyObject *kwds)
       free (info);
       free (location);
       free (device);
-      return NULL;
+      return PyErr_SetFromErrno (PyExc_RuntimeError);
     }
 
     args = Py_BuildValue ("(i)", fd);
