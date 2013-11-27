@@ -95,7 +95,11 @@ IPPAttribute_init (IPPAttribute *self, PyObject *args, PyObject *kwds)
       case IPP_TAG_INTEGER:
       case IPP_TAG_ENUM:
       case IPP_TAG_RANGE:
+#if PY_MAJOR_VERSION >= 3
+	valid = PyLong_Check (v);
+#else
 	valid = PyInt_Check (v);
+#endif
 	break;
 
       case IPP_TAG_BOOLEAN:
@@ -112,7 +116,7 @@ IPPAttribute_init (IPPAttribute *self, PyObject *args, PyObject *kwds)
       case IPP_TAG_MIMETYPE:
       case IPP_TAG_CHARSET:
       case IPP_TAG_LANGUAGE:
-	valid = PyString_Check (v);
+	valid = (PyUnicode_Check (v) || PyBytes_Check (v));
 	break;
 
       default:
@@ -141,7 +145,7 @@ IPPAttribute_dealloc (IPPAttribute *self)
   if (self->name)
     free (self->name);
 
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 static PyObject *
@@ -150,14 +154,23 @@ IPPAttribute_repr (IPPAttribute *self)
   PyObject *ret;
   PyObject *values_repr = NULL;
   char *values = NULL;
+  char buffer[256];
   if (self->values) {
     values_repr = PyList_Type.tp_repr (self->values);
-    values = PyString_AsString (values_repr);
+    UTF8_from_PyObj (&values, values_repr);
   }
-  ret = PyString_FromFormat ("<cups.IPPAttribute %s (%d:%d)%s%s>",
-			     self->name, self->group_tag, self->value_tag,
-			     values ? ": " : "",
-			     values ? values : "");
+
+  snprintf (buffer, 256, "<cups.IPPAttribute %s (%d:%d)%s%s>",
+			  self->name, self->group_tag, self->value_tag,
+			  values ? ": " : "",
+			  values ? values : "");
+#if PY_MAJOR_VERSION >= 3
+  ret = PyUnicode_FromString (buffer);
+#else
+  ret = PyBytes_FromString (buffer);
+#endif
+
+  free (values);
   Py_XDECREF (values_repr);
   return ret;
 }
@@ -169,19 +182,27 @@ IPPAttribute_repr (IPPAttribute *self)
 static PyObject *
 IPPAttribute_getGroupTag (IPPAttribute *self, void *closure)
 {
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (self->group_tag);
+#else
   return PyInt_FromLong (self->group_tag);
+#endif
 }
 
 static PyObject *
 IPPAttribute_getValueTag (IPPAttribute *self, void *closure)
 {
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (self->value_tag);
+#else
   return PyInt_FromLong (self->value_tag);
+#endif
 }
 
 static PyObject *
 IPPAttribute_getName (IPPAttribute *self, void *closure)
 {
-  return PyString_FromString (self->name);
+  return PyUnicode_FromString (self->name);
 }
 
 static PyObject *
@@ -219,8 +240,7 @@ PyMethodDef IPPAttribute_methods[] =
 
 PyTypeObject cups_IPPAttributeType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.IPPAttribute",       /*tp_name*/
     sizeof(IPPAttribute),      /*tp_basicsize*/
     0,                         /*tp_itemsize*/
@@ -303,7 +323,7 @@ static void
 IPPRequest_dealloc (IPPRequest *self)
 {
   ippDelete (self->ipp);
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 static ssize_t
@@ -329,13 +349,18 @@ cupsipp_iocb_read (PyObject *callable, ipp_uchar_t *buffer, size_t len)
     goto out;
   }
 
-  if (PyString_Check (result)) {
-    PyString_AsStringAndSize (result, &gotbuffer, &got);
+  if (PyUnicode_Check (result) || PyBytes_Check (result)) {
+    if (PyUnicode_Check (result)) {
+      PyObject *stringobj = PyUnicode_AsUTF8String (result);
+      PyBytes_AsStringAndSize (stringobj, &gotbuffer, &got);
+    } else {
+      PyBytes_AsStringAndSize (result, &gotbuffer, &got);
+    }
+
     if (got > len) {
       debugprintf ("More data returned than requested!  Truncated...\n");
       got = len;
     }
-
     memcpy (buffer, gotbuffer, got);
   } else {
     debugprintf ("Unknown result object type!\n");
@@ -353,6 +378,7 @@ IPPRequest_readIO (IPPRequest *self, PyObject *args, PyObject *kwds)
 {
   PyObject *cb;
   char blocking = 1;
+  ipp_state_t state;
   static char *kwlist[] = { "read_fn", "blocking", NULL };
 
   if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|b", kwlist,
@@ -364,9 +390,13 @@ IPPRequest_readIO (IPPRequest *self, PyObject *args, PyObject *kwds)
     return NULL;
   }
 
-  return PyInt_FromLong (ippReadIO (cb,
-				    (ipp_iocb_t) cupsipp_iocb_read,
-				    blocking, NULL, self->ipp));
+  state = ippReadIO (cb, (ipp_iocb_t) cupsipp_iocb_read,
+		     blocking, NULL, self->ipp);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (state);
+#else
+  return PyInt_FromLong (state);
+#endif
 }
 
 static PyObject *
@@ -401,7 +431,11 @@ IPPRequest_getAttributes (IPPRequest *self, void *closure)
 	  case IPP_TAG_INTEGER:
 	  case IPP_TAG_ENUM:
 	  case IPP_TAG_RANGE:
+#if PY_MAJOR_VERSION >= 3
+	    value = PyLong_FromLong (ippGetInteger (attr, i));
+#else
 	    value = PyInt_FromLong (ippGetInteger (attr, i));
+#endif
 	    debugprintf ("i%d", ippGetInteger (attr, i));
 	    break;
 
@@ -423,7 +457,7 @@ IPPRequest_getAttributes (IPPRequest *self, void *closure)
 	  case IPP_TAG_MIMETYPE:
 	  case IPP_TAG_CHARSET:
 	  case IPP_TAG_LANGUAGE:
-	    value = PyString_FromString (ippGetString (attr, i, NULL));
+	    value = PyUnicode_FromString (ippGetString (attr, i, NULL));
 	    debugprintf ("s%s", ippGetString (attr, i, NULL));
 	    break;
 
@@ -546,8 +580,7 @@ PyMethodDef IPPRequest_methods[] =
 
 PyTypeObject cups_IPPRequestType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.IPPRequest",         /*tp_name*/
     sizeof(IPPRequest),        /*tp_basicsize*/
     0,                         /*tp_itemsize*/

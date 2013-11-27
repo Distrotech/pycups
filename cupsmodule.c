@@ -189,7 +189,7 @@ do_password_callback (const char *prompt)
     password = NULL;
   else
   {
-    pwval = PyString_AsString (result);
+    pwval = PyBytes_AsString (result);
     password = strdup (pwval);
   }
 
@@ -396,9 +396,13 @@ cups_modelSort (PyObject *self, PyObject *args)
     PyErr_SetString (PyExc_RuntimeError, "Insufficient memory");
     return NULL;
   }
-
+#if PY_MAJOR_VERSION >= 3
+  PyUnicode_AsWideChar (a, wca, size_a);
+  PyUnicode_AsWideChar (b, wcb, size_b);
+#else
   PyUnicode_AsWideChar ((PyUnicodeObject *) a, wca, size_a);
   PyUnicode_AsWideChar ((PyUnicodeObject *) b, wcb, size_b);
+#endif
   Py_DECREF (a);
   Py_DECREF (b);
   return Py_BuildValue ("i", do_model_compare (wca, wcb));
@@ -464,13 +468,13 @@ cups_setEncryption (PyObject *self, PyObject *args)
 static PyObject *
 cups_getUser (PyObject *self)
 {
-  return PyString_FromString (cupsUser ());
+  return PyUnicode_FromString (cupsUser ());
 }
 
 static PyObject *
 cups_getServer (PyObject *self)
 {
-  return PyString_FromString (cupsServer ());
+  return PyUnicode_FromString (cupsServer ());
 }
 
 static PyObject *
@@ -770,7 +774,19 @@ fail:
   return NULL;
 }
 
-static PyMethodDef CupsMethods[] = {
+struct module_state {
+    PyObject *error;
+};
+
+#if PY_MAJOR_VERSION >= 3
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
+#else
+#define GETSTATE(m) (&_state)
+static struct module_state _state;
+#endif
+
+
+static PyMethodDef cups_methods[] = {
   { "modelSort", cups_modelSort, METH_VARARGS,
     "modelSort(s1,s2) -> integer\n\n"
     "Sort two model strings.\n\n"
@@ -897,17 +913,65 @@ static PyMethodDef CupsMethods[] = {
   { NULL, NULL, 0, NULL }
 };
 
+#if PY_MAJOR_VERSION >= 3
+static int cups_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(GETSTATE(m)->error);
+    return 0;
+}
+
+static int cups_clear(PyObject *m) {
+    Py_CLEAR(GETSTATE(m)->error);
+    return 0;
+}
+
+
+static struct PyModuleDef moduledef = {
+        PyModuleDef_HEAD_INIT,
+        "cups",
+        NULL,
+        sizeof(struct module_state),
+        cups_methods,
+        NULL,
+        cups_traverse,
+        cups_clear,
+        NULL
+};
+
+#define INITERROR return NULL
+
+PyObject *
+PyInit_cups(void)
+
+#else
+#define INITERROR return
+
 void
 initcups (void)
+#endif
 {
-  PyObject *m = Py_InitModule ("cups", CupsMethods);
+#if PY_MAJOR_VERSION >= 3
+    PyObject *m = PyModule_Create(&moduledef);
+#else
+    PyObject *m = Py_InitModule("cups", cups_methods);
+#endif
+
+  if (m == NULL)
+    INITERROR;
+  struct module_state *st = GETSTATE(m);
+
+  st->error = PyErr_NewException("cups.Error", NULL, NULL);
+  if (st->error == NULL) {
+    Py_DECREF(m);
+    INITERROR;
+  }
+
   PyObject *d = PyModule_GetDict (m);
   PyObject *obj;
 
   // Connection type
   cups_ConnectionType.tp_new = PyType_GenericNew;
   if (PyType_Ready (&cups_ConnectionType) < 0)
-    return;
+    INITERROR;
 
   PyModule_AddObject (m, "Connection",
 		      (PyObject *)&cups_ConnectionType);
@@ -915,7 +979,7 @@ initcups (void)
   // PPD type
   cups_PPDType.tp_new = PyType_GenericNew;
   if (PyType_Ready (&cups_PPDType) < 0)
-    return;
+    INITERROR;
 
   PyModule_AddObject (m, "PPD",
 		      (PyObject *)&cups_PPDType);
@@ -923,7 +987,7 @@ initcups (void)
   // Option type
   cups_OptionType.tp_new = PyType_GenericNew;
   if (PyType_Ready (&cups_OptionType) < 0)
-    return;
+    INITERROR;
 
   PyModule_AddObject (m, "Option",
 		      (PyObject *)&cups_OptionType);
@@ -931,7 +995,7 @@ initcups (void)
   // Group type
   cups_GroupType.tp_new = PyType_GenericNew;
   if (PyType_Ready (&cups_GroupType) < 0)
-    return;
+    INITERROR;
 
   PyModule_AddObject (m, "Group",
 		      (PyObject *)&cups_GroupType);
@@ -939,7 +1003,7 @@ initcups (void)
   // Constraint type
   cups_ConstraintType.tp_new = PyType_GenericNew;
   if (PyType_Ready (&cups_ConstraintType) < 0)
-    return;
+    INITERROR;
 
   PyModule_AddObject (m, "Constraint",
 		      (PyObject *)&cups_ConstraintType);
@@ -947,7 +1011,7 @@ initcups (void)
   // Attribute type
   cups_AttributeType.tp_new = PyType_GenericNew;
   if (PyType_Ready (&cups_AttributeType) < 0)
-    return;
+    INITERROR;
 
   PyModule_AddObject (m, "Attribute",
 		      (PyObject *)&cups_AttributeType);
@@ -955,7 +1019,7 @@ initcups (void)
   // Dest type
   cups_DestType.tp_new = PyType_GenericNew;
   if (PyType_Ready (&cups_DestType) < 0)
-    return;
+    INITERROR;
 
   PyModule_AddObject (m, "Dest",
 		      (PyObject *)&cups_DestType);
@@ -963,7 +1027,7 @@ initcups (void)
   // IPPRequest type
   cups_IPPRequestType.tp_new = PyType_GenericNew;
   if (PyType_Ready (&cups_IPPRequestType) < 0)
-      return;
+      INITERROR;
 
   PyModule_AddObject (m, "IPPRequest",
 		      (PyObject *)&cups_IPPRequestType);
@@ -971,17 +1035,21 @@ initcups (void)
   // IPPAttribute type
   cups_IPPAttributeType.tp_new = PyType_GenericNew;
   if (PyType_Ready (&cups_IPPAttributeType) < 0)
-      return;
+      INITERROR;
 
   PyModule_AddObject (m, "IPPAttribute",
 		      (PyObject *)&cups_IPPAttributeType);
 
   // Constants
-
+#if PY_MAJOR_VERSION >= 3
+  #define INT_CONSTANT(name)					\
+    PyDict_SetItemString (d, #name, PyLong_FromLong (name))
+#else
 #define INT_CONSTANT(name)					\
   PyDict_SetItemString (d, #name, PyInt_FromLong (name))
+#endif
 #define STR_CONSTANT(name)					\
-  PyDict_SetItemString (d, #name, PyString_FromString (name))
+  PyDict_SetItemString (d, #name, PyUnicode_FromString (name))
 
   // CUPS printer types
   INT_CONSTANT (CUPS_PRINTER_LOCAL);
@@ -1212,7 +1280,7 @@ initcups (void)
 
   // Exceptions
   obj = PyDict_New ();
-  PyDict_SetItemString (obj, "__doc__", PyString_FromString(
+  PyDict_SetItemString (obj, "__doc__", PyUnicode_FromString(
     "This exception is raised when an HTTP problem has occurred.  It \n"
     "provides an integer HTTP status code.\n\n"
     "Use it like this::\n"
@@ -1223,12 +1291,12 @@ initcups (void)
   HTTPError = PyErr_NewException ("cups.HTTPError", NULL, obj);
   Py_DECREF (obj);
   if (HTTPError == NULL)
-    return;
+    INITERROR;
   Py_INCREF (HTTPError);
   PyModule_AddObject (m, "HTTPError", HTTPError);
 
   obj = PyDict_New ();
-  PyDict_SetItemString (obj, "__doc__", PyString_FromString(
+  PyDict_SetItemString (obj, "__doc__", PyUnicode_FromString(
     "This exception is raised when an IPP error has occurred.  It \n"
     "provides an integer IPP status code, and a human-readable string \n"
     "describing the error.\n\n"
@@ -1241,9 +1309,13 @@ initcups (void)
   IPPError = PyErr_NewException ("cups.IPPError", NULL, obj);
   Py_DECREF (obj);
   if (IPPError == NULL)
-    return;
+    INITERROR;
   Py_INCREF (IPPError);
   PyModule_AddObject (m, "IPPError", IPPError);
+
+#if PY_MAJOR_VERSION >= 3
+    return m;
+#endif
 }
 
 ///////////////

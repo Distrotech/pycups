@@ -255,7 +255,7 @@ PPD_dealloc (PPD *self)
   if (self->conv_to)
     iconv_close (*self->conv_to);
 
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 /////////
@@ -300,8 +300,7 @@ PPD_localizeIPPReason (PPD *self, PyObject *args, PyObject *kwds)
   {
     ret = make_PyUnicode_from_ppd_string (self, buffer);
   } else {
-    ret = Py_None;
-    Py_INCREF (Py_None);
+    Py_RETURN_NONE;
   }
 
   free (reason);
@@ -333,8 +332,7 @@ PPD_localizeMarkerName (PPD *self, PyObject *args)
   {
     ret = make_PyUnicode_from_ppd_string (self, lname);
   } else {
-    ret = Py_None;
-    Py_INCREF (Py_None);
+    Py_RETURN_NONE;
   }
 
   return ret;
@@ -384,7 +382,11 @@ PPD_markOption (PPD *self, PyObject *args)
 static PyObject *
 PPD_conflicts (PPD *self)
 {
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (ppdConflicts (self->ppd));
+#else
   return PyInt_FromLong (ppdConflicts (self->ppd));
+#endif
 }
 
 static PyObject *
@@ -415,8 +417,7 @@ PPD_findOption (PPD *self, PyObject *args)
     Py_INCREF (self);
     ret = (PyObject *) optobj;
   } else {
-    ret = Py_None;
-    Py_INCREF (ret);
+    Py_RETURN_NONE;
   }
 
   return ret;
@@ -462,8 +463,7 @@ PPD_findAttr (PPD *self, PyObject *args, PyObject *kwds)
     Py_INCREF (self);
     ret = (PyObject *) attrobj;
   } else {
-    ret = Py_None;
-    Py_INCREF (ret);
+    Py_RETURN_NONE;
   }
 
   return ret;
@@ -509,8 +509,7 @@ PPD_findNextAttr (PPD *self, PyObject *args, PyObject *kwds)
     Py_INCREF (self);
     ret = (PyObject *) attrobj;
   } else {
-    ret = Py_None;
-    Py_INCREF (ret);
+    Py_RETURN_NONE;
   }
 
   return ret;
@@ -608,11 +607,10 @@ PPD_emitString (PPD *self, PyObject *args)
   emitted = ppdEmitString(self->ppd, section, min_order);
 
   if (emitted) {
-    ret = PyString_FromString(emitted);
+    ret = PyUnicode_FromString (emitted);
     free (emitted);
   } else {
-    Py_INCREF (Py_None);
-    ret = Py_None;
+    Py_RETURN_NONE;
   }
 
   return ret;
@@ -632,9 +630,14 @@ PPD_emit (PPD *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "Oi", &pyFile, &section))
     return NULL;
 
+#if PY_MAJOR_VERSION >= 3
+  int fd = PyObject_AsFileDescriptor(pyFile);
+  f = fdopen(fd, "w");
+#else
   f = PyFile_AsFile(pyFile);
+#endif
   if (!f)
-    return NULL;
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
 
   if (!ppdEmit(self->ppd, f, section))
     Py_RETURN_NONE;
@@ -657,9 +660,14 @@ PPD_emitAfterOrder (PPD *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "Oiif", &pyFile, &section, &limit, &min_order))
     return NULL;
 
+#if PY_MAJOR_VERSION >= 3
+  int fd = PyObject_AsFileDescriptor(pyFile);
+  f = fdopen(fd, "w");
+#else
   f = PyFile_AsFile(pyFile);
+#endif
   if (!f)
-    return NULL;
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
 
   if (!ppdEmitAfterOrder(self->ppd, f, section, limit, min_order))
     Py_RETURN_NONE;
@@ -710,9 +718,14 @@ PPD_emitJCL (PPD *self, PyObject *args)
     return NULL;
   }
 
+#if PY_MAJOR_VERSION >= 3
+  int fd = PyObject_AsFileDescriptor(pyFile);
+  f = fdopen(fd, "w");
+#else
   f = PyFile_AsFile(pyFile);
+#endif
   if (!f)
-    return NULL;
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
 
   if (!ppdEmitJCL(self->ppd, f, job_id, user, title))
     Py_RETURN_NONE;
@@ -735,9 +748,14 @@ PPD_emitJCLEnd (PPD *self, PyObject *args)
   if (!PyArg_ParseTuple (args, "O", &pyFile))
     return NULL;
 
+#if PY_MAJOR_VERSION >= 3
+  int fd = PyObject_AsFileDescriptor(pyFile);
+  f = fdopen(fd, "w");
+#else
   f = PyFile_AsFile(pyFile);
+#endif
   if (!f)
-    return NULL;
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
 
   if (!ppdEmitJCLEnd(self->ppd, f))
     Py_RETURN_NONE;
@@ -756,16 +774,12 @@ PPD_writeFd (PPD *self, PyObject *args)
     return NULL;
 
   dfd = dup (fd);
-  if (dfd == -1) {
-    PyErr_SetFromErrno (PyExc_RuntimeError);
-    return NULL;
-  }
+  if (dfd == -1)
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
 
   out = fdopen (dfd, "w");
-  if (!out) {
-    PyErr_SetFromErrno (PyExc_RuntimeError);
-    return NULL;
-  }
+  if (!out)
+    return PyErr_SetFromErrno (PyExc_RuntimeError);
 
   rewind (self->file);
   while (!feof (self->file)) {
@@ -1049,8 +1063,7 @@ PyMethodDef PPD_methods[] =
 
 PyTypeObject cups_PPDType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.PPD",                /*tp_name*/
     sizeof(PPD),               /*tp_basicsize*/
     0,                         /*tp_itemsize*/
@@ -1122,7 +1135,7 @@ static void
 Option_dealloc (Option *self)
 {
   Py_XDECREF (self->ppd);
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 static PyObject *
@@ -1130,10 +1143,16 @@ Option_repr (Option *self)
 {
   ppd_option_t *option = self->option;
   if (!option)
-    return PyString_FromString ("<cups.Option>");
+    return PyUnicode_FromString ("<cups.Option>");
 
-  return PyString_FromFormat ("<cups.Option %s=%s>",
-			      option->keyword, option->defchoice);
+  char buffer[256];
+  snprintf (buffer, 256, "<cups.Option %s=%s>",
+			  option->keyword, option->defchoice);
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_FromString (buffer);
+#else
+    return PyBytes_FromString (buffer);
+#endif
 }
 
 ////////////
@@ -1186,7 +1205,11 @@ Option_getUI (Option *self, void *closure)
     Py_RETURN_NONE;
   }
 
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (self->option->ui);
+#else
   return PyInt_FromLong (self->option->ui);
+#endif
 }
 
 static PyObject *
@@ -1280,8 +1303,7 @@ PyMethodDef Option_methods[] =
 
 PyTypeObject cups_OptionType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.Option",             /*tp_name*/
     sizeof(Option),            /*tp_basicsize*/
     0,                         /*tp_itemsize*/
@@ -1360,7 +1382,7 @@ static void
 Group_dealloc (Group *self)
 {
   Py_XDECREF (self->ppd);
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 static PyObject *
@@ -1368,9 +1390,15 @@ Group_repr (Group *self)
 {
   ppd_group_t *group = self->group;
   if (!group)
-    return PyString_FromString ("<cups.Group>");
+    return PyUnicode_FromString ("<cups.Group>");
 
-  return PyString_FromFormat ("<cups.Group %s>", group->name);
+  char buffer[256];
+  snprintf (buffer, 256, "<cups.Group %s>", group->name);
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_FromString (buffer);
+#else
+    return PyBytes_FromString (buffer);
+#endif
 }
 
 ///////////
@@ -1481,8 +1509,7 @@ PyMethodDef Group_methods[] =
 
 PyTypeObject cups_GroupType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.Group",              /*tp_name*/
     sizeof(Group),             /*tp_basicsize*/
     0,                         /*tp_itemsize*/
@@ -1556,7 +1583,7 @@ static void
 Constraint_dealloc (Constraint *self)
 {
   Py_XDECREF (self->ppd);
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 ////////////////
@@ -1626,8 +1653,7 @@ PyGetSetDef Constraint_getseters[] =
 
 PyTypeObject cups_ConstraintType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.Constraint",         /*tp_name*/
     sizeof(Constraint),        /*tp_basicsize*/
     0,                         /*tp_itemsize*/
@@ -1701,7 +1727,7 @@ static void
 Attribute_dealloc (Attribute *self)
 {
   Py_XDECREF (self->ppd);
-  self->ob_type->tp_free ((PyObject *) self);
+  ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
 static PyObject *
@@ -1709,12 +1735,18 @@ Attribute_repr (Attribute *self)
 {
   ppd_attr_t *attribute = self->attribute;
   if (!attribute)
-    return PyString_FromString ("<cups.Attribute>");
+    return PyUnicode_FromString ("<cups.Attribute>");
 
-  return PyString_FromFormat ("<cups.Attribute *%s%s%s>",
-			      attribute->name,
-			      attribute->spec[0] != '\0' ? " ": "",
-			      attribute->spec);
+  char buffer[256];
+  snprintf (buffer, 256, "<cups.Attribute *%s%s%s>",
+			  attribute->name,
+			  attribute->spec[0] != '\0' ? " ": "",
+			  attribute->spec);
+#if PY_MAJOR_VERSION >= 3
+    return PyUnicode_FromString (buffer);
+#else
+    return PyBytes_FromString (buffer);
+#endif
 }
 
 ///////////////
@@ -1784,8 +1816,7 @@ PyGetSetDef Attribute_getseters[] =
 
 PyTypeObject cups_AttributeType =
   {
-    PyObject_HEAD_INIT(NULL)
-    0,                         /*ob_size*/
+    PyVarObject_HEAD_INIT(NULL, 0)
     "cups.Attribute",          /*tp_name*/
     sizeof(Attribute),         /*tp_basicsize*/
     0,                         /*tp_itemsize*/

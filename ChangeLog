@@ -1,5 +1,13 @@
 2013-11-27  Tim Waugh  <twaugh@redhat.com>
 
+	* setup.py: Version 1.9.66.
+
+2013-11-04  Jiri Popelka  <jpopelka@redhat.com>
+
+	* Python3 compatibility
+
+2013-11-27  Tim Waugh  <twaugh@redhat.com>
+
 	* setup.py: Version 1.9.65.
 
 2013-07-31  Jiri Popelka  <jpopelka@redhat.com>
