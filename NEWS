@@ -1,6 +1,10 @@
 NEWS
 ----
 
+New in 1.9.66:
+
+* Python 3 support.
+
 New in 1.9.65:
 
 * cups.connectDest() API fix: now returns a tuple.
