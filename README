@@ -3,3 +3,4 @@ CUPS bindings for Python
 
 These Python bindings are intended to wrap the CUPS API.
 
+Python 2.6 or later is required.
