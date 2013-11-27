@@ -1,7 +1,7 @@
 NEWS
 ----
 
-New in 1.9.64:
+New in 1.9.65:
 
 * cups.connectDest() API fix: now returns a tuple.
 * cups.enumDests(), cups.connectDest(), and cups.CUPS_DEST_FLAGS_*
