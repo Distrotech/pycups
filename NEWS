@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in next version:
+
+* Bindings for streaming API: cups.CUPS_FORMAT_* constants, cups.createJob(),
+  cups.startDocument(), cups.writeRequestData(), cups.finishDocument().
+
 New in 1.9.66:
 
 * Python 3 support.
