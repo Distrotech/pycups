@@ -34,6 +34,12 @@
 #define _PATH_TMP P_tmpdir
 #endif
 
+#if PY_VERSION_HEX < 0x02050000
+#define DICT_POS_TYPE int
+#else
+#define DICT_POS_TYPE Py_ssize_t
+#endif
+
 PyObject *HTTPError;
 PyObject *IPPError;
 
@@ -1904,6 +1910,212 @@ Connection_cancelAllJobs (Connection *self, PyObject *args, PyObject *kwds)
 
   debugprintf ("<- Connection_cancelAllJobs() = None\n");
   Py_RETURN_NONE;
+}
+
+static PyObject *
+Connection_createJob (Connection *self, PyObject *args, PyObject *kwds)
+{
+  static char *kwlist[] = { "printer", "title", "options", NULL };
+  PyObject *printer_obj;
+  char *printer;
+  PyObject *title_obj;
+  char *title;
+  PyObject *options_obj, *key, *val;
+  int num_settings = 0;
+  DICT_POS_TYPE pos = 0;
+  cups_option_t *settings = NULL;
+  int jobid;
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "OOO", kwlist,
+				    &printer_obj, &title_obj,
+				    &options_obj))
+    return NULL;
+
+  if (UTF8_from_PyObj (&printer, printer_obj) == NULL)
+    return NULL;
+  if (UTF8_from_PyObj (&title, title_obj) == NULL) {
+    free (printer);
+    return NULL;
+  }
+  debugprintf ("-> Connection_createJob(printer=%s, title=%s)\n", printer, title);
+
+  if (!PyDict_Check (options_obj)) {
+    free (title);
+    free (printer);
+    PyErr_SetString (PyExc_TypeError, "options must be a dict");
+    return NULL;
+  }
+  while (PyDict_Next (options_obj, &pos, &key, &val)) {
+    char *name, *value;
+    if ((!PyUnicode_Check (key) && !PyBytes_Check (key)) ||
+        (!PyUnicode_Check (val) && !PyBytes_Check (val))) {
+      cupsFreeOptions (num_settings, settings);
+      free (title);
+      free (printer);
+      PyErr_SetString (PyExc_TypeError, "Keys and values must be strings");
+      return NULL;
+    }
+
+    num_settings = cupsAddOption (UTF8_from_PyObj (&name, key),
+				  UTF8_from_PyObj (&value, val),
+				  num_settings,
+				  &settings);
+    free (name);
+    free (value);
+  }
+
+  Connection_begin_allow_threads (self);
+  jobid = cupsCreateJob(self->http, printer, title, num_settings, settings);
+  Connection_end_allow_threads (self);
+
+  if (jobid == 0) {
+    cupsFreeOptions (num_settings, settings);
+    free (title);
+    free (printer);
+    set_ipp_error (cupsLastError (), cupsLastErrorString ());
+    debugprintf ("<- Connection_createJob() = NULL\n");
+    return NULL;
+  }
+
+  cupsFreeOptions (num_settings, settings);
+  free (title);
+  free (printer);
+  debugprintf ("<- Connection_createJob() = %d\n", jobid);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (jobid);
+#else
+  return PyInt_FromLong (jobid);
+#endif
+}
+
+static PyObject *
+Connection_startDocument (Connection *self, PyObject *args, PyObject *kwds)
+{
+  static char *kwlist[] = { "printer", "job_id", "doc_name", "format", "last_document", NULL };
+  PyObject *printer_obj;
+  char *printer;
+  int jobid;
+  PyObject *doc_name_obj;
+  char *doc_name;
+  PyObject *format_obj;
+  char *format;
+  int last_document;
+  http_status_t	status;		/* Write status */
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "OiOOi", kwlist,
+				    &printer_obj, &jobid, &doc_name_obj,
+				    &format_obj, &last_document))
+    return NULL;
+
+  if (UTF8_from_PyObj (&printer, printer_obj) == NULL)
+    return NULL;
+  if (UTF8_from_PyObj (&doc_name, doc_name_obj) == NULL) {
+    free (printer);
+    return NULL;
+  }
+  if (UTF8_from_PyObj (&format, format_obj) == NULL) {
+    free (doc_name);
+    free (printer);
+    return NULL;
+  }
+  debugprintf ("-> Connection_startDocument(printer=%s, jobid=%d, doc_name=%s, format=%s)\n",
+              printer, jobid, doc_name, format);
+
+  Connection_begin_allow_threads (self);
+  status = cupsStartDocument(self->http, printer, jobid, doc_name, format, last_document);
+  Connection_end_allow_threads (self);
+
+  if (status != HTTP_CONTINUE)
+  {
+    free (format);
+    free (doc_name);
+    free (printer);
+    set_ipp_error (cupsLastError (), cupsLastErrorString ());
+    debugprintf ("<- Connection_startDocument() = NULL\n");
+    return NULL;
+  }
+
+  free (format);
+  free (doc_name);
+  free (printer);
+  debugprintf ("<- Connection_startDocument() = %d\n", status);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (status);
+#else
+  return PyInt_FromLong (status);
+#endif
+}
+
+static PyObject *
+Connection_writeRequestData (Connection *self, PyObject *args, PyObject *kwds)
+{
+  static char *kwlist[] = { "buffer", "length", NULL };
+  PyObject *buffer_obj;
+  char *buffer;
+  int length;
+  http_status_t	status;		/* Write status */
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "Oi", kwlist,
+				    &buffer_obj, &length))
+    return NULL;
+
+  buffer = strdup(PyBytes_AsString (buffer_obj));
+  debugprintf ("-> Connection_writeRequestData(length=%d)\n", length);
+
+  Connection_begin_allow_threads (self);
+  status = cupsWriteRequestData(self->http, buffer, length);
+  Connection_end_allow_threads (self);
+
+  if (status != HTTP_CONTINUE)
+  {
+    free (buffer);
+    set_ipp_error (cupsLastError (), cupsLastErrorString ());
+    debugprintf ("<- Connection_writeRequestData() = NULL\n");
+    return NULL;
+  }
+
+  free (buffer);
+  debugprintf ("<- Connection_writeRequestData() = %d\n", status);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (status);
+#else
+  return PyInt_FromLong (status);
+#endif
+}
+
+static PyObject *
+Connection_finishDocument (Connection *self, PyObject *args, PyObject *kwds)
+{
+  static char *kwlist[] = { "printer", NULL };
+  PyObject *printer_obj;
+  char *printer;
+  int answer;
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "O", kwlist, &printer_obj))
+    return NULL;
+
+  if (UTF8_from_PyObj (&printer, printer_obj) == NULL)
+    return NULL;
+
+  debugprintf ("-> Connection_finishDocument(printer=%s)\n", printer);
+  Connection_begin_allow_threads (self);
+  answer = cupsFinishDocument(self->http, printer);
+  Connection_end_allow_threads (self);
+
+  if (answer != IPP_OK) {
+    free (printer);
+    set_ipp_error (cupsLastError (), cupsLastErrorString ());
+    debugprintf ("<- Connection_finishDocument() = NULL\n");
+    return NULL;
+  }
+
+  free (printer);
+  debugprintf ("<- Connection_finishDicument() = %d\n", answer);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (answer);
+#else
+  return PyInt_FromLong (answer);
+#endif
 }
 
 static PyObject *
@@ -3942,12 +4154,6 @@ Connection_adminGetServerSettings (Connection *self)
 static PyObject *
 Connection_adminSetServerSettings (Connection *self, PyObject *args)
 {
-#if PY_VERSION_HEX < 0x02050000
-#define DICT_POS_TYPE int
-#else
-#define DICT_POS_TYPE Py_ssize_t
-#endif
-
   PyObject *dict, *key, *val;
   int ret;
   int num_settings = 0;
@@ -5346,6 +5552,56 @@ PyMethodDef Connection_methods[] =
       "@param id: subscription ID\n"
       "@type lease_duration: integer\n"
       "@param lease_duration: lease duration in seconds\n"
+      "@raise IPPError: IPP problem" },
+
+    { "createJob",
+      (PyCFunction) Connection_createJob, METH_VARARGS | METH_KEYWORDS,
+      "createJob(printer, title, options) -> integer\n\n"
+      "Create an empty job for streaming.\n\n"
+      "@type printer: string\n"
+      "@param printer: queue name\n"
+      "@type title: string\n"
+      "@param title: title of the print job\n"
+      "@type options: dict\n"
+      "@param options: dict of options\n"
+      "@return: job ID\n"
+      "@raise IPPError: IPP problem" },
+
+    { "startDocument",
+      (PyCFunction) Connection_startDocument, METH_VARARGS | METH_KEYWORDS,
+      "startDocument(printer, job_id, doc_name, format, last_document) -> integer\n\n"
+      "Add a document to a job created with createJob.\n\n"
+      "@type printer: string\n"
+      "@param printer: queue name\n"
+      "@type job_id: integer\n"
+      "@param job_id: job ID to create document\n"
+      "@type doc_name: string\n"
+      "@param doc_name: name of the document\n"
+      "@type format: string\n"
+      "@param format: MIME type\n"
+      "@type last_document: integer\n"
+      "@param last_document: 1 for last document of job, 0 otherwise\n"
+      "@return: HTTP status\n"
+      "@raise IPPError: IPP problem" },
+
+    { "writeRequestData",
+      (PyCFunction) Connection_writeRequestData, METH_VARARGS | METH_KEYWORDS,
+      "writeRequestData(buffer, length) -> integer\n\n"
+      "Write data after an IPP request.\n\n"
+      "@type buffer: string\n"
+      "@param buffer: bytes to write\n"
+      "@type length: integer\n"
+      "@param length: number of bytes to write\n"
+      "@return: HTTP status\n"
+      "@raise IPPError: IPP problem" },
+
+    { "finishDocument",
+      (PyCFunction) Connection_finishDocument, METH_VARARGS | METH_KEYWORDS,
+      "finishDocument(printer) -> integer\n\n"
+      "Finish sending a document.\n\n"
+      "@type printer: string\n"
+      "@param printer: queue name\n"
+      "@return: HTTP status\n"
       "@raise IPPError: IPP problem" },
 
     { "printFile",
