@@ -4856,7 +4856,9 @@ PyMethodDef Connection_methods[] =
 
     { "cancelAllJobs",
       (PyCFunction) Connection_cancelAllJobs, METH_VARARGS | METH_KEYWORDS,
-      "cancelAllJobs(uri, my_jobs=False, purge_jobs=True) -> None\n\n"
+      "cancelAllJobs(name=None, uri=None, my_jobs=False, purge_jobs=True) -> None\n\n"
+      "@type name: string\n"
+      "@param name: queue name\n"
       "@type uri: string\n"
       "@param uri: printer URI\n"
       "@type my_jobs: boolean\n"
