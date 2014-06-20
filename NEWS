@@ -1,7 +1,7 @@
 NEWS
 ----
 
-New in next version:
+New in 1.9.67:
 
 * Bindings for streaming API: cups.CUPS_FORMAT_* constants, cups.createJob(),
   cups.startDocument(), cups.writeRequestData(), cups.finishDocument().
