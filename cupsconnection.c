@@ -2360,14 +2360,14 @@ Connection_getFile (Connection *self, PyObject *args, PyObject *kwds)
     return NULL;
   }
 
-#if PY_MAJOR_VERSION >= 3
-  fd = PyObject_AsFileDescriptor(fileobj);
-#else
   if (fileobj) {
+#if PY_MAJOR_VERSION >= 3
+    fd = PyObject_AsFileDescriptor(fileobj);
+#else
     FILE *f = PyFile_AsFile (fileobj);
     fd = fileno (f);
-  }
 #endif
+  }
 
   if (filename) {
     debugprintf ("-> Connection_getFile(%s, %s)\n", resource, filename);
@@ -2413,14 +2413,14 @@ Connection_putFile (Connection *self, PyObject *args, PyObject *kwds)
     return NULL;
   }
 
-#if PY_MAJOR_VERSION >= 3
-  fd = PyObject_AsFileDescriptor(fileobj);
-#else
   if (fileobj) {
+#if PY_MAJOR_VERSION >= 3
+    fd = PyObject_AsFileDescriptor(fileobj);
+#else
     FILE *f = PyFile_AsFile (fileobj);
     fd = fileno (f);
-  }
 #endif
+  }
 
   if (filename) {
     debugprintf ("-> Connection_putFile(%s, %s)\n", resource, filename);
