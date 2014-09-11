@@ -1,5 +1,6 @@
+PYTHON=python
 NAME=pycups
-VERSION:=$(shell python setup.py --version)
+VERSION:=$(shell $(PYTHON) setup.py --version)
 SDIST_ARGS=--formats=bztar -d.
 RPMCONFIGDIR:=$(shell rpm -E "%{_rpmconfigdir}" 2>/dev/null || :)
 
@@ -12,7 +13,7 @@ DIST=Makefile test.py \
 	COPYING NEWS README TODO ChangeLog
 
 cups.so: force
-	python setup.py build
+	$(PYTHON) setup.py build
 	ln -sf build/lib*/$@ .
 
 doc:	cups.so
@@ -26,15 +27,15 @@ clean:
 	-rm -rf build cups.so *.pyc *~
 
 dist:
-	python setup.py sdist $(SDIST_ARGS)
+	$(PYTHON) setup.py sdist $(SDIST_ARGS)
 
 upload:
-	python setup.py sdist $(SDIST_ARGS) upload -s
+	$(PYTHON) setup.py sdist $(SDIST_ARGS) upload -s
 
 install:	install-rpmhook
 	ROOT= ; \
 	if [ -n "$$DESTDIR" ]; then ROOT="--root $$DESTDIR"; fi; \
-	python setup.py install --skip-build $$ROOT
+	$(PYTHON) setup.py install --skip-build $$ROOT
 
 install-rpmhook:
 	if [ -n "$(RPMCONFIGDIR)" ]; then \
