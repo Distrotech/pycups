@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
-## Copyright (C) 2009, 2010 Red Hat, Inc.
+## Copyright (C) 2009, 2010, 2014 Red Hat, Inc.
 ## Author: Tim Waugh <twaugh@redhat.com>
 
 ## This program is free software; you can redistribute it and/or modify
@@ -54,7 +54,7 @@ class DeviceIDs:
 
     def get_tags (self):
         ret = []
-        for mfg, mdlset in self.ids.iteritems ():
+        for mfg, mdlset in self.ids.items ():
             mfgl = mfg.lower ().replace (" ", "_")
             for mdl in mdlset:
                 mdll = mdl.lower ().replace (" ", "_")
@@ -65,7 +65,7 @@ class DeviceIDs:
 
     def __add__ (self, other):
         if isinstance(other, DeviceIDs):
-            for omfg, omdlset in other.ids.iteritems ():
+            for omfg, omdlset in other.ids.items ():
                 try:
                     mdlset = self.ids[omfg]
                 except KeyError:
@@ -121,7 +121,7 @@ class PPDDriver(Driver):
     def examine_file (self, path):
         try:
             ppd = cups.PPD (path)
-        except RuntimeError, e:
+        except RuntimeError:
             # Not a PPD file.  Perhaps it's a drv file.
             drv = DrvDriver (path)
             self.ids += drv.list ()
@@ -164,16 +164,16 @@ class DynamicDriver(Driver):
             posix.kill (p.pid, signal.SIGKILL)
             raise
 
-	if stderr:
-		print >> sys.stderr, stderr
+        if stderr:
+            print(stderr.decode (), file=sys.stderr)
 
-	ppds = []
-	lines = stdout.split ('\n')
-	for line in lines:
-		l = shlex.split (line)
-		if len (l) < 5:
-                    continue
-                self.ids += l[4]
+        ppds = []
+        lines = stdout.decode ().split ('\n')
+        for line in lines:
+            l = shlex.split (line)
+            if len (l) < 5:
+                continue
+            self.ids += l[4]
 
         return Driver.list (self)
 
@@ -211,22 +211,35 @@ class DrvDriver(PPDDriver):
             posix.kill (p.pid, signal.SIGKILL)
             raise
 
-        os.path.walk (outputdir, self.examine_directory, None)
-        os.rmdir (outputdir)
-        return Driver.list (self)
+        for (dirpath, dirnames, filenames) in os.walk (outputdir,
+                                                       topdown=False):
+            for filename in filenames:
+                path = dirpath + os.path.sep + filename
+                self.examine_file (path)
+                try:
+                    os.unlink (path)
+                except OSError:
+                    pass
 
-    def examine_directory (self, unused, dirname, fnames):
-        for fname in fnames:
-            path = dirname + os.path.sep + fname
-            self.examine_file (path)
-            os.unlink (path)
+            for dirname in dirnames:
+                try:
+                    os.rmdir (dirpath + os.paht.sep + dirname)
+                except OSError:
+                    pass
+
+        try:
+            os.rmdir (outputdir)
+        except OSError:
+            pass
+
+        return Driver.list (self)
 
 class TagBuilder:
     def __init__ (self, filelist=None):
         if filelist == None:
             filelist = sys.stdin
 
-        paths = map (lambda x: x.rstrip (), filelist.readlines ())
+        paths = [x.rstrip () for x in filelist.readlines ()]
         self.ids = DeviceIDs ()
 
         for path in paths:
@@ -235,7 +248,8 @@ class TagBuilder:
                     self.ids += DynamicDriver (path).list ()
                 except TimedOut:
                     pass
-                except OSError, (e, s):
+                except OSError as exc:
+                    (e, s) = exc.args
                     if e == errno.EACCES or e == errno.ENOENT:
                         # Not executable
                         pass
@@ -256,4 +270,4 @@ if __name__ == "__main__":
     builder = TagBuilder ()
     tags = builder.get_tags ()
     for tag in tags:
-        print tag
+        print (tag)
