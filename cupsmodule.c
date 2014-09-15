@@ -52,7 +52,7 @@ static pthread_once_t tls_key_once = PTHREAD_ONCE_INIT;
 # define IPP_PKI_ERROR			0x1001
 #endif /* CUPS < 1.5 */
 
-#if (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR > 5)
+#if HAVE_CUPS_1_6
 # define CUPS_SERVER_REMOTE_PRINTERS	"_remote_printers"
 #endif /* CUPS > 1.5 */
 
