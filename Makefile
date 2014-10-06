@@ -10,7 +10,7 @@ SOURCES=cupsmodule.c cupsconnection.c cupsppd.c cupsipp.c setup.py \
 
 DIST=Makefile test.py \
 	examples \
-	COPYING NEWS README TODO ChangeLog
+	COPYING NEWS README TODO
 
 cups.so: force
 	$(PYTHON) setup.py build

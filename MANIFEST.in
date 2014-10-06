@@ -1,4 +1,4 @@
-include COPYING README NEWS TODO ChangeLog
+include COPYING README NEWS TODO
 
 include Makefile
 include cupsconnection.[ch]
