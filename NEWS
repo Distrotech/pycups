@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.68:
+
+* Now builds against CUPS 2.0.
+* The rpm provider script is now Python3.
+
 New in 1.9.67:
 
 * Bindings for streaming API: cups.CUPS_FORMAT_* constants, cups.createJob(),
