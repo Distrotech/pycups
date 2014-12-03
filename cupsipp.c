@@ -326,6 +326,270 @@ IPPRequest_dealloc (IPPRequest *self)
   ((PyObject *)self)->ob_type->tp_free ((PyObject *) self);
 }
 
+static IPPAttribute *
+build_IPPAttribute (ipp_attribute_t *attr)
+{
+  IPPAttribute *attribute = NULL;
+  PyObject *largs = NULL;
+  PyObject *lkwlist = NULL;
+  PyObject *values = NULL;
+
+  debugprintf ("%s: ", ippGetName (attr));
+  if (ippGetValueTag (attr) == IPP_TAG_ZERO ||
+      ippGetValueTag (attr) == IPP_TAG_NOVALUE ||
+      ippGetValueTag (attr) == IPP_TAG_NOTSETTABLE ||
+      ippGetValueTag (attr) == IPP_TAG_ADMINDEFINE) {
+    debugprintf ("no value\n");
+  } else {
+    PyObject *value = NULL;
+    int i;
+    int unknown_value_tag = 0;
+
+    values = PyList_New (0);
+    if (!values)
+      goto out;
+
+    for (i = 0; i < ippGetCount (attr); i++) {
+      switch (ippGetValueTag (attr)) {
+      case IPP_TAG_INTEGER:
+      case IPP_TAG_ENUM:
+      case IPP_TAG_RANGE:
+#if PY_MAJOR_VERSION >= 3
+	value = PyLong_FromLong (ippGetInteger (attr, i));
+#else
+	value = PyInt_FromLong (ippGetInteger (attr, i));
+#endif
+	debugprintf ("i%d", ippGetInteger (attr, i));
+	break;
+
+      case IPP_TAG_BOOLEAN:
+	value = PyBool_FromLong (ippGetBoolean (attr, i));
+	debugprintf ("b%d", ippGetInteger (attr, i));
+	break;
+
+      case IPP_TAG_TEXT:
+	value = PyUnicode_Decode (ippGetString (attr, i, NULL),
+				  strlen (ippGetString (attr, i, NULL)),
+				  "utf-8", NULL);
+	debugprintf ("u%s", ippGetString (attr, i, NULL));
+	break;
+
+      case IPP_TAG_NAME:
+      case IPP_TAG_KEYWORD:
+      case IPP_TAG_URI:
+      case IPP_TAG_MIMETYPE:
+      case IPP_TAG_CHARSET:
+      case IPP_TAG_LANGUAGE:
+	value = PyUnicode_FromString (ippGetString (attr, i, NULL));
+	debugprintf ("s%s", ippGetString (attr, i, NULL));
+	break;
+
+      default:
+	value = NULL;
+	unknown_value_tag = 1;
+	debugprintf ("Unable to encode value tag %d\n", ippGetValueTag (attr));
+      }
+
+      if (!value)
+	break; /* out of values loop */
+
+      debugprintf ("(%p), ", value);
+      if (PyList_Append (values, value) != 0) {
+	Py_DECREF (values);
+	Py_DECREF (value);
+	goto out;
+      }
+
+      Py_DECREF (value);
+    }
+
+    if (unknown_value_tag) {
+      Py_DECREF (values);
+      goto out;
+    }
+
+    debugprintf ("\n");
+  }
+
+  if (values) {
+    largs = Py_BuildValue ("(iisO)",
+			   ippGetGroupTag (attr),
+			   ippGetValueTag (attr),
+			   ippGetName (attr),
+			   values);
+    Py_DECREF (values);
+    values = NULL;
+  } else
+    largs = Py_BuildValue ("(iis)", ippGetGroupTag (attr), ippGetValueTag (attr),
+			   ippGetName (attr) ? ippGetName (attr) : "");
+
+  if (!largs)
+    goto out;
+
+  lkwlist = Py_BuildValue ("{}");
+  if (!lkwlist)
+    goto out;
+
+  attribute = (IPPAttribute *) PyType_GenericNew (&cups_IPPAttributeType,
+						  largs, lkwlist);
+  if (!attribute)
+    goto out;
+
+  if (IPPAttribute_init (attribute, largs, lkwlist) != 0) {
+    Py_DECREF (attribute);
+    attribute = NULL;
+  }
+
+out:
+  if (values)
+    Py_DECREF (values);
+
+  if (largs)
+    Py_DECREF (largs);
+
+  if (lkwlist)
+    Py_DECREF (lkwlist);
+
+  return attribute;
+}
+
+static PyObject *
+IPPRequest_addSeparator (IPPRequest *self)
+{
+  ipp_attribute_t *attr = ippAddSeparator (self->ipp);
+  return (PyObject *) build_IPPAttribute (attr);
+}
+
+static PyObject *
+IPPRequest_add (IPPRequest *self, PyObject *args)
+{
+  PyObject *obj;
+  IPPAttribute *attribute;
+  Py_ssize_t num_values;
+  void *values = NULL;
+  size_t value_size = 0;
+  int i;
+
+  if (!PyArg_ParseTuple (args, "O", &obj))
+    return NULL;
+
+  if (Py_TYPE(obj) != &cups_IPPAttributeType) {
+    PyErr_SetString (PyExc_TypeError, "Parameter must be IPPAttribute");
+    return NULL;
+  }
+
+  attribute = (IPPAttribute *) obj;
+  num_values = PyList_Size (attribute->values);
+  switch (attribute->value_tag) {
+  case IPP_TAG_INTEGER:
+  case IPP_TAG_ENUM:
+  case IPP_TAG_RANGE:
+    value_size = sizeof (int);
+    break;
+
+  case IPP_TAG_BOOLEAN:
+    value_size = sizeof (char);
+    break;
+
+  case IPP_TAG_NAME:
+  case IPP_TAG_KEYWORD:
+  case IPP_TAG_URI:
+  case IPP_TAG_MIMETYPE:
+  case IPP_TAG_CHARSET:
+  case IPP_TAG_LANGUAGE:
+    value_size = sizeof (char *);
+    break;
+
+  default:
+    break;
+  }
+
+  values = calloc (num_values, value_size);
+  if (!values) {
+    PyErr_SetString (PyExc_MemoryError, "Unable to allocate memory");
+    return NULL;
+  }
+
+  switch (attribute->value_tag) {
+  case IPP_TAG_INTEGER:
+  case IPP_TAG_ENUM:
+  case IPP_TAG_RANGE:
+    for (i = 0; i < num_values; i++) {
+      PyObject *item = PyList_GetItem (attribute->values, i);
+      if (PyLong_Check (item))
+	((int *)values)[i] = PyLong_AsLong (item);
+#if PY_MAJOR_VERSION < 3
+      else if (PyInt_Check (item))
+	((int *)values)[i] = PyInt_AsLong (item);
+#endif
+    }
+    ippAddIntegers (self->ipp,
+		    attribute->group_tag,
+		    attribute->value_tag,
+		    attribute->name,
+		    num_values,
+		    values);
+    break;
+
+  case IPP_TAG_BOOLEAN:
+    for (i = 0; i < num_values; i++) {
+      PyObject *item = PyList_GetItem (attribute->values, i);
+      ((char *)values)[i] = (item == Py_True ? 1 : 0);
+    }
+    ippAddBooleans (self->ipp,
+		    attribute->group_tag,
+		    attribute->name,
+		    num_values,
+		    values);
+    break;
+
+  case IPP_TAG_NAME:
+  case IPP_TAG_KEYWORD:
+  case IPP_TAG_URI:
+  case IPP_TAG_MIMETYPE:
+  case IPP_TAG_CHARSET:
+  case IPP_TAG_LANGUAGE:
+    for (i = 0; i < num_values; i++) {
+      PyObject *item = PyList_GetItem (attribute->values, i);
+      char *str;
+#if PY_MAJOR_VERSION >= 3
+      str = strdup (PyUnicode_AsUTF8 (item));
+#else
+      str = strdup (PyBytes_AsString (item));
+#endif
+      ((char **)values)[i] = str;
+      if (!str)
+	break;
+    }
+    if (i < num_values) {
+      int j;
+      for (j = 0; j < i; j++)
+	free (((char **)values)[j]);
+      PyErr_SetString (PyExc_MemoryError, "Unable to allocate memory");
+      free (values);
+      return NULL;
+    }
+    ippAddStrings (self->ipp,
+		   attribute->group_tag,
+		   attribute->value_tag,
+		   attribute->name,
+		   num_values,
+		   NULL,
+		   values);
+    for (i = 0; i < num_values; i++)
+      free (((char **)values)[i]);
+
+    break;
+
+  default:
+    break;
+  }
+
+  free (values);
+  Py_INCREF (obj);
+  return obj;
+}
+
 static ssize_t
 cupsipp_iocb_read (PyObject *callable, ipp_uchar_t *buffer, size_t len)
 {
@@ -373,6 +637,47 @@ cupsipp_iocb_read (PyObject *callable, ipp_uchar_t *buffer, size_t len)
   return got;
 }
 
+static ssize_t
+cupsipp_iocb_write (PyObject *callable, ipp_uchar_t *buffer, size_t len)
+{
+  PyObject *args = Py_BuildValue ("(y#)", buffer, len);
+  PyObject *result = NULL;
+  Py_ssize_t wrote = -1;
+
+  debugprintf ("-> cupsipp_iocb_write\n");
+
+  if (!args) {
+    debugprintf ("Py_BuildValue failed\n");
+    goto out;
+  }
+
+  result = PyEval_CallObject (callable, args);
+  Py_DECREF (args);
+
+  if (result == NULL) {
+    debugprintf ("Exception in write callback\n");
+    goto out;
+  }
+
+  if (PyLong_Check (result))
+    wrote = PyLong_AsLong (result);
+#if PY_MAJOR_VERSION < 3
+  else if (PyInt_Check (result))
+    wrote = PyInt_AsLong (result);
+#endif
+  else {
+    debugprintf ("Bad return value\n");
+    goto out;
+  }
+
+out:
+  if (result)
+    Py_DECREF (result);
+
+  debugprintf ("<- cupsipp_iocb_write()\n");
+  return wrote;
+}
+
 static PyObject *
 IPPRequest_readIO (IPPRequest *self, PyObject *args, PyObject *kwds)
 {
@@ -400,157 +705,137 @@ IPPRequest_readIO (IPPRequest *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
+IPPRequest_writeIO (IPPRequest *self, PyObject *args, PyObject *kwds)
+{
+  PyObject *cb;
+  char blocking = 1;
+  ipp_state_t state;
+  static char *kwlist[] = { "write_fn", "blocking", NULL };
+
+  if (!PyArg_ParseTupleAndKeywords (args, kwds, "O|b", kwlist,
+				    &cb, &blocking))
+    return NULL;
+
+  if (!PyCallable_Check (cb)) {
+    PyErr_SetString (PyExc_TypeError, "Parameter must be callable");
+    return NULL;
+  }
+
+  state = ippWriteIO (cb, (ipp_iocb_t) cupsipp_iocb_write,
+		     blocking, NULL, self->ipp);
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (state);
+#else
+  return PyInt_FromLong (state);
+#endif
+}
+
+/* Request properties */
+
+static PyObject *
 IPPRequest_getAttributes (IPPRequest *self, void *closure)
 {
   PyObject *attrs = PyList_New (0);
   ipp_attribute_t *attr;
   for (attr = ippFirstAttribute (self->ipp); attr; attr = ippNextAttribute(self->ipp))
     {
-      PyObject *largs = NULL;
-      PyObject *lkwlist = NULL;
-      PyObject *values = NULL;
-      IPPAttribute *attribute = NULL;
-
-      debugprintf ("%s: ", ippGetName (attr));
-      if (ippGetValueTag (attr) == IPP_TAG_ZERO ||
-	  ippGetValueTag (attr) == IPP_TAG_NOVALUE ||
-	  ippGetValueTag (attr) == IPP_TAG_NOTSETTABLE ||
-	  ippGetValueTag (attr) == IPP_TAG_ADMINDEFINE) {
-	debugprintf ("no value\n");
-      } else {
-	PyObject *value = NULL;
-	int i;
-	int unknown_value_tag = 0;
-
-	values = PyList_New (0);
-	if (!values)
-	  goto fail_add;
-
-	for (i = 0; i < ippGetCount (attr); i++) {
-	  switch (ippGetValueTag (attr)) {
-	  case IPP_TAG_INTEGER:
-	  case IPP_TAG_ENUM:
-	  case IPP_TAG_RANGE:
-#if PY_MAJOR_VERSION >= 3
-	    value = PyLong_FromLong (ippGetInteger (attr, i));
-#else
-	    value = PyInt_FromLong (ippGetInteger (attr, i));
-#endif
-	    debugprintf ("i%d", ippGetInteger (attr, i));
-	    break;
-
-	  case IPP_TAG_BOOLEAN:
-	    value = PyBool_FromLong (ippGetBoolean (attr, i));
-	    debugprintf ("b%d", ippGetInteger (attr, i));
-	    break;
-
-	  case IPP_TAG_TEXT:
-	    value = PyUnicode_Decode (ippGetString (attr, i, NULL),
-				      strlen (ippGetString (attr, i, NULL)),
-				      "utf-8", NULL);
-	    debugprintf ("u%s", ippGetString (attr, i, NULL));
-	    break;
-
-	  case IPP_TAG_NAME:
-	  case IPP_TAG_KEYWORD:
-	  case IPP_TAG_URI:
-	  case IPP_TAG_MIMETYPE:
-	  case IPP_TAG_CHARSET:
-	  case IPP_TAG_LANGUAGE:
-	    value = PyUnicode_FromString (ippGetString (attr, i, NULL));
-	    debugprintf ("s%s", ippGetString (attr, i, NULL));
-	    break;
-
-	  default:
-	    value = NULL;
-	    unknown_value_tag = 1;
-	    debugprintf ("Unable to encode value tag %d\n", ippGetValueTag (attr));
-	  }
-
-	  if (!value)
-	    break; /* out of values loop */
-
-	  debugprintf ("(%p), ", value);
-	  if (PyList_Append (values, value) != 0) {
-	    Py_DECREF (values);
-	    Py_DECREF (value);
-	    goto fail_add;
-	  }
-
-	  Py_DECREF (value);
-	}
-
-	if (unknown_value_tag) {
-	  Py_DECREF (values);
-
-	  /* Next attribute */
-	  continue;
-	}
-
-	if (!value)
-	  /* Failed to build object */
-	  goto fail_add;
-
-	debugprintf ("\n");
-      }
-
-      if (values) {
-	largs = Py_BuildValue ("(iisO)",
-			       ippGetGroupTag (attr),
-			       ippGetValueTag (attr),
-			       ippGetName (attr),
-			       values);
-	Py_DECREF (values);
-	values = NULL;
-      } else
-	largs = Py_BuildValue ("(iis)", ippGetGroupTag (attr), ippGetValueTag (attr),
-			       ippGetName (attr) ? ippGetName (attr) : "");
-
-      if (!largs)
-	goto fail_add;
-
-      lkwlist = Py_BuildValue ("{}");
-      if (!lkwlist)
-	goto fail_add;
-
-      attribute = (IPPAttribute *) PyType_GenericNew (&cups_IPPAttributeType,
-						      largs, lkwlist);
+      IPPAttribute *attribute = build_IPPAttribute (attr);
       if (!attribute)
-	goto fail_add;
-
-      if (IPPAttribute_init (attribute, largs, lkwlist) != 0)
-	goto fail_add;
+	goto fail;
 
       if (PyList_Append (attrs, (PyObject *) attribute) != 0)
-	goto fail_add;
-
-      Py_DECREF (largs);
-      Py_DECREF (lkwlist);
-      Py_DECREF (attribute);
-      continue;
-
-    fail_add:
-      if (values)
-	Py_DECREF (values);
-
-      if (largs)
-	Py_DECREF (largs);
-
-      if (lkwlist)
-	Py_DECREF (lkwlist);
-
-      if (attribute)
-	Py_DECREF (attribute);
-
-      debugprintf ("\nException creating new object\n");
-      goto fail_out;
+	goto fail;
     }
 
   return attrs;
 
- fail_out:
+ fail:
   Py_DECREF (attrs);
   return NULL;
+}
+
+static PyObject *
+IPPRequest_getOperation (IPPRequest *self, void *closure)
+{
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (ippGetOperation (self->ipp));
+#else
+  return PyInt_FromLong (ippGetOperation (self->ipp));
+#endif
+}
+
+static PyObject *
+IPPRequest_getStatuscode (IPPRequest *self, void *closure)
+{
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (ippGetStatusCode (self->ipp));
+#else
+  return PyInt_FromLong (ippGetStatusCode (self->ipp));
+#endif
+}
+
+static int
+IPPRequest_setState (IPPRequest *self, PyObject *value, void *closure)
+{
+  int state;
+
+  if (value == NULL)
+  {
+    PyErr_SetString(PyExc_TypeError, "Cannot delete state");
+    return -1;
+  }
+
+  if (PyLong_Check(value))
+    state = PyLong_AsLong (value);
+#if PY_MAJOR_VERSION < 3
+  else if (PyInt_Check(value))
+    state = PyInt_AsLong (value);
+#endif
+  else
+  {
+    PyErr_SetString(PyExc_TypeError, "state must be an integer");
+    return -1;
+  }
+
+  ippSetState (self->ipp, state);
+  return 0;
+}
+
+static PyObject *
+IPPRequest_getState (IPPRequest *self, void *closure)
+{
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong (ippGetState (self->ipp));
+#else
+  return PyInt_FromLong (ippGetState (self->ipp));
+#endif
+}
+
+static int
+IPPRequest_setStatuscode (IPPRequest *self, PyObject *value, void *closure)
+{
+  int statuscode;
+
+  if (value == NULL)
+  {
+    PyErr_SetString(PyExc_TypeError, "Cannot delete statuscode");
+    return -1;
+  }
+
+  if (PyLong_Check(value))
+    statuscode = PyLong_AsLong (value);
+#if PY_MAJOR_VERSION < 3
+  else if (PyInt_Check(value))
+    statuscode = PyInt_AsLong (value);
+#endif
+  else
+  {
+    PyErr_SetString(PyExc_TypeError, "statuscode must be an integer");
+    return -1;
+  }
+
+  ippSetStatusCode (self->ipp, statuscode);
+  return 0;
 }
 
 PyGetSetDef IPPRequest_getseters[] =
@@ -559,11 +844,37 @@ PyGetSetDef IPPRequest_getseters[] =
       (getter) IPPRequest_getAttributes, (setter) NULL,
       "IPP request attributes", NULL },
 
+    { "operation",
+      (getter) IPPRequest_getOperation, (setter) NULL,
+      "IPP request operation", NULL },
+
+    { "state",
+      (getter) IPPRequest_getState,
+      (setter) IPPRequest_setState,
+      "IPP request transfer state", NULL },
+
+    { "statuscode",
+      (getter) IPPRequest_getStatuscode,
+      (setter) IPPRequest_setStatuscode,
+      "IPP response status code", NULL },
+
     { NULL } /* Sentinel */
   };
 
 PyMethodDef IPPRequest_methods[] =
   {
+    { "addSeparator",
+      (PyCFunction) IPPRequest_addSeparator, METH_NOARGS,
+      "addSeparator() -> IPPAttribute\n\n"
+      "@return: IPP request attribute" },
+
+    { "add",
+      (PyCFunction) IPPRequest_add, METH_VARARGS,
+      "add(attr) -> IPPAttribute\n\n"
+      "@type attr: IPPAttribute\n"
+      "@param attr: Attribute to add to the request\n"
+      "@return: IPP request attribute" },
+
     { "readIO",
       (PyCFunction) IPPRequest_readIO, METH_VARARGS | METH_KEYWORDS,
       "readIO(read_fn, blocking=True) -> IPP state\n\n"
@@ -573,6 +884,17 @@ PyMethodDef IPPRequest_methods[] =
       "@type blocking: Boolean\n"
       "@param blocking: whether to continue reading until a complete\n"
       "request is read\n"
+      "@return: IPP state value" },
+
+    { "writeIO",
+      (PyCFunction) IPPRequest_writeIO, METH_VARARGS | METH_KEYWORDS,
+      "writeIO(write_fn, blocking=True) -> IPP state\n\n"
+      "@type write_fn: Callable function\n"
+      "@param write_fn: A callback, taking a bytes object, for writing\n"
+      "IPP data\n"
+      "@type blocking: Boolean\n"
+      "@param blocking: whether to continue reading until a complete\n"
+      "request is written\n"
       "@return: IPP state value" },
 
     { NULL } /* Sentinel */

@@ -1,6 +1,13 @@
 NEWS
 ----
 
+New in 1.9.69:
+
+* cups.IPPRequest.operation, cups.IPPRequest.state,
+  cups.IPPRequest.statuscode, cups.ippOpString(), cups.IPP_OP_*,
+  cups.IPPRequest.addSeparator(), cups.IPPRequest.add(),
+  cups.IPPRequest.writeIO().
+
 New in 1.9.68:
 
 * Now builds against CUPS 2.0.
