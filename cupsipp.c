@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010, 2011  Red Hat, Inc.
+ * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2014  Red Hat, Inc.
  * Author: Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -154,16 +154,16 @@ IPPAttribute_repr (IPPAttribute *self)
   PyObject *ret;
   PyObject *values_repr = NULL;
   char *values = NULL;
-  char buffer[256];
+  char buffer[1024];
   if (self->values) {
     values_repr = PyList_Type.tp_repr (self->values);
     UTF8_from_PyObj (&values, values_repr);
   }
 
-  snprintf (buffer, 256, "<cups.IPPAttribute %s (%d:%d)%s%s>",
-			  self->name, self->group_tag, self->value_tag,
-			  values ? ": " : "",
-			  values ? values : "");
+  snprintf (buffer, sizeof (buffer), "<cups.IPPAttribute %s (%d:%d)%s%s>",
+	    self->name, self->group_tag, self->value_tag,
+	    values ? ": " : "",
+	    values ? values : "");
 #if PY_MAJOR_VERSION >= 3
   ret = PyUnicode_FromString (buffer);
 #else
