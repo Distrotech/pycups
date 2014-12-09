@@ -733,6 +733,17 @@ cups_connectDest (PyObject *self, PyObject *args, PyObject *kwds)
 #endif /* HAVE_CUPS_1_6 */
 
 static PyObject *
+cups_ippErrorString (PyObject *self, PyObject *args)
+{
+  int op;
+
+  if (!PyArg_ParseTuple (args, "i", &op))
+    return NULL;
+
+  return PyUnicode_FromString (ippErrorString (op));
+}
+
+static PyObject *
 cups_ippOpString (PyObject *self, PyObject *args)
 {
   int op;
@@ -913,6 +924,13 @@ static PyMethodDef cups_methods[] = {
     "@param user_data: user data to pass to callback function\n"
     "@return: a 2-tuple of the Connection object and the HTTP resource.\n"},
 #endif /* HAVE_CUPS_1_6 */
+
+  { "ippErrorString",
+    (PyCFunction) cups_ippErrorString, METH_VARARGS,
+    "ippErrorString(statuscode) -> name\n\n"
+    "@type statuscode: integer\n"
+    "@param statuscode: IPP Request status code\n"
+    "@return: a string describing the status code\n"},
 
   { "ippOpString",
     (PyCFunction) cups_ippOpString, METH_VARARGS,
