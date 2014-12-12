@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2013  Red Hat, Inc
+ * Copyright (C) 2002, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2013, 2014  Red Hat, Inc
  * Author: Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -362,7 +362,6 @@ password_callback (int newstyle,
   Connection *self = NULL;
   PyObject *args;
   PyObject *result;
-  const char *pwval;
   int i;
 
   debugprintf ("-> password_callback for http=%p, newstyle=%d\n",
@@ -403,13 +402,9 @@ password_callback (int newstyle,
   }
 
   free (self->cb_password);
-  if (result == Py_None)
+  if (result == Py_None ||
+      !UTF8_from_PyObj (&self->cb_password, result))
     self->cb_password = NULL;
-  else
-  {
-    pwval = PyBytes_AsString (result);
-    self->cb_password = strdup (pwval);
-  }
 
   Py_DECREF (result);
   if (!self->cb_password || !*self->cb_password)
