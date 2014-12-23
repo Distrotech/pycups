@@ -1,6 +1,6 @@
 /*
  * cups - Python bindings for CUPS
- * Copyright (C) 2006, 2007, 2008, 2009, 2010, 2013  Tim Waugh <twaugh@redhat.com>
+ * Copyright (C) 2006, 2007, 2008, 2009, 2010, 2013, 2014  Tim Waugh <twaugh@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -96,6 +96,9 @@ ipp_attribute_t * ippNextAttribute(ipp_t *ipp);
 int ippSetInteger(ipp_t *ipp, ipp_attribute_t **attr,
                   int element, int intvalue);
 int ippSetOperation(ipp_t *ipp, ipp_op_t op);
+ipp_state_t ippGetState(ipp_t *ipp);
+int ippSetState(ipp_t *ipp, ipp_state_t state);
+int ippSetStatusCode(ipp_t *ipp, ipp_status_t status);
 int ippSetString(ipp_t *ipp, ipp_attribute_t **attr,
                  int element, const char *strvalue);
 #endif

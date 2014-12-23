@@ -3,7 +3,10 @@ NEWS
 
 New in 1.9.70:
 
-* cups.ippErrorString().
+* cups.ippErrorString(). Fixed build with CUPS 1.5. New-style (CUPS
+  1.6) naming for HTTP status (cups.HTTP_STATUS_*), IPP orientation
+  (cups.IPP_ORIENT_*), IPP status (cups.IPP_STATUS_*), and IPP
+  I/O (cups.IPP_STATE_*) constants.
 
 New in 1.9.69:
 
