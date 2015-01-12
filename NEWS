@@ -1,6 +1,14 @@
 NEWS
 ----
 
+New in 1.9.71:
+
+* Fixes for cups.IPP_JOB_CANCELED, cups.IPP_ERROR_JOB_CANCELED,
+  cups.IPP_STATUS_ERROR_CUPS_AUTHENTICATION_CANCELED,
+  cups.IPP_AUTHENTICATION_CANCELED,
+  cups.IPP_STATUS_ERROR_CUPS_UPGRADE_REQUIRED, and
+  cups.IPP_UPGRADE_REQUIRED.
+
 New in 1.9.70:
 
 * cups.ippErrorString(). Fixed build with CUPS 1.5. New-style (CUPS
