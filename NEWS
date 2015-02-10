@@ -1,6 +1,14 @@
 NEWS
 ----
 
+New in 1.9.72:
+
+* Removed private CANCEL_DOCUMENT, GET_DOCUMENT_ATTRIBUTES,
+  GET_DOCUMENTS, DELETE_DOCUMENT, SET_DOCUMENT_ATTRIBUTES IPP
+  operation constants.
+* Fixed build for CUPS 1.4 by making several constants conditional on
+  CUPS >= 1.5.
+
 New in 1.9.71:
 
 * Fixes for cups.IPP_JOB_CANCELED, cups.IPP_ERROR_JOB_CANCELED,
