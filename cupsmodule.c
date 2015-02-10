@@ -1119,7 +1119,7 @@ initcups (void)
 #define STR_CONSTANT(name)					\
   PyDict_SetItemString (d, #name, PyUnicode_FromString (name))
 
-#if CUPS_VERSION_MAJOR > 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 6)
+#if HAVE_CUPS_1_6
 #  define INT_16_CONSTANT(newname,oldname)	\
   INT_CONSTANT_ALIAS(newname,#oldname)
 #  define INT_16_CONSTANT_NEWNAME(newname,oldname)	\
@@ -1176,7 +1176,7 @@ initcups (void)
 
   // Selected HTTP status codes
   /* Also define legacy names */
-#if CUPS_VERSION_MAJOR > 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 6)
+#if HAVE_CUPS_1_6
 #  define INT_HTTP_STATUS_CONSTANT(name)		\
   INT_CONSTANT_ALIAS(HTTP_STATUS_##name, "HTTP_"#name)
 #else /* CUPS < 1.6 */
@@ -1266,7 +1266,7 @@ initcups (void)
 
   // IPP orientations
   /* Also define legacy names */
-#if CUPS_VERSION_MAJOR > 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 6)
+#if HAVE_CUPS_1_6
 #  define INT_IPP_ORIENT_CONSTANT(name)	\
   INT_CONSTANT_ALIAS(IPP_ORIENT_##name, "IPP_"#name)
 #else /* CUPS < 1.6 */
@@ -1286,7 +1286,7 @@ initcups (void)
 
   // IPP errors
   /* Also define legacy names */
-#if CUPS_VERSION_MAJOR > 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 6)
+#if HAVE_CUPS_1_6
 #  define INT_IPP_STATUS_ERROR_CONSTANT(name)	\
   INT_CONSTANT_ALIAS(IPP_STATUS_ERROR_##name, "IPP_"#name)
 #  define INT_IPP_STATUS_OK_CONSTANT(name)	\
@@ -1347,14 +1347,14 @@ initcups (void)
   INT_16_CONSTANT (IPP_STATUS_ERROR_CUPS_AUTHENTICATION_CANCELED,
 		   IPP_AUTHENTICATION_CANCELED);
   INT_16_CONSTANT (IPP_STATUS_ERROR_CUPS_PKI, IPP_PKI_ERROR);
-#if CUPS_VERSION_MAJOR > 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 5)
+#if HAVE_CUPS_1_5
   INT_16_CONSTANT (IPP_STATUS_ERROR_CUPS_UPGRADE_REQUIRED,
 		   IPP_UPGRADE_REQUIRED);
 #endif /* CUPS >= 1.5 */
 
   // IPP states
   /* Also define legacy names */
-#if CUPS_VERSION_MAJOR > 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 6)
+#if HAVE_CUPS_1_6
 #  define INT_IPP_STATE_CONSTANT(name)	\
   INT_CONSTANT_ALIAS(IPP_STATE_##name, "IPP_"#name)
 #else /* CUPS < 1.6 */
@@ -1387,7 +1387,7 @@ initcups (void)
   INT_CONSTANT (IPP_TAG_MIMETYPE);
 
   // IPP operations
-#if CUPS_VERSION_MAJOR > 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 6)
+#if HAVE_CUPS_1_6
 #  define INT_IPP_OP_CONSTANT(name)		\
   INT_CONSTANT(IPP_OP_##name)
 #else /* CUPS < 1.6 */
@@ -1423,7 +1423,7 @@ initcups (void)
   INT_IPP_OP_CONSTANT (CANCEL_SUBSCRIPTION);
   INT_IPP_OP_CONSTANT (GET_NOTIFICATIONS);
   INT_IPP_OP_CONSTANT (SEND_NOTIFICATIONS);
-#if CUPS_VERSION_MAJOR > 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 6)
+#if HAVE_CUPS_1_6
   INT_IPP_OP_CONSTANT (GET_RESOURCE_ATTRIBUTES);
   INT_IPP_OP_CONSTANT (GET_RESOURCE_DATA);
   INT_IPP_OP_CONSTANT (GET_RESOURCES);
@@ -1445,7 +1445,7 @@ initcups (void)
   INT_IPP_OP_CONSTANT (RESUME_JOB);
   INT_IPP_OP_CONSTANT (PROMOTE_JOB);
   INT_IPP_OP_CONSTANT (SCHEDULE_JOB_AFTER);
-#if CUPS_VERSION_MAJOR > 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 6)
+#if HAVE_CUPS_1_6
   INT_IPP_OP_CONSTANT (CANCEL_JOBS);
   INT_IPP_OP_CONSTANT (CANCEL_MY_JOBS);
   INT_IPP_OP_CONSTANT (RESUBMIT_JOB);

@@ -34,22 +34,26 @@
 
 extern void debugprintf (const char *fmt, ...) FORMAT ((__printf__, 1, 2));
 
-#if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MINOR > 1)
+#if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 2)
 #define HAVE_CUPS_1_2 1
 #endif
 
-#if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MINOR > 2)
+#if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 3)
 #define HAVE_CUPS_1_3 1
 #else
 #define cupsAdminGetServerSettings _cupsAdminGetServerSettings
 #define cupsAdminSetServerSettings _cupsAdminSetServerSettings
 #endif
 
-#if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MINOR > 3)
+#if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 4)
 #define HAVE_CUPS_1_4 1
 #endif
 
-#if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MINOR > 5)
+#if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 5)
+#define HAVE_CUPS_1_5 1
+#endif
+
+#if (CUPS_VERSION_MAJOR > 1) || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 6)
 #define HAVE_CUPS_1_6 1
 #endif
 
