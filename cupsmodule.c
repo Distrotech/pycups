@@ -37,7 +37,7 @@
 static pthread_key_t tls_key = -1;
 static pthread_once_t tls_key_once = PTHREAD_ONCE_INIT;
 
-#if CUPS_VERSION_MAJOR > 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR >= 3)
+#if CUPS_VERSION_MAJOR > 1 || (CUPS_VERSION_MAJOR == 1 && CUPS_VERSION_MINOR < 3)
 # define CUPS_PRINTER_DISCOVERED	0x1000000
 # define CUPS_SERVER_REMOTE_ANY		"_remote_any"
 #endif /* CUPS < 1.3 */
