@@ -107,11 +107,18 @@ UTF8_from_PyObj (char **const utf8, PyObject *obj)
 // converts PyUnicode or PyBytes to char *
 {
   if (PyUnicode_Check (obj)) {
+    const char *string;
     PyObject *stringobj = PyUnicode_AsUTF8String (obj);
     if (stringobj == NULL)
       return NULL;
 
-    *utf8 = strdup (PyBytes_AsString (stringobj));
+    string = PyBytes_AsString (stringobj);
+    if (string == NULL) {
+      Py_DECREF (stringobj);
+      return NULL;
+    }
+
+    *utf8 = strdup (string);
     Py_DECREF (stringobj);
     return *utf8;
   }
