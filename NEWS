@@ -1,6 +1,11 @@
 NEWS
 ----
 
+New in 1.9.73:
+
+* Fixed build for CUPS 1.6.3 by making several constants conditional
+  on CUPS >= 1.7.
+
 New in 1.9.72:
 
 * Removed private CANCEL_DOCUMENT, GET_DOCUMENT_ATTRIBUTES,
